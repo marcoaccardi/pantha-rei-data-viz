@@ -1,0 +1,25 @@
+# NOAA Clean Globe Texture System Requirements
+# Core data processing
+numpy>=1.24.0
+pandas>=2.1.0
+xarray>=2025.6.0
+netcdf4>=1.7.0
+
+# Visualization and mapping
+matplotlib>=3.10.0
+cartopy>=0.24.0
+pillow>=11.0.0
+
+# Web requests and caching
+requests>=2.32.0
+requests-cache>=1.2.0
+
+# WebSocket server
+websockets>=12.0
+
+# Scientific computing (optional, with fallbacks implemented)
+scipy>=1.15.0
+
+# Additional dependencies that may be needed
+certifi>=2025.1.0
+urllib3>=2.3.0
