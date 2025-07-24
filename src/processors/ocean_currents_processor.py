@@ -2,6 +2,7 @@
 """
 Ocean Currents Live Processor - Real-time OSCAR ocean current data collection.
 Adapted from currents monitoring system for live API-based queries.
+Uses standardized WGS84 coordinate validation and ERDDAP formatting.
 """
 
 import requests
@@ -11,13 +12,15 @@ import numpy as np
 
 from ..utils.api_client import APIClient
 from ..utils.erddap_utils import ERDDAPUtils
+from .base_processor import OceanDataProcessor
 
 
-class OceanCurrentsProcessor:
+class OceanCurrentsProcessor(OceanDataProcessor):
     """Live ocean currents data collection using OSCAR ERDDAP API."""
     
     def __init__(self):
-        """Initialize ocean currents processor."""
+        """Initialize ocean currents processor with WGS84 coordinate validation."""
+        super().__init__()  # Initialize coordinate validation
         self.api_client = APIClient()
         
         # Multiple ERDDAP endpoints to try for ocean currents data
@@ -56,10 +59,17 @@ class OceanCurrentsProcessor:
         print("🌊 Ocean Currents Processor initialized")
         print("📡 Source: OSCAR Ocean Currents (ERDDAP)")
         print("🌍 Coverage: Global ocean surface currents")
+
+    def get_processor_data(self, lat: float, lon: float, date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Implementation of abstract base class method.
+        Delegates to get_ocean_currents_data for backward compatibility.
+        """
+        return self.get_ocean_currents_data(lat, lon, date)
     
     def get_ocean_currents_data(self, lat: float, lon: float, date: Optional[str] = None) -> Dict[str, Any]:
         """
-        Get live ocean currents data from OSCAR.
+        Get live ocean currents data from OSCAR with WGS84 coordinate validation.
         
         Args:
             lat: Latitude in decimal degrees
@@ -67,12 +77,16 @@ class OceanCurrentsProcessor:
             date: Date string (YYYY-MM-DD), defaults to today
             
         Returns:
-            Dictionary with ocean currents data and metadata
+            Dictionary with ocean currents data and standardized metadata
         """
-        if date is None:
-            date = datetime.now().strftime('%Y-%m-%d')
+        # Validate and normalize coordinates using base class
+        normalized_lat, normalized_lon = self.get_normalized_coordinates(lat, lon)
+        validated_date = self.validate_date_parameter(date)
         
-        print(f"🌊 Fetching ocean currents data for {lat:.4f}, {lon:.4f} on {date}")
+        # Log the request with standardized format
+        self.log_coordinate_request(lat, lon, validated_date, "OceanCurrentsProcessor")
+        
+        print(f"🌊 Fetching ocean currents data for {normalized_lat:.6f}, {normalized_lon:.6f} on {validated_date}")
         
         # Try multiple ERDDAP sources and datasets
         for source in self.erddap_sources:
@@ -104,10 +118,10 @@ class OceanCurrentsProcessor:
                         query_date = recent_date
                         print(f"   📅 Using recent available date: {query_date}")
                     
-                    # Build query URL for both U and V components
+                    # Build query URL for both U and V components using normalized coordinates
                     # First get U component
                     query_url = ERDDAPUtils.build_query_url(
-                        source['base_url'], dataset_id, u_variable, lat, lon, query_date
+                        source['base_url'], dataset_id, u_variable, normalized_lat, normalized_lon, query_date
                     )
                     
                     # Make API request
@@ -126,7 +140,7 @@ class OceanCurrentsProcessor:
                     if v_variable and u_variable != v_variable:
                         try:
                             v_query_url = ERDDAPUtils.build_query_url(
-                                source['base_url'], dataset_id, v_variable, lat, lon, query_date
+                                source['base_url'], dataset_id, v_variable, normalized_lat, normalized_lon, query_date
                             )
                             v_response = requests.get(v_query_url, headers=headers, timeout=30)
                             v_response.raise_for_status()
@@ -156,23 +170,23 @@ class OceanCurrentsProcessor:
                                     )
                                 }
                         
-                        # Add metadata
-                        formatted_data['metadata'] = {
-                            'source': 'NOAA/ERDDAP',
+                        # Calculate derived current properties
+                        formatted_data['current_analysis'] = self._analyze_current_properties(formatted_data)
+                        
+                        # Add dataset-specific metadata
+                        formatted_data['dataset_metadata'] = {
                             'dataset': dataset_id,
                             'variables_queried': [u_variable, v_variable] if v_variable else [u_variable],
-                            'coordinates': {'lat': lat, 'lon': lon},
-                            'date': query_date,
-                            'query_timestamp': datetime.now().isoformat(),
                             'data_quality': 'model_analysis',
                             'spatial_resolution': 'variable'
                         }
                         
-                        # Calculate derived current properties
-                        formatted_data['current_analysis'] = self._analyze_current_properties(formatted_data)
+                        print(f"✅ Ocean currents data retrieved from {dataset_id}")
                         
-                        print("✅ Ocean currents data retrieved")
-                        return formatted_data
+                        # Return standardized response with coordinate metadata
+                        return self.create_standardized_response(
+                            formatted_data, lat, lon, validated_date, f"NOAA/ERDDAP/{dataset_id}"
+                        )
                         
                 except Exception as e:
                     print(f"⚠️ {dataset_id} failed: {e}")
@@ -180,7 +194,7 @@ class OceanCurrentsProcessor:
         
         # If all sources fail, return fallback
         print("⚠️ All ocean currents sources failed, generating fallback estimates")
-        return self._generate_fallback_currents_data(lat, lon, date)
+        return self._generate_fallback_currents_data(lat, lon, validated_date)
     
     
     
@@ -243,12 +257,15 @@ class OceanCurrentsProcessor:
     def _generate_fallback_currents_data(self, lat: float, lon: float, date: str) -> Dict[str, Any]:
         """
         Generate fallback ocean currents estimates when API fails.
-        Based on typical ocean circulation patterns.
+        Based on typical ocean circulation patterns using validated coordinates.
         """
         print("🔄 Generating fallback ocean currents estimates...")
         
+        # Use normalized coordinates for calculations
+        normalized_lat, normalized_lon = self.get_normalized_coordinates(lat, lon)
+        
         # Estimate currents based on latitude and ocean basin
-        abs_lat = abs(lat)
+        abs_lat = abs(normalized_lat)
         
         # Basic ocean circulation patterns
         if abs_lat < 10:  # Equatorial region
@@ -291,24 +308,25 @@ class OceanCurrentsProcessor:
                 'units': 'm/s',
                 'description': self.parameter_descriptions['v']
             },
-            'metadata': {
-                'source': 'Fallback_Estimate',
-                'flow_type': flow_type,
-                'coordinates': {'lat': lat, 'lon': lon},
-                'date': date,
-                'confidence': 0.4,
-                'note': 'Estimated values based on typical circulation patterns'
-            },
             'current_analysis': {
                 'current_speed': base_speed,
                 'current_direction': base_direction,
                 'flow_regime': 'estimated',
                 'current_strength': 'estimated'
+            },
+            'dataset_metadata': {
+                'flow_type': flow_type,
+                'confidence': 0.4,
+                'note': 'Estimated values based on typical circulation patterns'
             }
         }
         
         print(f"🌊 Applied currents fallback ({flow_type}: {base_speed:.2f} m/s @ {base_direction:.0f}°)")
-        return fallback_data
+        
+        # Return standardized response
+        return self.create_standardized_response(
+            fallback_data, lat, lon, date, "Fallback_Ocean_Circulation_Model"
+        )
     
     def close(self):
         """Clean up resources."""

@@ -36,11 +36,18 @@ DATA_SOURCES = {
 
 # Directory paths
 PATHS = {
+    'base_dir': BASE_DIR,
     'data_dir': DATA_DIR,
     'cache_dir': DATA_DIR / "cache",
+    'ocean_cache_dir': DATA_DIR / "ocean_cache",
+    'coordinates_data_dir': DATA_DIR / "coordinates_data",
     'textures_dir': TEXTURES_DIR,
     'earth_textures_dir': TEXTURES_DIR / "earth",
-    'sst_textures_dir': TEXTURES_DIR / "sst"
+    'sst_textures_dir': TEXTURES_DIR / "sst",
+    'ocean_datasets_dir': DATA_DIR / "ocean_datasets",
+    'biological_data_dir': DATA_DIR / "ocean_datasets" / "biological",
+    'currents_data_dir': DATA_DIR / "ocean_datasets" / "currents",
+    'web_globe_dir': BASE_DIR / "web-globe"
 }
 
 # API configuration

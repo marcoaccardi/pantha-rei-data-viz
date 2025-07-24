@@ -408,6 +408,13 @@ class WaveDataProcessor:
         print(f"🌊 Applied wave fallback (height: {base_height:.1f}m, period: {base_period:.1f}s)")
         return fallback_data
     
+    def get_processor_data(self, lat: float, lon: float, date: str) -> Dict[str, Any]:
+        """
+        Standard interface method for dynamic coordinate system compatibility.
+        Delegates to get_wave_data() method.
+        """
+        return self.get_wave_data(lat, lon, date)
+    
     def close(self):
         """Clean up resources."""
         self.api_client.close()

@@ -25,6 +25,7 @@ from src.processors.erddap_sst_processor import ERDDAPSSTProcessor
 from src.processors.enhanced_climate_data import EnhancedClimateDataProcessor
 from src.utils.validation import TextureValidator
 from src.utils.file_ops import FileOperations
+from src.utils.ocean_validation import generate_safe_ocean_coordinates, validate_ocean_coordinates
 import config
 
 class NOAATextureSystem:
@@ -47,9 +48,53 @@ class NOAATextureSystem:
     def generate_random_location_and_date(self) -> tuple[str, str]:
         """Generate random coordinates and date for data collection."""
         
-        # Generate random coordinates (avoiding extreme polar regions for better data availability)
-        lat = random.uniform(-75, 75)  # Avoid extreme polar regions
-        lon = random.uniform(-180, 180)
+        # Define major ocean regions with deep water areas (avoiding coastlines and land)
+        ocean_regions = [
+            # North Atlantic Deep Ocean
+            {"name": "North_Atlantic", "lat_range": (35, 60), "lon_range": (-50, -10), "weight": 0.15},
+            # South Atlantic Deep Ocean  
+            {"name": "South_Atlantic", "lat_range": (-45, -10), "lon_range": (-40, 10), "weight": 0.12},
+            # North Pacific Deep Ocean (avoiding coastlines)
+            {"name": "North_Pacific", "lat_range": (20, 50), "lon_range": (-170, -130), "weight": 0.20},
+            # Central Pacific (deep ocean)
+            {"name": "Central_Pacific", "lat_range": (-10, 10), "lon_range": (-160, -120), "weight": 0.15},
+            # South Pacific Deep Ocean
+            {"name": "South_Pacific", "lat_range": (-45, -15), "lon_range": (-150, -80), "weight": 0.15},
+            # Indian Ocean Deep Waters
+            {"name": "Indian_Ocean", "lat_range": (-35, 5), "lon_range": (60, 100), "weight": 0.12},
+            # Southern Ocean (avoiding ice shelves)
+            {"name": "Southern_Ocean", "lat_range": (-65, -40), "lon_range": (-180, 180), "weight": 0.08},
+            # Arctic Ocean (open water areas)
+            {"name": "Arctic_Ocean", "lat_range": (70, 85), "lon_range": (-180, 180), "weight": 0.03}
+        ]
+        
+        # Select ocean region based on weights
+        regions = [region for region in ocean_regions]
+        weights = [region["weight"] for region in regions]
+        selected_region = random.choices(regions, weights=weights)[0]
+        
+        # Generate coordinates within the selected ocean region
+        lat_min, lat_max = selected_region["lat_range"]
+        lon_min, lon_max = selected_region["lon_range"]
+        
+        # Add some variation within the region bounds
+        lat = random.uniform(lat_min, lat_max)
+        lon = random.uniform(lon_min, lon_max)
+        
+        # Additional validation to ensure we're in deep ocean areas
+        # Avoid coordinates too close to major landmasses
+        if selected_region["name"] == "North_Atlantic":
+            # Avoid European and North American coasts
+            if lat > 55 and lon > -30:  # Avoid Scandinavian coast
+                lon = random.uniform(-45, -35)
+            if lat < 40 and lon > -25:  # Avoid Iberian Peninsula
+                lon = random.uniform(-45, -30)
+        elif selected_region["name"] == "Indian_Ocean":
+            # Avoid African, Australian, and Indian coasts
+            if lon < 70 and lat > -10:  # Avoid African coast
+                lon = random.uniform(75, 95)
+            if lon > 95 and lat < -20:  # Avoid Australian coast
+                lon = random.uniform(70, 90)
         
         # Generate random date within the last year, but ensure it's not in the future
         # Most marine APIs only have data up to a few days ago
@@ -60,6 +105,19 @@ class NOAATextureSystem:
         
         coordinates = f"{lat:.4f},{lon:.4f}"
         date_str = random_date.strftime('%Y-%m-%d')
+        
+        # Validate that coordinates are actually over ocean
+        validation = validate_ocean_coordinates(lat, lon, strict=True)
+        
+        if not validation["is_ocean"] or validation["confidence"] < 0.7:
+            # Use the safe coordinate generator as fallback
+            print(f"⚠️ Generated coordinates failed validation: {validation['reason']}")
+            print("🔄 Using safe ocean coordinate generator...")
+            lat, lon = generate_safe_ocean_coordinates()
+            coordinates = f"{lat:.4f},{lon:.4f}"
+        
+        print(f"🌊 Generated random ocean location: {coordinates} in {selected_region['name']}")
+        print(f"   ✅ Ocean validation: {validation['confidence']:.1%} confidence - {validation.get('ocean_zone', 'Deep ocean')}")
         
         return coordinates, date_str
     

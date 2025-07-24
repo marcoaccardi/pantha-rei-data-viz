@@ -35,12 +35,24 @@ class FastClimateProcessor:
         try:
             from ocean_data_downloader import OceanDataDownloader
             self.ocean_downloader = OceanDataDownloader()
-            # Initialize in background to avoid blocking
+            
+            # Initialize the downloader and try to load/download data
             if hasattr(self.ocean_downloader, 'initialize'):
-                self.ocean_downloader.initialize()
-            print("🌊 Ocean pollution data system initialized")
+                init_success = self.ocean_downloader.initialize()
+                if init_success:
+                    print("🌊 Ocean pollution data system initialized successfully")
+                    print(f"   📊 Datasets available: {len(self.ocean_downloader.spatial_indices)} types")
+                else:
+                    print("⚠️ Ocean data initialization had issues, but fallback data available")
+            else:
+                print("🌊 Ocean pollution data system initialized (legacy mode)")
+        except ImportError as e:
+            print(f"⚠️ Ocean downloader module not found: {e}")
+            print("   Using geographic-based estimates for marine parameters")
+            self.ocean_downloader = None
         except Exception as e:
             print(f"⚠️ Ocean downloader initialization failed: {e}")
+            print("   Marine parameter data will use fallback estimates")
             self.ocean_downloader = None
         
     def get_climate_data_fast(self, lat: float, lon: float, date: Optional[str] = None) -> Dict[str, Any]:

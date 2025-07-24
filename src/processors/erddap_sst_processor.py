@@ -370,6 +370,64 @@ class ERDDAPSSTProcessor:
         
         return "\n".join(report)
     
+    def get_processor_data(self, lat: float, lon: float, date: str) -> Dict[str, Any]:
+        """
+        Standard interface method for dynamic coordinate system compatibility.
+        For SST processor, this returns texture download status and metadata.
+        """
+        try:
+            # Attempt to download SST texture for the given date
+            texture_paths = self.download_sst_texture(date, resolution='medium')
+            
+            if texture_paths:
+                return {
+                    'data': {
+                        'texture_paths': texture_paths,
+                        'sst_available': True,
+                        'texture_date': date
+                    },
+                    'metadata': {
+                        'source': 'NOAA Coral Reef Watch (PacIOOS ERDDAP)',
+                        'data_type': 'sst_texture',
+                        'coordinates': {'lat': lat, 'lon': lon},
+                        'date': date,
+                        'confidence': 0.95,
+                        'note': f'SST texture downloaded for {date}'
+                    }
+                }
+            else:
+                return {
+                    'data': {
+                        'texture_paths': [],
+                        'sst_available': False,
+                        'texture_date': date
+                    },
+                    'metadata': {
+                        'source': 'NOAA Coral Reef Watch (PacIOOS ERDDAP)',
+                        'data_type': 'sst_texture',
+                        'coordinates': {'lat': lat, 'lon': lon},
+                        'date': date,
+                        'confidence': 0.0,
+                        'note': f'SST texture unavailable for {date}'
+                    }
+                }
+        except Exception as e:
+            return {
+                'data': {
+                    'texture_paths': [],
+                    'sst_available': False,
+                    'error': str(e)
+                },
+                'metadata': {
+                    'source': 'NOAA Coral Reef Watch (PacIOOS ERDDAP)',
+                    'data_type': 'sst_texture',
+                    'coordinates': {'lat': lat, 'lon': lon},
+                    'date': date,
+                    'confidence': 0.0,
+                    'note': f'SST texture processing failed: {e}'
+                }
+            }
+    
     def close(self):
         """Clean up resources."""
         self.api_client.close()

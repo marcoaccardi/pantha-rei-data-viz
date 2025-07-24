@@ -326,6 +326,13 @@ class CoralBleachingProcessor:
         print(f"🪸 Applied coral bleaching fallback (coral zone: {is_coral_zone})")
         return fallback_data
     
+    def get_processor_data(self, lat: float, lon: float, date: str) -> Dict[str, Any]:
+        """
+        Standard interface method for dynamic coordinate system compatibility.
+        Delegates to get_coral_bleaching_data() method.
+        """
+        return self.get_coral_bleaching_data(lat, lon, date)
+    
     def close(self):
         """Clean up resources."""
         self.api_client.close()

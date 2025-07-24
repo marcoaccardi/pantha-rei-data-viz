@@ -47,6 +47,12 @@ class NOAAWebSocketServer:
             self.fast_processor = FastClimateProcessor()
             logger.info("✅ NOAA Texture System initialized")
             logger.info("🚀 Fast Climate Processor initialized")
+            
+            # Verify ocean data system is properly initialized
+            if hasattr(self.fast_processor, 'ocean_downloader') and self.fast_processor.ocean_downloader:
+                logger.info("🌊 Ocean pollution data system: ✅ Ready")
+            else:
+                logger.warning("🌊 Ocean pollution data system: ⚠️ Not available - using fallback estimates")
         except Exception as e:
             logger.error(f"❌ Failed to initialize NOAA system: {e}")
             raise
@@ -623,7 +629,7 @@ class NOAAWebSocketServer:
             
             logger.info(f"📨 Received message type: {message_type}")
             
-            if message_type == "coordinate_request":
+            if message_type == "coordinate_request" or message_type == "coordinate_data":
                 await self.handle_coordinate_request(websocket, payload)
             elif message_type == "ping":
                 await self.send_message(websocket, {

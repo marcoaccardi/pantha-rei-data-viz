@@ -2,6 +2,7 @@
 """
 Marine Biogeochemistry Live Processor - Real-time marine biogeochemical data collection.
 Adapted from Copernicus marine biogeochemistry system for live API-based queries.
+Uses standardized WGS84 coordinate validation and ERDDAP formatting.
 """
 
 import requests
@@ -11,13 +12,15 @@ import numpy as np
 
 from ..utils.api_client import APIClient
 from ..utils.erddap_utils import ERDDAPUtils
+from .base_processor import OceanDataProcessor
 
 
-class MarineBiogeochemistryProcessor:
+class MarineBiogeochemistryProcessor(OceanDataProcessor):
     """Live marine biogeochemistry data collection using Copernicus/ERDDAP APIs."""
     
     def __init__(self):
-        """Initialize marine biogeochemistry processor."""
+        """Initialize marine biogeochemistry processor with WGS84 coordinate validation."""
+        super().__init__()  # Initialize coordinate validation
         self.api_client = APIClient()
         
         # Multiple potential data sources for marine biogeochemistry
@@ -65,10 +68,17 @@ class MarineBiogeochemistryProcessor:
         print("🧪 Marine Biogeochemistry Processor initialized")
         print("📡 Source: Copernicus Marine Service / ERDDAP")
         print("🌍 Coverage: Global ocean biogeochemical conditions")
+
+    def get_processor_data(self, lat: float, lon: float, date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Implementation of abstract base class method.
+        Delegates to get_marine_biogeochemistry_data for backward compatibility.
+        """
+        return self.get_marine_biogeochemistry_data(lat, lon, date)
     
     def get_marine_biogeochemistry_data(self, lat: float, lon: float, date: Optional[str] = None) -> Dict[str, Any]:
         """
-        Get live marine biogeochemistry data.
+        Get live marine biogeochemistry data with WGS84 coordinate validation.
         
         Args:
             lat: Latitude in decimal degrees
@@ -76,12 +86,16 @@ class MarineBiogeochemistryProcessor:
             date: Date string (YYYY-MM-DD), defaults to today
             
         Returns:
-            Dictionary with marine biogeochemistry data and metadata
+            Dictionary with marine biogeochemistry data and standardized metadata
         """
-        if date is None:
-            date = datetime.now().strftime('%Y-%m-%d')
+        # Validate and normalize coordinates using base class
+        normalized_lat, normalized_lon = self.get_normalized_coordinates(lat, lon)
+        validated_date = self.validate_date_parameter(date)
         
-        print(f"🧪 Fetching marine biogeochemistry data for {lat:.4f}, {lon:.4f} on {date}")
+        # Log the request with standardized format
+        self.log_coordinate_request(lat, lon, validated_date, "MarineBiogeochemistryProcessor")
+        
+        print(f"🧪 Fetching marine biogeochemistry data for {normalized_lat:.6f}, {normalized_lon:.6f} on {validated_date}")
         
         # Try multiple data sources and datasets
         for source in self.data_sources:
