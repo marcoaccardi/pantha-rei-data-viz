@@ -81,7 +81,7 @@ sleep 2
 # Start WebSocket server (background) - USE FIXED LAND VALIDATION SERVER
 echo -e "${BLUE}🌊 Starting Fixed Land Validation WebSocket server on port 8765...${NC}"
 echo -e "${YELLOW}🚨 Using NEW server with proper land/ocean validation${NC}"
-python fixed_land_validation_server.py > websocket.log 2>&1 &
+python backend/servers/fixed_land_validation_server.py > logs/websocket.log 2>&1 &
 WEBSOCKET_PID=$!
 
 # Wait a moment for WebSocket server to start
@@ -98,7 +98,7 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Start development server (background)
-npm run dev > ../frontend.log 2>&1 &
+npm run dev > ../logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
 
 # Return to root directory
@@ -106,7 +106,7 @@ cd ..
 
 echo -e "${GREEN}✅ All services started successfully!${NC}"
 echo ""
-echo -e "${GREEN}🌍 Globe Interface: ${BLUE}http://localhost:5173${NC}"
+echo -e "${GREEN}🌍 Globe Interface: ${BLUE}http://localhost:5175${NC}"
 echo -e "${GREEN}🔗 Texture Server: ${BLUE}http://localhost:8000${NC}"
 echo -e "${GREEN}🌐 WebSocket Server: ${BLUE}ws://localhost:8765${NC}"
 echo ""
@@ -117,8 +117,8 @@ echo "  • Rotate, zoom, and pan the globe with mouse controls"
 echo "  • Climate data will be fetched automatically for selected locations"
 echo ""
 echo -e "${YELLOW}📄 Logs:${NC}"
-echo "  • WebSocket server: tail -f websocket.log"
-echo "  • Frontend: tail -f frontend.log"
+echo "  • WebSocket server: tail -f logs/websocket.log"
+echo "  • Frontend: tail -f logs/frontend.log"
 echo ""
 echo -e "${RED}Press Ctrl+C to stop all services${NC}"
 

@@ -17,15 +17,15 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-# Add src to Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# Add backend/src to Python path
+sys.path.insert(0, str(Path(__file__).parent / "backend" / "src"))
 
-from src.processors.earth_textures import EarthTextureProcessor
-from src.processors.erddap_sst_processor import ERDDAPSSTProcessor
-from src.processors.enhanced_climate_data import EnhancedClimateDataProcessor
-from src.utils.validation import TextureValidator
-from src.utils.file_ops import FileOperations
-from src.utils.ocean_validation import generate_safe_ocean_coordinates, validate_ocean_coordinates
+from backend.src.processors.earth_textures import EarthTextureProcessor
+from backend.src.processors.erddap_sst_processor import ERDDAPSSTProcessor
+from backend.src.processors.enhanced_climate_data import EnhancedClimateDataProcessor
+from backend.src.utils.validation import TextureValidator
+from backend.src.utils.file_ops import FileOperations
+from backend.src.utils.ocean_validation import generate_safe_ocean_coordinates, validate_ocean_coordinates
 import config
 
 class NOAATextureSystem:
@@ -572,7 +572,7 @@ def main():
             
             # Import and start WebSocket server
             try:
-                from server.websocket_server import main as websocket_main
+                from backend.servers.websocket_server import main as websocket_main
                 import asyncio
                 asyncio.run(websocket_main())
             except ImportError as e:
