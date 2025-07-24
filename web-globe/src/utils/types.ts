@@ -30,7 +30,7 @@ export interface ClimateDataResponse {
 }
 
 export interface WebSocketMessage {
-  type: 'texture_update' | 'coordinate_data' | 'climate_data' | 'progress' | 'error' | 'connection';
+  type: 'texture_update' | 'coordinate_data' | 'climate_data' | 'progress' | 'error' | 'connection' | 'getOceanData' | 'oceanData' | 'pong';
   payload: {
     coordinates?: Coordinates;
     texturePath?: string;
@@ -38,7 +38,40 @@ export interface WebSocketMessage {
     progress?: number;
     message?: string;
     timestamp: string;
+    // New real data format
+    lat?: number;
+    lng?: number;
+    longitude?: number;
+    latitude?: number;
+    parameters?: string[];
+    measurements?: OceanMeasurement[];
+    data_summary?: {
+      successful_retrievals: number;
+      failed_retrievals: number;
+      success_rate: number;
+      failed_sources?: string[];
+    };
+    ocean_validation?: {
+      is_over_ocean: boolean;
+      confidence: number;
+      ocean_zone?: string;
+      depth_estimate?: string;
+    };
+    data_policy?: string;
+    system?: string;
   };
+}
+
+export interface OceanMeasurement {
+  model: string;
+  parameter: string;
+  value: number;
+  units: string;
+  description: string;
+  source: string;
+  quality: string; // 'R' for Real, 'S' for Synthetic
+  confidence: number;
+  zone: string;
 }
 
 export interface TextureInfo {
