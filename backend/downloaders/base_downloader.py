@@ -43,6 +43,9 @@ class BaseDataDownloader(ABC):
         self.logs_path = self.base_path / self.storage_config["logs_path"]
         self.cache_path = self.base_path / self.storage_config["cache_path"]
         
+        # Validate directory structure
+        self._validate_directory_structure()
+        
         # Create directories
         self.raw_data_path.mkdir(parents=True, exist_ok=True)
         self.logs_path.mkdir(parents=True, exist_ok=True)
@@ -64,6 +67,16 @@ class BaseDataDownloader(ABC):
         
         self.logger.info(f"Initialized {dataset_name} downloader")
         
+    def _validate_directory_structure(self) -> None:
+        """Validate that the directory structure is correct."""
+        # Basic validation - can be extended by subclasses
+        if not self.config_path.exists():
+            raise FileNotFoundError(f"Configuration directory not found: {self.config_path}")
+        
+        # Check if storage base path parent exists
+        if not self.base_path.parent.exists():
+            raise FileNotFoundError(f"Storage parent directory not found: {self.base_path.parent}")
+    
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from sources.yaml."""
         config_file = self.config_path / "sources.yaml"
@@ -93,6 +106,24 @@ class BaseDataDownloader(ABC):
                 credentials[key] = os.environ[key]
                 
         return credentials
+    
+    def _validate_directory_structure(self):
+        """Validate that directory paths follow expected structure."""
+        # Ensure raw data path is under base_path/raw/{dataset}
+        expected_raw_pattern = self.base_path / "raw" / self.dataset_name
+        if self.raw_data_path != expected_raw_pattern:
+            raise ValueError(
+                f"Invalid raw data path structure: {self.raw_data_path}\n"
+                f"Expected: {expected_raw_pattern}\n"
+                f"Ensure dataset follows base_path/raw/{{dataset}} pattern"
+            )
+        
+        # Warn about potential root-level dataset directories
+        root_dataset_path = self.base_path / self.dataset_name
+        if root_dataset_path.exists() and root_dataset_path != self.raw_data_path:
+            print(f"⚠️  WARNING: Found dataset directory at root level: {root_dataset_path}")
+            print(f"   This may cause data structure inconsistencies.")
+            print(f"   Consider moving to: {self.raw_data_path}")
     
     def _setup_logging(self) -> logging.Logger:
         """Set up logging for this downloader."""

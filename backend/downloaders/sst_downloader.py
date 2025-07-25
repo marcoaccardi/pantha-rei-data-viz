@@ -39,7 +39,7 @@ class SSTDownloader(BaseDataDownloader):
             self.downsampled_path.mkdir(parents=True, exist_ok=True)
         
         if self.needs_coord_harmonization:
-            self.harmonized_path = self.processed_data_path / "unified_coords"
+            self.harmonized_path = self.processed_data_path / "unified_coords" / "sst"
             self.harmonized_path.mkdir(parents=True, exist_ok=True)
     
     def _get_filename_for_date(self, target_date: date) -> str:

@@ -235,27 +235,54 @@ download_dataset() {
         return 0
     fi
     
-    # Prepare download command
-    local cmd="python3 -c \"
-import sys
+    # Prepare download command - map dataset names to class names
+    local dataset_class
+    case "$dataset" in
+        "sst")
+            dataset_class="SSTDownloader"
+            ;;
+        "waves")
+            dataset_class="WavesDownloader"
+            ;;
+        "currents")
+            dataset_class="CurrentsDownloader"
+            ;;
+        "acidity")
+            dataset_class="AcidityDownloader"
+            ;;
+        "microplastics")
+            dataset_class="MicroplasticsDownloader"
+            ;;
+        *)
+            log_error "Unknown dataset: $dataset"
+            return 1
+            ;;
+    esac
+    
+    # Build Python script with proper conditional logic
+    local python_script="import sys
 sys.path.append('$BACKEND_DIR')
-from downloaders.${dataset}_downloader import ${dataset^}Downloader
+from downloaders.${dataset}_downloader import ${dataset_class}
 
-downloader = ${dataset^}Downloader()
-result = downloader.download_date_range('$start_date', '$end_date'"
+downloader = ${dataset_class}()"
     
     if [ ! -z "$MAX_FILES" ]; then
-        cmd="$cmd, max_files=$MAX_FILES"
+        python_script="$python_script
+result = downloader.download_date_range('$start_date', '$end_date', max_files=$MAX_FILES)"
+    else
+        python_script="$python_script
+result = downloader.download_date_range('$start_date', '$end_date')"
     fi
     
-    cmd="$cmd)
+    python_script="$python_script
 print(f'Downloaded: {result[\"downloaded\"]}')
 print(f'Failed: {result[\"failed\"]}')
 if result['errors']:
     print('Errors:')
     for error in result['errors']:
-        print(f'  {error}')
-\""
+        print(f'  {error}')"
+        
+    local cmd="python3 -c \"$python_script\""
     
     # Create log file for this download
     local log_file="$LOG_DIR/$(date +%Y%m%d_%H%M%S)_${dataset}_download.log"

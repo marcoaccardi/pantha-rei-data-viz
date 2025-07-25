@@ -80,4 +80,6 @@ wheels/
 *.egg
 MANIFEST
 
-/textures
+# Ocean Data
+ocean-data
+**/credentials.env

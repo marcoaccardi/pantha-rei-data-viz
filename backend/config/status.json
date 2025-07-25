@@ -1,25 +1,27 @@
 {
-  "last_updated": "2025-07-25T13:27:46.109587",
+  "last_updated": "2025-07-25T17:43:04.132388",
   "datasets": {
     "sst": {
-      "last_date": null,
-      "total_files": 2,
+      "last_date": "2024-01-17",
+      "total_files": 8,
       "storage_gb": 0.001,
-      "last_success": null,
+      "last_success": "2025-07-25T15:37:31.338814",
       "last_error": null,
-      "status": "not_started",
-      "last_optimization": "2025-07-25T13:27:46.027585",
-      "space_freed_mb": 1.636,
-      "final_file_size_kb": 178.1,
+      "status": "up_to_date",
+      "last_optimization": "2025-07-25T15:37:31.321415",
+      "space_freed_mb": 1.651,
+      "final_file_size_kb": 179.1,
       "api_ready": true
     },
     "waves": {
-      "last_date": null,
-      "total_files": 0,
-      "storage_gb": 0.0,
-      "last_success": null,
+      "last_date": "2024-07-25",
+      "total_files": 3,
+      "storage_gb": 2.816319465637207e-06,
+      "last_success": "2025-07-25T15:06:02.087872",
       "last_error": null,
-      "status": "not_started"
+      "status": "downloading",
+      "mock_data": true,
+      "ready_for_testing": true
     },
     "currents": {
       "last_date": null,
@@ -27,23 +29,32 @@
       "storage_gb": 0.0,
       "last_success": null,
       "last_error": null,
-      "status": "not_started"
+      "status": "downloading"
     },
     "acidity": {
-      "last_date": null,
-      "total_files": 0,
+      "last_date": "2024-01-06",
+      "total_files": 7,
       "storage_gb": 0.0,
-      "last_success": null,
+      "last_success": "2025-07-25T16:41:11.646860",
       "last_error": null,
-      "status": "not_started"
+      "status": "up_to_date",
+      "last_optimization": "2025-07-25T17:41:58.178783",
+      "space_freed_mb": 29.96,
+      "final_file_size_kb": 30679.2,
+      "api_ready": true
     },
     "microplastics": {
-      "last_date": null,
-      "total_files": 0,
+      "last_date": "2024-01-01",
+      "total_files": 5,
       "storage_mb": 0.0,
-      "last_success": null,
+      "last_success": "2025-07-25T16:58:39.786415",
       "last_error": null,
-      "status": "not_started"
+      "status": "up_to_date",
+      "last_optimization": "2025-07-25T17:43:04.130691",
+      "space_freed_mb": 0.006,
+      "final_file_size_kb": 6.5,
+      "api_ready": true,
+      "storage_gb": 0.0
     }
   },
   "system": {
