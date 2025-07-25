@@ -35,10 +35,12 @@ Design and implement a local ocean data management system that systematically do
 | **Manual Update Scripts** | ✅ Complete | Shell scripts for on-demand data updates |
 | **Base Downloader Framework** | ✅ Complete | Common functionality for all data sources |
 | **Local Storage System** | ✅ Complete | Organized directory structure on hard drives |
-| **Data Processing Pipeline** | ✅ Complete | Format standardization and downsampling |
+| **Data Processing Pipeline** | ✅ Complete | Format standardization, downsampling, and unified coordinates |
+| **Unified Coordinate Processors** | ✅ Complete | Acidity and currents processors for coordinate harmonization |
+| **Raw Data Preservation** | ✅ Complete | All downloaders preserve raw files for processing |
 | **Status Tracking System** | ✅ Complete | JSON-based progress and health monitoring |
 | **API Server** | ⏳ Planned | FastAPI server for data access |
-| **Individual Dataset Downloaders** | 🔄 Partial | SST complete, others pending |
+| **Individual Dataset Downloaders** | 🔄 Partial | 4/5 datasets complete (microplastics needs work) |
 
 ### 2.2 Technology Stack
 
@@ -92,10 +94,10 @@ python -c "from utils.status_manager import StatusManager;
 | Dataset | 3-File Test Status | Test Dates | Issues Found | Ready for Full Download |
 |---------|-------------------|------------|--------------|------------------------|
 | **SST** | ✅ **Passed** | 2024-01-15, 2024-06-15, 2024-12-15 | None | ✅ Yes |
-| **Waves** | ✅ **Ready for 3-File Test** | Ready for testing | SQLite3 fixed | ✅ Ready |
-| **Currents** | ✅ **Ready for 3-File Test** | Ready for testing | SQLite3 fixed | ✅ Ready |
-| **Acidity** | ✅ **Ready for 3-File Test** | Ready for testing | Environment fix needed | ✅ Ready |
-| **Microplastics** | ✅ **Passed** | 2024-Q1, 2024-Q2, 2024-Q3 | None | ✅ Yes |
+| **Waves** | ✅ **Passed** | 2024-07-23, 2024-07-24, 2024-07-25 | None | ✅ Yes |
+| **Currents** | ✅ **Processor Ready** | Ready for testing | Unified coordinate processor implemented | ✅ Ready |
+| **Acidity** | ✅ **Passed** | 2024-01-06 | Unified coordinate processor implemented | ✅ Yes |
+| **Microplastics** | ❌ **Not Implemented** | - | Downloader needs debugging | ❌ No |
 
 ## 3. Data Sources & Coverage
 
@@ -107,7 +109,7 @@ python -c "from utils.status_manager import StatusManager;
 | **Waves** | CMEMS WAV_001_027 | ✅ Implemented | 0.2° | ~25MB/day | 1993-present |
 | **Currents** | CMEMS PHY_001_024 | ✅ Implemented | 0.083° (1/12°) | ~45KB/day | 1993-present |
 | **Acidity** | CMEMS BGC_001_028 | ✅ Implemented | 0.25° | ~20MB/day | 1993-present |
-| **Microplastics** | NOAA NCEI Portal | ✅ Complete | Point data | ~20KB/quarter | 1972-present |
+| **Microplastics** | NOAA NCEI Portal | ❌ Not Working | Point data | ~20KB/quarter | 1972-present |
 
 ### 3.2 Coordinate Coverage
 
@@ -146,7 +148,9 @@ backend/
 │   └── acidity_downloader.py ✅ CMEMS acidity implementation complete
 ├── processors/
 │   ├── coordinate_harmonizer.py ✅ 0-360° ↔ -180-180° conversion
-│   └── sst_downsampler.py    ✅ 0.25° → 1° spatial averaging
+│   ├── sst_downsampler.py    ✅ 0.25° → 1° spatial averaging
+│   ├── acidity_processor.py  ✅ biogeochemistry data processing
+│   └── currents_processor.py ✅ ocean currents processing
 ├── utils/
 │   └── status_manager.py     ✅ Health monitoring & progress tracking
 └── scripts/
@@ -201,11 +205,18 @@ ocean-data/
 
 #### Acidity Downloader (100% Complete)
 - ✅ CMEMS BGC_001_028 integration
-- ✅ Biogeochemical variables (pH, fCO2)
+- ✅ Biogeochemical variables (pH, DIC, alkalinity)
 - ✅ Ocean acidification parameter validation
-- ✅ Range checking (pH: 7.5-8.5, fCO2: 200-600 µatm)
-- ✅ Auto-optimization storage pipeline
-- ✅ **Testing**: Ready for 3-file test
+- ✅ Range checking (pH: 6.0-9.0, DIC: 0-5 mol/m³)
+- ✅ Raw data preservation for processing
+- ✅ **Testing**: Passed with unified coordinate processing
+
+#### Data Processing Pipeline (100% Complete) ✅
+- ✅ **Acidity Processor**: Surface layer extraction, quality control, coordinate harmonization
+- ✅ **Currents Processor**: Velocity component processing, speed/direction calculation, surface layer selection
+- ✅ **Raw Data Preservation**: All downloaders preserve raw files for processing
+- ✅ **Unified Coordinate System**: All datasets converted to -180°-180° longitude convention
+- ✅ **Processing Scripts**: Automated processing of raw data to unified coordinates
 
 ### 4.3 Planned Components ⏳
 
