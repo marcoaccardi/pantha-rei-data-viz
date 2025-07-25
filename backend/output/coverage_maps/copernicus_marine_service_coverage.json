@@ -1,0 +1,458 @@
+{
+  "api_name": "Copernicus Marine Service",
+  "status": "connected",
+  "discovery_timestamp": "2025-07-24T17:40:34.620019",
+  "spatial_coverage": {
+    "global_coverage": true,
+    "regional_coverage": [
+      "Arctic",
+      "Antarctic"
+    ],
+    "bounds": {
+      "lat_min": -90,
+      "lat_max": 90,
+      "lon_min": -180,
+      "lon_max": 180
+    },
+    "resolution": "unknown",
+    "coverage_type": "unknown"
+  },
+  "temporal_coverage": {
+    "historical_data": true,
+    "real_time_data": true,
+    "earliest_date": "1993-01-01",
+    "latest_date": "2025-07-24",
+    "update_frequency": "unknown",
+    "temporal_resolution": "unknown",
+    "data_latency": "1-3 days"
+  },
+  "parameter_coverage": {
+    "total_parameters": 20,
+    "parameter_list": [
+      "analysed_sst",
+      "sst_anomaly",
+      "adt",
+      "sla",
+      "ugos",
+      "vgos",
+      "ohc300",
+      "ohc700",
+      "ohc2000",
+      "chl",
+      "ph",
+      "o2",
+      "no3",
+      "po4",
+      "uo",
+      "vo",
+      "thetao",
+      "so",
+      "sea_ice_concentration",
+      "sea_ice_thickness"
+    ],
+    "parameter_categories": {},
+    "data_quality": "unknown"
+  },
+  "data_access": {
+    "access_methods": [
+      {
+        "method": "Direct API Subset",
+        "description": "Direct coordinate-based data retrieval without downloads",
+        "endpoint": "https://data.marine.copernicus.eu/api/subset",
+        "formats": [
+          "netcdf",
+          "json",
+          "csv"
+        ],
+        "recommended": true
+      },
+      {
+        "method": "Ocean Climate Portal",
+        "description": "Pre-calculated climate indicators and trends",
+        "endpoint": "https://marine.copernicus.eu/ocean-climate-portal",
+        "formats": [
+          "web_interface",
+          "downloadable_reports"
+        ],
+        "recommended": true
+      },
+      {
+        "method": "OPeNDAP",
+        "description": "Direct access to data arrays",
+        "formats": [
+          "netcdf",
+          "binary"
+        ],
+        "recommended": false
+      }
+    ],
+    "authentication_required": false,
+    "rate_limits": "unknown",
+    "data_formats": [],
+    "api_endpoints": []
+  },
+  "quality_indicators": {
+    "peer_reviewed": false,
+    "real_time_qc": true,
+    "uncertainty_info": false,
+    "metadata_completeness": "high",
+    "traceability": "operational"
+  },
+  "strengths": [
+    "Global ocean coverage",
+    "No download required (API subset)",
+    "Pre-calculated climate indicators",
+    "Multiple data products",
+    "High spatial resolution"
+  ],
+  "limitations": [
+    "Authentication required",
+    "Complex dataset structure",
+    "Learning curve for new users"
+  ],
+  "detailed_info": {
+    "api_name": "Copernicus Marine Service",
+    "discovery_timestamp": "2025-07-24T17:40:34.620019",
+    "datasets": {
+      "sst_global_l4": {
+        "dataset_id": "cmems_obs-sst_glo_phy_nrt_l4_0.083deg_P1D",
+        "name": "Global SST Level 4 Daily",
+        "parameters": [
+          "analysed_sst",
+          "sst_anomaly"
+        ],
+        "spatial_resolution": "0.083_degree",
+        "temporal_resolution": "daily",
+        "coverage_type": "global",
+        "estimated_spatial_bounds": {
+          "lat_min": -90,
+          "lat_max": 90,
+          "lon_min": -180,
+          "lon_max": 180
+        },
+        "estimated_temporal_bounds": {
+          "start": "1993-01-01",
+          "end": "2025-07-24",
+          "real_time_lag": "1-3 days"
+        },
+        "access_tested": false,
+        "sample_query_possible": true
+      },
+      "sea_level_global": {
+        "dataset_id": "cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.25deg_P1D",
+        "name": "Global Sea Level Daily",
+        "parameters": [
+          "adt",
+          "sla",
+          "ugos",
+          "vgos"
+        ],
+        "spatial_resolution": "0.25_degree",
+        "temporal_resolution": "daily",
+        "coverage_type": "global",
+        "estimated_spatial_bounds": {
+          "lat_min": -90,
+          "lat_max": 90,
+          "lon_min": -180,
+          "lon_max": 180
+        },
+        "estimated_temporal_bounds": {
+          "start": "1993-01-01",
+          "end": "2025-07-24",
+          "real_time_lag": "1-3 days"
+        },
+        "access_tested": false,
+        "sample_query_possible": true
+      },
+      "ocean_heat_content": {
+        "dataset_id": "cmems_obs-oc_glo_bgc-plankton_nrt_l4-gapfree-multi-4km_P1D",
+        "name": "Global Ocean Heat Content",
+        "parameters": [
+          "ohc300",
+          "ohc700",
+          "ohc2000"
+        ],
+        "spatial_resolution": "4km",
+        "temporal_resolution": "daily",
+        "coverage_type": "global",
+        "estimated_spatial_bounds": {
+          "lat_min": -90,
+          "lat_max": 90,
+          "lon_min": -180,
+          "lon_max": 180
+        },
+        "estimated_temporal_bounds": {
+          "start": "1993-01-01",
+          "end": "2025-07-24",
+          "real_time_lag": "1-3 days"
+        },
+        "access_tested": false,
+        "sample_query_possible": true
+      },
+      "biogeochemistry_global": {
+        "dataset_id": "cmems_mod_glo_bgc_anfc_0.25deg_P1D-m",
+        "name": "Global Biogeochemistry Analysis and Forecast",
+        "parameters": [
+          "chl",
+          "ph",
+          "o2",
+          "no3",
+          "po4"
+        ],
+        "spatial_resolution": "0.25_degree",
+        "temporal_resolution": "daily",
+        "coverage_type": "global",
+        "estimated_spatial_bounds": {
+          "lat_min": -90,
+          "lat_max": 90,
+          "lon_min": -180,
+          "lon_max": 180
+        },
+        "estimated_temporal_bounds": {
+          "start": "1993-01-01",
+          "end": "2025-07-24",
+          "real_time_lag": "1-3 days"
+        },
+        "access_tested": false,
+        "sample_query_possible": true
+      },
+      "currents_global": {
+        "dataset_id": "cmems_mod_glo_phy_anfc_0.083deg_P1D-m",
+        "name": "Global Ocean Physics Analysis and Forecast",
+        "parameters": [
+          "uo",
+          "vo",
+          "thetao",
+          "so"
+        ],
+        "spatial_resolution": "0.083_degree",
+        "temporal_resolution": "daily",
+        "coverage_type": "global",
+        "estimated_spatial_bounds": {
+          "lat_min": -90,
+          "lat_max": 90,
+          "lon_min": -180,
+          "lon_max": 180
+        },
+        "estimated_temporal_bounds": {
+          "start": "1993-01-01",
+          "end": "2025-07-24",
+          "real_time_lag": "1-3 days"
+        },
+        "access_tested": false,
+        "sample_query_possible": true
+      },
+      "sea_ice_arctic": {
+        "dataset_id": "cmems_obs-si_arc_phy_nrt_l4_P1D",
+        "name": "Arctic Sea Ice Daily",
+        "parameters": [
+          "sea_ice_concentration",
+          "sea_ice_thickness"
+        ],
+        "spatial_resolution": "10km",
+        "temporal_resolution": "daily",
+        "coverage_type": "regional",
+        "estimated_spatial_bounds": {
+          "lat_min": 60,
+          "lat_max": 90,
+          "lon_min": -180,
+          "lon_max": 180
+        },
+        "estimated_temporal_bounds": {
+          "start": "1993-01-01",
+          "end": "2025-07-24",
+          "real_time_lag": "1-3 days"
+        },
+        "access_tested": false,
+        "sample_query_possible": true
+      },
+      "sea_ice_antarctic": {
+        "dataset_id": "cmems_obs-si_ant_phy_nrt_l4_P1D",
+        "name": "Antarctic Sea Ice Daily",
+        "parameters": [
+          "sea_ice_concentration",
+          "sea_ice_thickness"
+        ],
+        "spatial_resolution": "10km",
+        "temporal_resolution": "daily",
+        "coverage_type": "regional",
+        "estimated_spatial_bounds": {
+          "lat_min": -90,
+          "lat_max": -60,
+          "lon_min": -180,
+          "lon_max": 180
+        },
+        "estimated_temporal_bounds": {
+          "start": "1993-01-01",
+          "end": "2025-07-24",
+          "real_time_lag": "1-3 days"
+        },
+        "access_tested": false,
+        "sample_query_possible": true
+      }
+    },
+    "global_coverage": {
+      "available": true,
+      "datasets": [
+        "sst_global_l4",
+        "sea_level_global",
+        "ocean_heat_content",
+        "biogeochemistry_global",
+        "currents_global"
+      ],
+      "spatial_bounds": {
+        "lat_min": -90,
+        "lat_max": 90,
+        "lon_min": -180,
+        "lon_max": 180
+      },
+      "parameters": [
+        "o2",
+        "analysed_sst",
+        "uo",
+        "vo",
+        "thetao",
+        "sla",
+        "vgos",
+        "ohc300",
+        "ohc700",
+        "no3",
+        "ugos",
+        "po4",
+        "so",
+        "ph",
+        "adt",
+        "ohc2000",
+        "sst_anomaly",
+        "chl"
+      ]
+    },
+    "regional_coverage": {
+      "available": true,
+      "datasets": [
+        "sea_ice_arctic",
+        "sea_ice_antarctic"
+      ],
+      "regions": [
+        "Arctic",
+        "Antarctic"
+      ]
+    },
+    "parameter_availability": {
+      "analysed_sst": [
+        "sst_global_l4"
+      ],
+      "sst_anomaly": [
+        "sst_global_l4"
+      ],
+      "adt": [
+        "sea_level_global"
+      ],
+      "sla": [
+        "sea_level_global"
+      ],
+      "ugos": [
+        "sea_level_global"
+      ],
+      "vgos": [
+        "sea_level_global"
+      ],
+      "ohc300": [
+        "ocean_heat_content"
+      ],
+      "ohc700": [
+        "ocean_heat_content"
+      ],
+      "ohc2000": [
+        "ocean_heat_content"
+      ],
+      "chl": [
+        "biogeochemistry_global"
+      ],
+      "ph": [
+        "biogeochemistry_global"
+      ],
+      "o2": [
+        "biogeochemistry_global"
+      ],
+      "no3": [
+        "biogeochemistry_global"
+      ],
+      "po4": [
+        "biogeochemistry_global"
+      ],
+      "uo": [
+        "currents_global"
+      ],
+      "vo": [
+        "currents_global"
+      ],
+      "thetao": [
+        "currents_global"
+      ],
+      "so": [
+        "currents_global"
+      ],
+      "sea_ice_concentration": [
+        "sea_ice_arctic",
+        "sea_ice_antarctic"
+      ],
+      "sea_ice_thickness": [
+        "sea_ice_arctic",
+        "sea_ice_antarctic"
+      ]
+    },
+    "temporal_coverage": {
+      "earliest_data": "1993-01-01",
+      "latest_data": "2025-07-24",
+      "real_time_availability": true,
+      "real_time_lag": "1-3 days",
+      "historical_archive": true,
+      "climate_time_series": true
+    },
+    "access_methods": [
+      {
+        "method": "Direct API Subset",
+        "description": "Direct coordinate-based data retrieval without downloads",
+        "endpoint": "https://data.marine.copernicus.eu/api/subset",
+        "formats": [
+          "netcdf",
+          "json",
+          "csv"
+        ],
+        "recommended": true
+      },
+      {
+        "method": "Ocean Climate Portal",
+        "description": "Pre-calculated climate indicators and trends",
+        "endpoint": "https://marine.copernicus.eu/ocean-climate-portal",
+        "formats": [
+          "web_interface",
+          "downloadable_reports"
+        ],
+        "recommended": true
+      },
+      {
+        "method": "OPeNDAP",
+        "description": "Direct access to data arrays",
+        "formats": [
+          "netcdf",
+          "binary"
+        ],
+        "recommended": false
+      }
+    ],
+    "connection_status": {
+      "api_name": "Copernicus Marine Service",
+      "status": "connected",
+      "response_time_ms": 64.87700000000001,
+      "status_code": 200,
+      "timestamp": "2025-07-24T17:40:34.880586"
+    }
+  },
+  "metadata": {
+    "created_at": "2025-07-24T17:40:34.881182",
+    "api_name": "Copernicus Marine Service",
+    "version": "1.0"
+  }
+}

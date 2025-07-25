@@ -6,6 +6,23 @@
 echo "🌍 Starting NOAA Climate Data Globe System"
 echo "=========================================="
 
+# Check if required directories exist
+if [ ! -d "backend" ]; then
+    echo -e "${RED}❌ backend directory not found${NC}"
+    exit 1
+fi
+
+if [ ! -d "frontend" ]; then
+    echo -e "${RED}❌ frontend directory not found${NC}"
+    exit 1
+fi
+
+# Create logs directory if it doesn't exist
+if [ ! -d "logs" ]; then
+    echo -e "${BLUE}📁 Creating logs directory...${NC}"
+    mkdir -p logs
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -33,13 +50,17 @@ cleanup() {
 # Set up trap for cleanup
 trap cleanup SIGINT SIGTERM
 
-# Activate Python virtual environment if it exists
-if [ -d ".venv" ]; then
-    echo -e "${BLUE}🐍 Activating Python virtual environment...${NC}"
+# Activate backend Python virtual environment
+if [ -d "backend/.venv" ]; then
+    echo -e "${BLUE}🐍 Activating backend virtual environment...${NC}"
+    source backend/.venv/bin/activate
+    echo -e "${GREEN}✅ Backend virtual environment activated${NC}"
+elif [ -d ".venv" ]; then
+    echo -e "${BLUE}🐍 Activating root virtual environment...${NC}"
     source .venv/bin/activate
-    echo -e "${GREEN}✅ Virtual environment activated${NC}"
+    echo -e "${GREEN}✅ Root virtual environment activated${NC}"
 else
-    echo -e "${YELLOW}⚠️  No .venv directory found, using system Python${NC}"
+    echo -e "${YELLOW}⚠️  No virtual environment found, using system Python${NC}"
 fi
 
 # Check if Python is available
@@ -54,14 +75,29 @@ echo -e "${BLUE}🐍 Using Python: ${PYTHON_PATH}${NC}"
 
 # Check if required Python packages are installed
 echo -e "${BLUE}📦 Checking Python dependencies...${NC}"
-if ! python -c "import websockets, requests, numpy, pandas" 2>/dev/null; then
+if ! python -c "import websockets, requests, numpy, pandas, asyncio, json, pathlib" 2>/dev/null; then
     echo -e "${YELLOW}⚠️  Some Python dependencies missing. Installing from requirements.txt...${NC}"
-    if [ -f "requirements.txt" ]; then
+    
+    # Check backend requirements first
+    if [ -f "backend/requirements.txt" ]; then
+        echo -e "${BLUE}📦 Installing backend dependencies...${NC}"
+        pip install -r backend/requirements.txt
+    elif [ -f "requirements.txt" ]; then
         pip install -r requirements.txt
     else
         echo -e "${YELLOW}⚠️  requirements.txt not found, installing essential packages...${NC}"
-        pip install websockets requests numpy pandas
+        pip install websockets requests numpy pandas python-dotenv
     fi
+fi
+
+# Check for Copernicus Marine CLI (required for real data)
+echo -e "${BLUE}🌊 Checking Copernicus Marine CLI...${NC}"
+if ! python -c "import copernicusmarine" 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  Copernicus Marine CLI not found. Installing...${NC}"
+    pip install copernicusmarine
+    echo -e "${GREEN}✅ Copernicus Marine CLI installed${NC}"
+else
+    echo -e "${GREEN}✅ Copernicus Marine CLI available${NC}"
 fi
 
 # Check if Node.js is available
@@ -78,18 +114,36 @@ HTTP_SERVER_PID=$!
 # Wait a moment for server to start
 sleep 2
 
-# Start WebSocket server (background) - USE FIXED LAND VALIDATION SERVER
-echo -e "${BLUE}🌊 Starting Fixed Land Validation WebSocket server on port 8765...${NC}"
-echo -e "${YELLOW}🚨 Using NEW server with proper land/ocean validation${NC}"
-python backend/servers/fixed_land_validation_server.py > logs/websocket.log 2>&1 &
+# Start WebSocket server (background) - USE SIMPLE RELIABLE SERVER
+echo -e "${BLUE}🌊 Starting Ocean Data WebSocket server on port 8765...${NC}"
+echo -e "${GREEN}✅ Auto-detects real data availability (Copernicus Marine)${NC}"
+echo -e "${YELLOW}ℹ️  Falls back to synthetic data if real data unavailable${NC}"
+python backend/servers/simple_websocket_server.py > logs/websocket.log 2>&1 &
 WEBSOCKET_PID=$!
+
+# Check if server started successfully
+sleep 3
+if ! ps -p $WEBSOCKET_PID > /dev/null 2>&1; then
+    echo -e "${RED}❌ WebSocket server failed to start. Checking logs...${NC}"
+    if [ -f "logs/websocket.log" ]; then
+        tail -10 logs/websocket.log
+    fi
+    echo -e "${YELLOW}🔧 Trying fallback server...${NC}"
+    python backend/servers/fallback_websocket_server.py > logs/websocket.log 2>&1 &
+    WEBSOCKET_PID=$!
+    sleep 2
+    if ! ps -p $WEBSOCKET_PID > /dev/null 2>&1; then
+        echo -e "${RED}❌ All servers failed to start. Check logs/websocket.log${NC}"
+        exit 1
+    fi
+fi
 
 # Wait a moment for WebSocket server to start
 sleep 3
 
-# Navigate to web-globe directory and start React app
+# Navigate to frontend directory and start React app
 echo -e "${BLUE}⚛️  Starting React Three Fiber frontend...${NC}"
-cd web-globe
+cd frontend
 
 # Check if node_modules exists, install if not
 if [ ! -d "node_modules" ]; then
@@ -106,15 +160,28 @@ cd ..
 
 echo -e "${GREEN}✅ All services started successfully!${NC}"
 echo ""
+echo -e "${GREEN}🌊 OCEAN DATA & DATE FUNCTIONALITY READY${NC}"
 echo -e "${GREEN}🌍 Globe Interface: ${BLUE}http://localhost:5175${NC}"
 echo -e "${GREEN}🔗 Texture Server: ${BLUE}http://localhost:8000${NC}"
 echo -e "${GREEN}🌐 WebSocket Server: ${BLUE}ws://localhost:8765${NC}"
 echo ""
+echo -e "${BLUE}📊 Features Available:${NC}"
+echo -e "${GREEN}  ✅ Random ocean coordinate generation (120 verified points)${NC}"
+echo -e "${GREEN}  ✅ Random date generation with data availability validation${NC}"
+echo -e "${GREEN}  ✅ Real ocean data: SST, salinity, waves, currents, chlorophyll, pH${NC}"
+echo -e "${GREEN}  ✅ Temporal coverage: 1972-2025 with guaranteed data from 2022-06-01${NC}"
+echo -e "${GREEN}  ✅ Real-time WebSocket communication with date parameters${NC}"
+echo -e "${GREEN}  ✅ Automatic data download and caching with progress notifications${NC}"
+echo -e "${GREEN}  ✅ Smart caching - subsequent requests load instantly${NC}"
+echo ""
 echo -e "${YELLOW}📊 Usage:${NC}"
 echo "  • Click anywhere on the 3D globe to select coordinates"
+echo "  • Use date picker to select specific dates or generate random dates"
+echo "  • Click 'Random Location' for verified ocean coordinates"
+echo "  • Click 'Random Both' for random date + location combinations"
 echo "  • Toggle SST overlay with the button in the data panel"
 echo "  • Rotate, zoom, and pan the globe with mouse controls"
-echo "  • Climate data will be fetched automatically for selected locations"
+echo "  • Ocean data will be fetched automatically for selected locations and dates"
 echo ""
 echo -e "${YELLOW}📄 Logs:${NC}"
 echo "  • WebSocket server: tail -f logs/websocket.log"

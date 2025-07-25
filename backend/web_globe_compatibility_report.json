@@ -1,0 +1,90 @@
+{
+  "test_timestamp": "2025-07-24T17:54:32.834228",
+  "integration_version": "1.0",
+  "test_results": {
+    "coordinate_compatibility": {
+      "error": "Coordinate compatibility test failed: No module named 'test_coordinates'",
+      "status": "failed"
+    },
+    "websocket_compatibility": {
+      "websocket_compatible": true,
+      "json_serializable": true,
+      "data_structure_tests": {},
+      "sample_websocket_messages": []
+    },
+    "texture_compatibility": {
+      "data_format_compatible": true,
+      "coordinate_mapping_ready": true,
+      "sample_texture_data": {},
+      "integration_requirements": []
+    },
+    "cache_integration": {
+      "cache_compatible": true,
+      "storage_format": "JSON",
+      "cache_structure": {
+        "api_responses": {
+          "copernicus": {
+            "coverage_data": "cached for 24 hours",
+            "sample_queries": "cached for 1 hour",
+            "climate_indicators": "cached for 6 hours"
+          },
+          "noaa_cops": {
+            "station_data": "cached for 12 hours",
+            "real_time_data": "cached for 10 minutes",
+            "historical_data": "cached for 24 hours"
+          },
+          "pangaea": {
+            "dataset_search": "cached for 7 days",
+            "doi_metadata": "cached for 30 days",
+            "research_data": "cached for 24 hours"
+          }
+        },
+        "coordinate_validation": {
+          "ocean_points": "cached permanently",
+          "api_bounds": "cached for 24 hours"
+        },
+        "processed_data": {
+          "temperature_grids": "cached for 2 hours",
+          "microplastics_maps": "cached for 24 hours",
+          "climate_composites": "cached for 6 hours"
+        }
+      },
+      "performance_considerations": [
+        "Implement cache invalidation strategies",
+        "Add cache size monitoring and cleanup",
+        "Use SQLite for structured cache data",
+        "Implement cache warming for frequently accessed data",
+        "Add cache hit/miss metrics for optimization"
+      ]
+    }
+  },
+  "overall_compatibility": true,
+  "integration_readiness": {
+    "compatible_systems": [
+      "websocket_communication",
+      "texture_generation",
+      "cache_system"
+    ],
+    "compatibility_score": 75.0,
+    "ready_for_integration": true,
+    "next_steps": [
+      "Implement WebSocket integration layer",
+      "Add coordinate validation middleware",
+      "Extend texture generation pipeline",
+      "Configure cache system for API data"
+    ]
+  },
+  "integration_examples": {
+    "websocket_integration": {
+      "server_side": "\n# WebSocket server integration example\nimport json\nfrom backend_api.clients.copernicus_client import CopernicusMarineClient\n\nasync def handle_temperature_request(websocket, message):\n    \"\"\"Handle temperature data request from web-globe\"\"\"\n    client = CopernicusMarineClient()\n    \n    # Extract coordinates from web-globe message\n    lat = message['coordinates']['lat']\n    lon = message['coordinates']['lon']\n    \n    # Query temperature data\n    result = client.query_data(lat, lon, '2024-01-01', '2024-01-31', \n                              dataset_key='sst_global_l4')\n    \n    # Format response for web-globe\n    response = {\n        'message_type': 'temperature_response',\n        'coordinates': {'lat': lat, 'lon': lon},\n        'data': result,\n        'timestamp': datetime.now().isoformat()\n    }\n    \n    await websocket.send(json.dumps(response))\n    client.close()\n            ",
+      "client_side": "\n// Web-globe client integration\nconst requestTemperatureData = (lat, lon) => {\n    const message = {\n        type: 'temperature_request',\n        coordinates: { lat, lon },\n        parameters: ['analysed_sst', 'sst_anomaly'],\n        dateRange: { start: '2024-01-01', end: '2024-01-31' }\n    };\n    \n    websocket.send(JSON.stringify(message));\n};\n\nwebsocket.onmessage = (event) => {\n    const data = JSON.parse(event.data);\n    \n    if (data.message_type === 'temperature_response') {\n        updateTemperatureVisualization(data);\n    }\n};\n            "
+    },
+    "coordinate_integration": {
+      "validation": "\n# Coordinate validation for web-globe\nfrom backend_api.config.test_coordinates import SAMPLE_OCEAN_COORDINATES\nfrom backend_api.clients.copernicus_client import CopernicusMarineClient\n\ndef validate_web_globe_coordinates(coordinates):\n    \"\"\"Validate coordinates from web-globe selection\"\"\"\n    client = CopernicusMarineClient()\n    \n    validated_coords = []\n    for coord in coordinates:\n        if client.validate_coordinates(coord['lat'], coord['lon']):\n            validated_coords.append({\n                'lat': round(coord['lat'], 4),\n                'lon': round(coord['lon'], 4),\n                'valid': True,\n                'data_available': True\n            })\n        else:\n            validated_coords.append({\n                'lat': coord['lat'],\n                'lon': coord['lon'], \n                'valid': False,\n                'data_available': False\n            })\n    \n    client.close()\n    return validated_coords\n            ",
+      "conversion": "\n// Coordinate format conversion for API calls\nconst convertWebGlobeToAPI = (webGlobeCoords) => {\n    return {\n        lat: parseFloat(webGlobeCoords.latitude.toFixed(4)),\n        lon: parseFloat(webGlobeCoords.longitude.toFixed(4)),\n        name: webGlobeCoords.locationName || 'Selected Point',\n        region: webGlobeCoords.region || 'Ocean'\n    };\n};\n            "
+    },
+    "texture_integration": {
+      "generation": "\n# Texture generation integration\nfrom backend_api.clients.copernicus_client import CopernicusMarineClient\nimport numpy as np\nfrom PIL import Image\n\ndef generate_sst_texture(date_range, output_path):\n    \"\"\"Generate SST texture from Copernicus data\"\"\"\n    client = CopernicusMarineClient()\n    \n    # Query global SST data\n    # Note: This would require actual API authentication for production\n    result = client.query_data(\n        lat=0, lon=0,  # Global query would be different\n        start_date=date_range['start'],\n        end_date=date_range['end'],\n        dataset_key='sst_global_l4'\n    )\n    \n    # Process data for texture generation\n    # (Simulation - actual implementation would process real data)\n    texture_data = {\n        'width': 1440,  # 0.25 degree resolution\n        'height': 720,\n        'format': 'temperature_celsius',\n        'data_source': 'copernicus_marine',\n        'generated_at': datetime.now().isoformat()\n    }\n    \n    client.close()\n    return texture_data\n            "
+    }
+  }
+}

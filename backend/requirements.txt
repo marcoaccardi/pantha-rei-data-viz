@@ -1,0 +1,33 @@
+# Ocean Climate Data API Client Dependencies
+# For comprehensive data access and analysis
+
+# Core HTTP and API access
+requests>=2.28.0
+urllib3>=1.26.0
+
+# Data processing and analysis
+pandas>=1.5.0
+numpy>=1.24.0
+
+# JSON and data serialization
+python-dateutil>=2.8.0
+
+# Optional API-specific packages (install when needed)
+
+# Copernicus Marine Service
+# copernicusmarine>=1.0.0  # Uncomment when ready for production
+
+# PANGAEA data access  
+# pangaeapy>=1.0.0  # Uncomment for direct PANGAEA dataset access
+
+# Scientific data formats (for future integration)
+# netCDF4>=1.6.0  # For NetCDF file handling
+# xarray>=2023.1.0  # For scientific data arrays
+# scipy>=1.10.0  # For scientific computing
+
+# Development and testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Logging and utilities
+colorlog>=6.7.0
