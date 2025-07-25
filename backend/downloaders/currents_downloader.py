@@ -462,7 +462,7 @@ class CurrentsDownloader(BaseDataDownloader):
         """Get current timestamp as ISO format string."""
         return datetime.now().isoformat()
     
-    def _auto_optimize_storage(self, raw_file_path: Path, processed_file: Path, target_date: date):
+    def _auto_optimize_storage(self, raw_file_path: Path, processed_file: Path, target_date: date, keep_raw_files: bool = True):
         """
         Auto-optimize storage by removing raw files after successful processing.
         
@@ -470,14 +470,17 @@ class CurrentsDownloader(BaseDataDownloader):
             raw_file_path: Path to raw downloaded file
             processed_file: Path to final processed file  
             target_date: Date of the data
+            keep_raw_files: If True, preserve raw files for further processing
         """
         try:
             if processed_file.exists() and processed_file.stat().st_size > 0:
-                # Remove raw file to save space
-                if raw_file_path.exists():
+                # Remove raw file to save space (unless preservation is requested)
+                if raw_file_path.exists() and not keep_raw_files:
                     raw_size_mb = raw_file_path.stat().st_size / (1024 * 1024)
                     raw_file_path.unlink()
                     self.logger.info(f"Auto-optimization: removed raw file, freed {raw_size_mb:.1f} MB")
+                elif keep_raw_files and raw_file_path.exists():
+                    self.logger.info(f"Preserving raw file for further processing: {raw_file_path}")
                 
                 # Clean up empty directories
                 try:

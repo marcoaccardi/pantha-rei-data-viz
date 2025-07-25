@@ -230,7 +230,8 @@ class SSTDownloader(BaseDataDownloader):
                         target_date=target_date,
                         raw_file_path=raw_file_path,
                         intermediate_files=intermediate_files,
-                        final_file_path=final_file_path
+                        final_file_path=final_file_path,
+                        keep_raw_files=True
                     )
                     
                     # Log API data sample for development

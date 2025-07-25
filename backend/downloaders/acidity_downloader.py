@@ -328,7 +328,8 @@ class AcidityDownloader(BaseDataDownloader):
                     target_date=target_date,
                     raw_file_path=raw_file_path,
                     intermediate_files=intermediate_files,
-                    final_file_path=final_file_path
+                    final_file_path=final_file_path,
+                    keep_raw_files=True
                 )
                 
                 # Update status with optimization results

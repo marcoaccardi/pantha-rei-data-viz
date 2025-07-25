@@ -15,6 +15,17 @@ import shutil
 import json
 import warnings
 import time
+import os
+
+# Selenium imports for browser automation
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 from .base_downloader import BaseDataDownloader
 
@@ -179,7 +190,7 @@ class MicroplasticsDownloader(BaseDataDownloader):
             # 2. Call a direct API endpoint if available
             # 3. Use pre-exported data files
             
-            success = self._simulate_microplastics_download(raw_file_path, target_date)
+            success = self._download_ncei_microplastics_data(raw_file_path, target_date)
             
             if success:
                 # Process the downloaded file
@@ -202,10 +213,10 @@ class MicroplasticsDownloader(BaseDataDownloader):
             self.logger.error(f"Unexpected error downloading {filename}: {e}")
             return False
     
-    def _simulate_microplastics_download(self, output_file: Path, target_date: date) -> bool:
+    def _download_ncei_microplastics_data(self, output_file: Path, target_date: date) -> bool:
         """
-        Simulate microplastics data download.
-        In production, this would be replaced with actual NCEI portal automation.
+        Download actual microplastics data from NOAA NCEI portal using Selenium automation.
+        This automates the interactive web portal to export real data.
         
         Args:
             output_file: Path where to save the downloaded file
@@ -215,24 +226,202 @@ class MicroplasticsDownloader(BaseDataDownloader):
             True if successful, False otherwise
         """
         try:
-            # Generate realistic test data that matches NCEI microplastics structure
-            self.logger.info("Generating simulated microplastics data (replace with actual NCEI portal access)")
+            self.logger.info("Downloading NCEI marine microplastics database using browser automation")
             
-            # Create sample data with realistic values
-            sample_data = self._generate_sample_microplastics_data(target_date)
+            # Use Selenium to automate the interactive portal
+            success = self._selenium_export_data(output_file, target_date)
             
-            # Save as CSV
-            sample_data.to_csv(output_file, index=False)
+            if not success:
+                self.logger.error("Failed to download real NCEI data via browser automation")
+                self.logger.error("The microplastics dataset requires manual download from:")
+                self.logger.error("https://experience.arcgis.com/experience/b296879cc1984fda833a8acc93e31476")
+                return False
             
-            # Get file size for logging
-            file_size_kb = output_file.stat().st_size / 1024
-            self.logger.info(f"Generated sample microplastics data: {output_file.name} ({file_size_kb:.1f} KB)")
-            
-            return True
+            return success
             
         except Exception as e:
-            self.logger.error(f"Error generating sample microplastics data: {e}")
+            self.logger.error(f"Error downloading NCEI microplastics data: {e}")
             return False
+    
+    def _selenium_export_data(self, output_file: Path, target_date: date) -> bool:
+        """
+        Use Selenium to automate the NCEI microplastics portal and export CSV data.
+        
+        Args:
+            output_file: Path where to save the downloaded file
+            target_date: Date for the download
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        driver = None
+        try:
+            # Set up Chrome options for headless browser
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")  # Run in background
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--window-size=1920,1080")
+            
+            # Set download directory
+            download_dir = str(output_file.parent)
+            prefs = {
+                "download.default_directory": download_dir,
+                "download.prompt_for_download": False,
+                "download.directory_upgrade": True,
+                "safebrowsing.enabled": True
+            }
+            chrome_options.add_experimental_option("prefs", prefs)
+            
+            # Initialize Chrome driver
+            self.logger.info("Starting Chrome browser for NCEI portal automation")
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            # Navigate to NCEI microplastics portal
+            portal_url = "https://experience.arcgis.com/experience/b296879cc1984fda833a8acc93e31476"
+            self.logger.info(f"Navigating to NCEI portal: {portal_url}")
+            driver.get(portal_url)
+            
+            # Wait for page to load
+            wait = WebDriverWait(driver, 30)
+            
+            # Wait for the page to load (look for any elements that indicate loading is complete)
+            self.logger.info("Waiting for portal to load...")
+            
+            # Try multiple strategies to detect when the page is loaded
+            loaded = False
+            load_indicators = [
+                (By.TAG_NAME, "canvas"),
+                (By.CLASS_NAME, "esri-view"),
+                (By.CLASS_NAME, "esri-widget"),
+                (By.XPATH, "//div[contains(@class, 'calcite')]"),
+                (By.XPATH, "//div[contains(@class, 'experience')]")
+            ]
+            
+            for indicator in load_indicators:
+                try:
+                    wait.until(EC.presence_of_element_located(indicator))
+                    self.logger.info(f"Portal loaded - found element: {indicator}")
+                    loaded = True
+                    break
+                except TimeoutException:
+                    continue
+            
+            if not loaded:
+                self.logger.warning("Could not detect portal load completion, proceeding anyway")
+            
+            time.sleep(10)  # Additional wait for full initialization
+            
+            # Look for the Data Table tab or similar element
+            self.logger.info("Looking for Data Table access...")
+            
+            # Try multiple selectors that might represent the data table
+            data_table_selectors = [
+                "//div[contains(text(), 'Data Table')]",
+                "//button[contains(text(), 'Data Table')]",  
+                "//span[contains(text(), 'Data Table')]",
+                "//div[contains(@class, 'data-table')]",
+                "//div[contains(@aria-label, 'table')]"
+            ]
+            
+            data_table_element = None
+            for selector in data_table_selectors:
+                try:
+                    data_table_element = wait.until(EC.element_to_be_clickable((By.XPATH, selector)))
+                    self.logger.info(f"Found data table with selector: {selector}")
+                    break
+                except TimeoutException:
+                    continue
+            
+            if not data_table_element:
+                self.logger.warning("Could not find Data Table element, trying alternative approach")
+                # Look for any export or download buttons
+                export_selectors = [
+                    "//button[contains(text(), 'Export')]",
+                    "//div[contains(text(), 'Export')]",
+                    "//button[contains(@title, 'export')]",
+                    "//div[contains(@class, 'export')]"
+                ]
+                
+                for selector in export_selectors:
+                    try:
+                        export_element = driver.find_element(By.XPATH, selector)
+                        self.logger.info(f"Found export button: {selector}")
+                        export_element.click()
+                        time.sleep(2)
+                        break
+                    except NoSuchElementException:
+                        continue
+            else:
+                # Click on Data Table
+                data_table_element.click()
+                time.sleep(3)
+                
+                # Look for Actions menu or Export button
+                self.logger.info("Looking for Actions menu...")
+                actions_selectors = [
+                    "//button[contains(text(), 'Actions')]",
+                    "//div[contains(text(), 'Actions')]",
+                    "//button[contains(text(), 'Export all')]",
+                    "//button[contains(text(), 'Export')]"
+                ]
+                
+                for selector in actions_selectors:
+                    try:
+                        actions_button = driver.find_element(By.XPATH, selector)
+                        self.logger.info(f"Found actions button: {selector}")
+                        actions_button.click()
+                        time.sleep(2)
+                        
+                        # Look for CSV export option
+                        csv_selectors = [
+                            "//div[contains(text(), 'CSV')]",
+                            "//button[contains(text(), 'CSV')]",
+                            "//option[contains(text(), 'CSV')]"
+                        ]
+                        
+                        for csv_selector in csv_selectors:
+                            try:
+                                csv_option = driver.find_element(By.XPATH, csv_selector)
+                                self.logger.info("Found CSV export option")
+                                csv_option.click()
+                                time.sleep(2)
+                                break
+                            except NoSuchElementException:
+                                continue
+                        break
+                    except NoSuchElementException:
+                        continue
+            
+            # Wait for download to complete
+            self.logger.info("Waiting for download to complete...")
+            time.sleep(10)
+            
+            # Check if file was downloaded
+            downloaded_files = list(output_file.parent.glob("*.csv"))
+            if downloaded_files:
+                # Move the downloaded file to our expected location
+                downloaded_file = downloaded_files[0]
+                if downloaded_file != output_file:
+                    shutil.move(str(downloaded_file), str(output_file))
+                
+                file_size_kb = output_file.stat().st_size / 1024
+                self.logger.info(f"Successfully downloaded NCEI microplastics data: {output_file.name} ({file_size_kb:.1f} KB)")
+                return True
+            else:
+                self.logger.error("No CSV file was downloaded")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error in Selenium automation: {e}")
+            return False
+            
+        finally:
+            if driver:
+                driver.quit()
+                self.logger.info("Closed browser")
+    
     
     def _generate_sample_microplastics_data(self, target_date: date) -> pd.DataFrame:
         """
@@ -410,7 +599,8 @@ class MicroplasticsDownloader(BaseDataDownloader):
                 target_date=target_date,
                 raw_file_path=raw_file_path,
                 intermediate_files=intermediate_files,
-                final_file_path=final_file_path
+                final_file_path=final_file_path,
+                keep_raw_files=True
             )
             
             # Update status with optimization results

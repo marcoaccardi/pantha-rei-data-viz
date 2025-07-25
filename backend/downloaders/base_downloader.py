@@ -379,7 +379,8 @@ class BaseDataDownloader(ABC):
         }
     
     def _auto_optimize_storage(self, target_date: date, raw_file_path: Path, 
-                              intermediate_files: List[Path], final_file_path: Path) -> Dict[str, Any]:
+                              intermediate_files: List[Path], final_file_path: Path,
+                              keep_raw_files: bool = False) -> Dict[str, Any]:
         """
         Automatically optimize storage by removing raw and intermediate files after successful processing.
         
@@ -388,6 +389,7 @@ class BaseDataDownloader(ABC):
             raw_file_path: Path to the raw downloaded file
             intermediate_files: List of intermediate processing files to remove
             final_file_path: Path to the final processed file (kept)
+            keep_raw_files: If True, preserve raw files for further processing
             
         Returns:
             Dictionary with optimization results
@@ -419,8 +421,8 @@ class BaseDataDownloader(ABC):
                 optimization_log["optimization_enabled"] = False
                 return optimization_log
             
-            # Remove raw file
-            if raw_file_path.exists():
+            # Remove raw file (unless preservation is requested)
+            if raw_file_path.exists() and not keep_raw_files:
                 raw_size = raw_file_path.stat().st_size
                 raw_file_path.unlink()
                 optimization_log["files_removed"].append({
@@ -430,6 +432,8 @@ class BaseDataDownloader(ABC):
                 })
                 optimization_log["space_freed_mb"] += raw_size / (1024 * 1024)
                 self.logger.info(f"Removed raw file: {raw_file_path} ({raw_size / (1024 * 1024):.1f} MB)")
+            elif keep_raw_files and raw_file_path.exists():
+                self.logger.info(f"Preserving raw file for further processing: {raw_file_path}")
             
             # Remove intermediate files
             for intermediate_file in intermediate_files:
