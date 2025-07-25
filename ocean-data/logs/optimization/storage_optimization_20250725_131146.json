@@ -1,0 +1,139 @@
+{
+  "analysis": {
+    "timestamp": "2025-07-25T13:11:44.920096",
+    "data_root": "/Volumes/Backup/panta-rhei-data-map/ocean-data",
+    "storage_by_stage": {
+      "raw": {
+        "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/sst",
+        "file_count": 1,
+        "size_mb": 1.461,
+        "files": [
+          {
+            "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/sst/2024/07/oisst-avhrr-v02r01.20240724.nc",
+            "size_kb": 1496.1
+          }
+        ]
+      },
+      "downsampled": {
+        "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/sst_downsampled",
+        "file_count": 1,
+        "size_mb": 0.177,
+        "files": [
+          {
+            "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/sst_downsampled/2024/07/sst_1deg_20240724.nc",
+            "size_kb": 181.2
+          }
+        ]
+      },
+      "harmonized": {
+        "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords",
+        "file_count": 1,
+        "size_mb": 0.174,
+        "files": [
+          {
+            "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/2024/07/sst_harmonized_20240724.nc",
+            "size_kb": 178.3
+          }
+        ]
+      }
+    },
+    "total_storage_mb": 1.812,
+    "optimization_potential": {
+      "current_total_mb": 1.812,
+      "after_optimization_mb": 0.174,
+      "space_savings_mb": 1.638,
+      "space_savings_percent": 90.4,
+      "recommended_action": "Keep harmonized files only, remove raw and downsampled"
+    }
+  },
+  "validation": {
+    "timestamp": "2025-07-25T13:11:44.922136",
+    "files_validated": 1,
+    "validation_results": {
+      "sst_harmonized_20240724.nc": {
+        "file_path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/2024/07/sst_harmonized_20240724.nc",
+        "file_size_kb": 178.3,
+        "checks": {
+          "has_sst_variable": true,
+          "coordinate_system": "correct",
+          "data_coverage_percent": 69.7,
+          "has_valid_data": true,
+          "resolution": "1.00\u00b0 x 1.00\u00b0",
+          "correct_resolution": true
+        },
+        "status": "valid"
+      }
+    },
+    "overall_status": "passed",
+    "issues": []
+  },
+  "optimization_plan": {
+    "strategy": "Retain harmonized files only",
+    "justification": [
+      "Harmonized files contain all necessary data for API consumption",
+      "Coordinate system is standardized (-180/+180 longitude)",
+      "Resolution is optimized for performance (1-degree grid)",
+      "All original data variables are preserved",
+      "Significant storage reduction (90%+ savings)"
+    ],
+    "actions": [
+      {
+        "action": "remove_raw_files",
+        "description": "Remove 1 raw SST files",
+        "space_savings_mb": 1.461,
+        "files_to_remove": [
+          {
+            "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/sst/2024/07/oisst-avhrr-v02r01.20240724.nc",
+            "size_kb": 1496.1
+          }
+        ]
+      },
+      {
+        "action": "remove_downsampled_files",
+        "description": "Remove 1 downsampled SST files",
+        "space_savings_mb": 0.177,
+        "files_to_remove": [
+          {
+            "path": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/sst_downsampled/2024/07/sst_1deg_20240724.nc",
+            "size_kb": 181.2
+          }
+        ]
+      }
+    ],
+    "backup_recommendations": [
+      "Verify harmonized files are valid before removing raw data",
+      "Create metadata backup containing original file information",
+      "Document processing parameters for reproducibility",
+      "Keep at least one raw file sample for validation"
+    ],
+    "validation_steps": [
+      "Test data extraction from harmonized files",
+      "Verify coordinate system correctness",
+      "Check data value ranges and statistics",
+      "Confirm all variables are accessible"
+    ]
+  },
+  "dry_run_log": {
+    "timestamp": "2025-07-25T13:11:46.268459",
+    "dry_run": true,
+    "actions_executed": [
+      {
+        "action": "remove_raw_files",
+        "description": "Remove 1 raw SST files",
+        "files_processed": 1,
+        "space_freed_mb": 1.461038589477539,
+        "status": "dry_run_completed"
+      },
+      {
+        "action": "remove_downsampled_files",
+        "description": "Remove 1 downsampled SST files",
+        "files_processed": 1,
+        "space_freed_mb": 0.1769695281982422,
+        "status": "dry_run_completed"
+      }
+    ],
+    "files_removed": [],
+    "space_freed_mb": 1.6380081176757812,
+    "errors": []
+  }
+}

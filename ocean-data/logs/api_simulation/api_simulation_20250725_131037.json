@@ -1,0 +1,1004 @@
+{
+  "simulation_metadata": {
+    "timestamp": "2025-07-25T13:10:35.456465",
+    "data_file": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/2024/07/sst_harmonized_20240724.nc",
+    "file_size_kb": 178.3,
+    "test_locations": 13
+  },
+  "point_extractions": {
+    "atlantic_north": {
+      "requested_coordinates": {
+        "latitude": 45.0,
+        "longitude": -30.0
+      },
+      "actual_coordinates": {
+        "latitude": 45.5,
+        "longitude": -29.5
+      },
+      "data": {
+        "sst": {
+          "value": 20.549999237060547,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 1.96999990940094,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.11999999731779099,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 826.92,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 67.99
+      }
+    },
+    "pacific_equatorial": {
+      "requested_coordinates": {
+        "latitude": 0.0,
+        "longitude": 180.0
+      },
+      "actual_coordinates": {
+        "latitude": 0.5,
+        "longitude": 179.5
+      },
+      "data": {
+        "sst": {
+          "value": 29.0,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.29999998211860657,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.11999999731779099,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 37.75,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 78.63
+      }
+    },
+    "indian_ocean": {
+      "requested_coordinates": {
+        "latitude": -20.0,
+        "longitude": 75.0
+      },
+      "actual_coordinates": {
+        "latitude": -19.5,
+        "longitude": 75.5
+      },
+      "data": {
+        "sst": {
+          "value": 23.69999885559082,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.1599999964237213,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.10999999940395355,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 32.79,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 76.35
+      }
+    },
+    "gulf_stream": {
+      "requested_coordinates": {
+        "latitude": 35.0,
+        "longitude": -75.0
+      },
+      "actual_coordinates": {
+        "latitude": 35.5,
+        "longitude": -74.5
+      },
+      "data": {
+        "sst": {
+          "value": 28.549999237060547,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 1.6299999952316284,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.1599999964237213,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 26.97,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 71.78
+      }
+    },
+    "kuroshio": {
+      "requested_coordinates": {
+        "latitude": 35.0,
+        "longitude": 140.0
+      },
+      "actual_coordinates": {
+        "latitude": 35.5,
+        "longitude": 140.5
+      },
+      "data": {
+        "sst": {
+          "value": 25.100000381469727,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.4599999785423279,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.14000000059604645,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 41.2,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 71.78
+      }
+    },
+    "agulhas": {
+      "requested_coordinates": {
+        "latitude": -35.0,
+        "longitude": 25.0
+      },
+      "actual_coordinates": {
+        "latitude": -34.5,
+        "longitude": 25.5
+      },
+      "data": {
+        "sst": {
+          "value": 20.619998931884766,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.9300000071525574,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.1899999976158142,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 29.0,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 71.96
+      }
+    },
+    "california_coast": {
+      "requested_coordinates": {
+        "latitude": 36.0,
+        "longitude": -122.0
+      },
+      "actual_coordinates": {
+        "latitude": 36.5,
+        "longitude": -121.5
+      },
+      "data": {
+        "sst": {
+          "value": 15.149999618530273,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.6499999761581421,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.2199999988079071,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 60.43,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 71.42
+      }
+    },
+    "north_sea": {
+      "requested_coordinates": {
+        "latitude": 56.0,
+        "longitude": 3.0
+      },
+      "actual_coordinates": {
+        "latitude": 56.5,
+        "longitude": 3.5
+      },
+      "data": {
+        "sst": {
+          "value": 15.559999465942383,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.8299999833106995,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.11999999731779099,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 28.12,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 63.6
+      }
+    },
+    "great_barrier_reef": {
+      "requested_coordinates": {
+        "latitude": -18.0,
+        "longitude": 147.0
+      },
+      "actual_coordinates": {
+        "latitude": -17.5,
+        "longitude": 147.5
+      },
+      "data": {
+        "sst": {
+          "value": 25.209999084472656,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 1.0699999332427979,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.10999999940395355,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 29.25,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 76.78
+      }
+    },
+    "arctic": {
+      "requested_coordinates": {
+        "latitude": 75.0,
+        "longitude": 0.0
+      },
+      "actual_coordinates": {
+        "latitude": 75.5,
+        "longitude": 0.5
+      },
+      "data": {
+        "sst": {
+          "value": 5.62999963760376,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 1.6999999284744263,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.11999999731779099,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 57.28,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 57.37
+      }
+    },
+    "antarctic": {
+      "requested_coordinates": {
+        "latitude": -65.0,
+        "longitude": 0.0
+      },
+      "actual_coordinates": {
+        "latitude": -64.5,
+        "longitude": 0.5
+      },
+      "data": {
+        "sst": {
+          "value": -1.7999999523162842,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": -0.029999999329447746,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.29999998211860657,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": 0.9799999594688416,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": true
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 112.98,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 60.44
+      }
+    },
+    "mediterranean": {
+      "requested_coordinates": {
+        "latitude": 38.0,
+        "longitude": 15.0
+      },
+      "actual_coordinates": {
+        "latitude": 38.5,
+        "longitude": 15.5
+      },
+      "data": {
+        "sst": {
+          "value": 28.149999618530273,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 2.9700000286102295,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.11999999731779099,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 281.74,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 70.69
+      }
+    },
+    "red_sea": {
+      "requested_coordinates": {
+        "latitude": 20.0,
+        "longitude": 38.0
+      },
+      "actual_coordinates": {
+        "latitude": 20.5,
+        "longitude": 38.5
+      },
+      "data": {
+        "sst": {
+          "value": 31.979999542236328,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 1.2699999809265137,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.14999999105930328,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 331.57,
+        "file_source": "sst_harmonized_20240724.nc",
+        "grid_resolution": "1.00\u00b0",
+        "coordinate_system": "-180/+180",
+        "distance_km": 76.24
+      }
+    }
+  },
+  "area_extractions": {
+    "north_atlantic_small": {
+      "requested_bounds": {
+        "lat_min": 40,
+        "lat_max": 50,
+        "lon_min": -40,
+        "lon_max": -20
+      },
+      "actual_bounds": {
+        "lat_min": 40.5,
+        "lat_max": 49.5,
+        "lon_min": -39.5,
+        "lon_max": -20.5
+      },
+      "grid_info": {
+        "lat_points": 10,
+        "lon_points": 20,
+        "total_points": 200
+      },
+      "statistics": {
+        "sst": {
+          "mean": 20.81920623779297,
+          "std": 2.7346978187561035,
+          "min": 15.889999389648438,
+          "max": 25.329999923706055,
+          "valid_points": 200,
+          "total_points": 200,
+          "coverage_percent": 100.0
+        },
+        "anom": {
+          "mean": 2.07930064201355,
+          "std": 0.916245698928833,
+          "min": -0.11999999731779099,
+          "max": 4.099999904632568,
+          "valid_points": 200,
+          "total_points": 200,
+          "coverage_percent": 100.0
+        },
+        "err": {
+          "mean": 0.12489988654851913,
+          "std": 0.007482646498829126,
+          "min": 0.10999999940395355,
+          "max": 0.14999999105930328,
+          "valid_points": 200,
+          "total_points": 200,
+          "coverage_percent": 100.0
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 67.57,
+        "file_source": "sst_harmonized_20240724.nc",
+        "data_size_kb": 3.12
+      }
+    },
+    "pacific_equatorial_band": {
+      "requested_bounds": {
+        "lat_min": -5,
+        "lat_max": 5,
+        "lon_min": 160,
+        "lon_max": 200
+      },
+      "actual_bounds": {
+        "lat_min": -4.5,
+        "lat_max": 4.5,
+        "lon_min": 160.5,
+        "lon_max": 179.5
+      },
+      "grid_info": {
+        "lat_points": 10,
+        "lon_points": 20,
+        "total_points": 200
+      },
+      "statistics": {
+        "sst": {
+          "mean": 30.025291442871094,
+          "std": 0.38070058822631836,
+          "min": 28.979999542236328,
+          "max": 30.69999885559082,
+          "valid_points": 200,
+          "total_points": 200,
+          "coverage_percent": 100.0
+        },
+        "anom": {
+          "mean": 0.9183497428894043,
+          "std": 0.24208217859268188,
+          "min": 0.22999998927116394,
+          "max": 1.399999976158142,
+          "valid_points": 200,
+          "total_points": 200,
+          "coverage_percent": 100.0
+        },
+        "err": {
+          "mean": 0.12055015563964844,
+          "std": 0.003346265759319067,
+          "min": 0.11999999731779099,
+          "max": 0.14999999105930328,
+          "valid_points": 200,
+          "total_points": 200,
+          "coverage_percent": 100.0
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 171.45,
+        "file_source": "sst_harmonized_20240724.nc",
+        "data_size_kb": 3.12
+      }
+    },
+    "mediterranean": {
+      "requested_bounds": {
+        "lat_min": 30,
+        "lat_max": 45,
+        "lon_min": 0,
+        "lon_max": 35
+      },
+      "actual_bounds": {
+        "lat_min": 30.5,
+        "lat_max": 44.5,
+        "lon_min": 0.5,
+        "lon_max": 34.5
+      },
+      "grid_info": {
+        "lat_points": 15,
+        "lon_points": 35,
+        "total_points": 525
+      },
+      "statistics": {
+        "sst": {
+          "mean": 27.239492416381836,
+          "std": 1.5067832469940186,
+          "min": 21.420000076293945,
+          "max": 30.42999839782715,
+          "valid_points": 340,
+          "total_points": 525,
+          "coverage_percent": 64.76190476190476
+        },
+        "anom": {
+          "mean": 2.8157958984375,
+          "std": 1.0341776609420776,
+          "min": -0.7099999785423279,
+          "max": 5.279999732971191,
+          "valid_points": 340,
+          "total_points": 525,
+          "coverage_percent": 64.76190476190476
+        },
+        "err": {
+          "mean": 0.12955892086029053,
+          "std": 0.01630895771086216,
+          "min": 0.10999999940395355,
+          "max": 0.22999998927116394,
+          "valid_points": 340,
+          "total_points": 525,
+          "coverage_percent": 64.76190476190476
+        }
+      },
+      "metadata": {
+        "extraction_time_ms": 125.97,
+        "file_source": "sst_harmonized_20240724.nc",
+        "data_size_kb": 8.2
+      }
+    }
+  },
+  "validation_results": {
+    "atlantic_north": {
+      "location": "North Atlantic",
+      "quality_checks": {
+        "sst_value": 20.549999237060547,
+        "expected_range": [
+          8,
+          18
+        ],
+        "in_expected_range": false,
+        "grid_distance_km": 67.99,
+        "acceptable_distance": true,
+        "extraction_time_ms": 826.92,
+        "acceptable_performance": false
+      },
+      "warnings": [
+        "SST 20.5\u00b0C outside expected range [8, 18]",
+        "Extraction took 826.9ms (>100ms)"
+      ],
+      "status": "warning"
+    },
+    "pacific_equatorial": {
+      "location": "Equatorial Pacific",
+      "quality_checks": {
+        "sst_value": 29.0,
+        "expected_range": [
+          26,
+          30
+        ],
+        "in_expected_range": true,
+        "grid_distance_km": 78.63,
+        "acceptable_distance": true,
+        "extraction_time_ms": 37.75,
+        "acceptable_performance": true
+      },
+      "warnings": [],
+      "status": "passed"
+    },
+    "indian_ocean": {
+      "location": "Southern Indian Ocean",
+      "quality_checks": {
+        "sst_value": 23.69999885559082,
+        "expected_range": [
+          22,
+          28
+        ],
+        "in_expected_range": true,
+        "grid_distance_km": 76.35,
+        "acceptable_distance": true,
+        "extraction_time_ms": 32.79,
+        "acceptable_performance": true
+      },
+      "warnings": [],
+      "status": "passed"
+    },
+    "gulf_stream": {
+      "location": "Gulf Stream",
+      "quality_checks": {
+        "sst_value": 28.549999237060547,
+        "expected_range": [
+          18,
+          25
+        ],
+        "in_expected_range": false,
+        "grid_distance_km": 71.78,
+        "acceptable_distance": true,
+        "extraction_time_ms": 26.97,
+        "acceptable_performance": true
+      },
+      "warnings": [
+        "SST 28.5\u00b0C outside expected range [18, 25]"
+      ],
+      "status": "warning"
+    },
+    "kuroshio": {
+      "location": "Kuroshio Current",
+      "quality_checks": {
+        "sst_value": 25.100000381469727,
+        "expected_range": [
+          15,
+          22
+        ],
+        "in_expected_range": false,
+        "grid_distance_km": 71.78,
+        "acceptable_distance": true,
+        "extraction_time_ms": 41.2,
+        "acceptable_performance": true
+      },
+      "warnings": [
+        "SST 25.1\u00b0C outside expected range [15, 22]"
+      ],
+      "status": "warning"
+    },
+    "agulhas": {
+      "location": "Agulhas Current",
+      "quality_checks": {
+        "sst_value": 20.619998931884766,
+        "expected_range": [
+          16,
+          24
+        ],
+        "in_expected_range": true,
+        "grid_distance_km": 71.96,
+        "acceptable_distance": true,
+        "extraction_time_ms": 29.0,
+        "acceptable_performance": true
+      },
+      "warnings": [],
+      "status": "passed"
+    },
+    "california_coast": {
+      "location": "California Coast",
+      "quality_checks": {
+        "sst_value": 15.149999618530273,
+        "expected_range": [
+          12,
+          18
+        ],
+        "in_expected_range": true,
+        "grid_distance_km": 71.42,
+        "acceptable_distance": true,
+        "extraction_time_ms": 60.43,
+        "acceptable_performance": true
+      },
+      "warnings": [],
+      "status": "passed"
+    },
+    "north_sea": {
+      "location": "North Sea",
+      "quality_checks": {
+        "sst_value": 15.559999465942383,
+        "expected_range": [
+          6,
+          16
+        ],
+        "in_expected_range": true,
+        "grid_distance_km": 63.6,
+        "acceptable_distance": true,
+        "extraction_time_ms": 28.12,
+        "acceptable_performance": true
+      },
+      "warnings": [],
+      "status": "passed"
+    },
+    "great_barrier_reef": {
+      "location": "Great Barrier Reef",
+      "quality_checks": {
+        "sst_value": 25.209999084472656,
+        "expected_range": [
+          24,
+          29
+        ],
+        "in_expected_range": true,
+        "grid_distance_km": 76.78,
+        "acceptable_distance": true,
+        "extraction_time_ms": 29.25,
+        "acceptable_performance": true
+      },
+      "warnings": [],
+      "status": "passed"
+    },
+    "arctic": {
+      "location": "Arctic Ocean",
+      "quality_checks": {
+        "sst_value": 5.62999963760376,
+        "expected_range": [
+          -2,
+          2
+        ],
+        "in_expected_range": false,
+        "grid_distance_km": 57.37,
+        "acceptable_distance": true,
+        "extraction_time_ms": 57.28,
+        "acceptable_performance": true
+      },
+      "warnings": [
+        "SST 5.6\u00b0C outside expected range [-2, 2]"
+      ],
+      "status": "warning"
+    },
+    "antarctic": {
+      "location": "Southern Ocean",
+      "quality_checks": {
+        "sst_value": -1.7999999523162842,
+        "expected_range": [
+          -1,
+          4
+        ],
+        "in_expected_range": false,
+        "grid_distance_km": 60.44,
+        "acceptable_distance": true,
+        "extraction_time_ms": 112.98,
+        "acceptable_performance": false
+      },
+      "warnings": [
+        "SST -1.8\u00b0C outside expected range [-1, 4]",
+        "Extraction took 113.0ms (>100ms)"
+      ],
+      "status": "warning"
+    },
+    "mediterranean": {
+      "location": "Mediterranean Sea",
+      "quality_checks": {
+        "sst_value": 28.149999618530273,
+        "expected_range": [
+          15,
+          25
+        ],
+        "in_expected_range": false,
+        "grid_distance_km": 70.69,
+        "acceptable_distance": true,
+        "extraction_time_ms": 281.74,
+        "acceptable_performance": false
+      },
+      "warnings": [
+        "SST 28.1\u00b0C outside expected range [15, 25]",
+        "Extraction took 281.7ms (>100ms)"
+      ],
+      "status": "warning"
+    },
+    "red_sea": {
+      "location": "Red Sea",
+      "quality_checks": {
+        "sst_value": 31.979999542236328,
+        "expected_range": [
+          24,
+          30
+        ],
+        "in_expected_range": false,
+        "grid_distance_km": 76.24,
+        "acceptable_distance": true,
+        "extraction_time_ms": 331.57,
+        "acceptable_performance": false
+      },
+      "warnings": [
+        "SST 32.0\u00b0C outside expected range [24, 30]",
+        "Extraction took 331.6ms (>100ms)"
+      ],
+      "status": "warning"
+    }
+  },
+  "performance_summary": {
+    "total_extractions": 16,
+    "successful_extractions": 16,
+    "average_extraction_time_ms": 141.31,
+    "max_extraction_time_ms": 826.92,
+    "min_extraction_time_ms": 26.97
+  },
+  "storage_analysis": {
+    "current_file_size_kb": 178.3,
+    "optimization_recommendations": [
+      "Remove raw and downsampled files after harmonization: Save 1677.3 KB per file"
+    ],
+    "retention_strategy": {
+      "keep": "harmonized files only",
+      "remove": "raw and downsampled files after successful harmonization",
+      "space_savings_percent": 90.4,
+      "final_size_per_file_kb": 178.3
+    },
+    "storage_breakdown": {
+      "raw_files": {
+        "count": 1,
+        "total_size_kb": 1496.1
+      },
+      "downsampled_files": {
+        "count": 1,
+        "total_size_kb": 181.2
+      },
+      "harmonized_files": {
+        "count": 1,
+        "total_size_kb": 178.3
+      }
+    }
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "timestamp": "2025-07-25T13:27:46.029842",
+  "date": "2024-07-23",
+  "file_source": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/2024/07/sst_harmonized_20240723.nc",
+  "file_size_kb": 178.1,
+  "sample_extractions": [
+    {
+      "location": "Equatorial Pacific",
+      "requested_coordinates": {
+        "lat": 0.0,
+        "lon": 180.0
+      },
+      "actual_coordinates": {
+        "lat": 0.5,
+        "lon": 179.5
+      },
+      "data": {
+        "sst": {
+          "value": 29.19999885559082,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.5,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.11999999731779099,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "extraction_time_ms": 13.77
+    },
+    {
+      "location": "North Atlantic",
+      "requested_coordinates": {
+        "lat": 45.0,
+        "lon": -30.0
+      },
+      "actual_coordinates": {
+        "lat": 45.5,
+        "lon": -29.5
+      },
+      "data": {
+        "sst": {
+          "value": 20.239999771118164,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 1.6899999380111694,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.11999999731779099,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": NaN,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": false
+        }
+      },
+      "extraction_time_ms": 1.04
+    },
+    {
+      "location": "Southern Ocean",
+      "requested_coordinates": {
+        "lat": -60.0,
+        "lon": 0.0
+      },
+      "actual_coordinates": {
+        "lat": -59.5,
+        "lon": 0.5
+      },
+      "data": {
+        "sst": {
+          "value": -1.4499999284744263,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature",
+          "valid": true
+        },
+        "anom": {
+          "value": 0.05999999865889549,
+          "units": "Celsius",
+          "long_name": "Daily sea surface temperature anomalies",
+          "valid": true
+        },
+        "err": {
+          "value": 0.26999998092651367,
+          "units": "Celsius",
+          "long_name": "Estimated error standard deviation of analysed_sst",
+          "valid": true
+        },
+        "ice": {
+          "value": 0.5399999618530273,
+          "units": "%",
+          "long_name": "Sea ice concentration",
+          "valid": true
+        }
+      },
+      "extraction_time_ms": 2.96
+    }
+  ],
+  "data_structure": {
+    "dimensions": {
+      "time": 1,
+      "zlev": 1,
+      "lat": 180,
+      "lon": 360
+    },
+    "variables": [
+      "sst",
+      "anom",
+      "err",
+      "ice"
+    ],
+    "coordinates": [
+      "time",
+      "zlev",
+      "lat",
+      "lon"
+    ],
+    "coordinate_ranges": {
+      "lat": {
+        "min": -89.5,
+        "max": 89.5
+      },
+      "lon": {
+        "min": -179.5,
+        "max": 179.5
+      }
+    },
+    "resolution": {
+      "lat": 1.0,
+      "lon": 1.0
+    }
+  },
+  "api_readiness": {
+    "average_extraction_time_ms": 5.92,
+    "max_extraction_time_ms": 13.77,
+    "performance_grade": "excellent",
+    "ready_for_api": true
+  }
+}

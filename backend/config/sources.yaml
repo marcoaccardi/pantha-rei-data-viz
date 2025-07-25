@@ -1,0 +1,119 @@
+# Ocean Data Sources Configuration
+# Defines data sources, URLs, and processing parameters for each dataset
+
+datasets:
+  sst:
+    name: "NOAA OISST v2.1"
+    description: "Sea Surface Temperature - Optimum Interpolation"
+    base_url: "https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/"
+    file_pattern: "oisst-avhrr-v02r01.{date}.nc"
+    url_pattern: "{base_url}{year_month}/oisst-avhrr-v02r01.{date}.nc"
+    temporal_coverage:
+      start: "1981-09-01"
+      end: "present"
+      test_start: "2024-01-01"  # Start with 2024 for testing
+    spatial_resolution: 0.25  # degrees
+    target_resolution: 1.0    # downsample to 1 degree
+    coordinate_system: "0-360"  # needs conversion to -180-180
+    variables: ["sst", "anom", "err", "ice"]
+    update_frequency: "daily"
+    file_size_mb: 1.6  # approximate size per file
+    processing:
+      downsample: true
+      harmonize_coords: true
+    
+  waves:
+    name: "CMEMS Global Waves"
+    description: "Ocean Wave Analysis and Forecast"
+    product_id: "GLOBAL_ANALYSISFORECAST_WAV_001_027"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "1993-01-01"
+      end: "present"
+      test_start: "2024-01-01"
+    spatial_resolution: 0.2  # degrees
+    coordinate_system: "-180-180"
+    variables: ["VHM0", "MWD", "PP1D"]  # significant height, direction, period
+    update_frequency: "daily"
+    file_size_mb: 25  # approximate size per file
+    processing:
+      harmonize_coords: false  # already in -180-180
+    credentials_required: true
+    
+  currents:
+    name: "CMEMS Global Ocean Currents"
+    description: "Global Ocean Physics Analysis and Forecast"
+    product_id: "GLOBAL_ANALYSISFORECAST_PHY_001_024"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "1993-01-01"
+      end: "present"
+      test_start: "2024-01-01"
+    spatial_resolution: 0.083  # 1/12 degree
+    coordinate_system: "-180-180"
+    variables: ["uo", "vo"]  # zonal and meridional velocity
+    layers: ["surface"]  # Phase 1: surface only
+    update_frequency: "daily"
+    file_size_mb: 15  # approximate size per file
+    processing:
+      harmonize_coords: false
+    credentials_required: true
+    
+  acidity:
+    name: "CMEMS Global Ocean Biogeochemistry"
+    description: "Global Ocean Biogeochemistry Analysis and Forecast"
+    product_id: "GLOBAL_ANALYSISFORECAST_BGC_001_028"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "1993-01-01"
+      end: "present"
+      test_start: "2024-01-01"
+    spatial_resolution: 0.25  # degrees
+    coordinate_system: "-180-180"
+    variables: ["ph", "fco2", "DIC", "TA"]  # pH, fugacity CO2, dissolved inorganic carbon
+    layers: ["surface"]  # Phase 1: surface only
+    update_frequency: "daily"
+    file_size_mb: 20  # approximate size per file
+    processing:
+      harmonize_coords: false
+    credentials_required: true
+    
+  microplastics:
+    name: "NOAA NCEI Marine Microplastics"
+    description: "Marine Microplastics Observations Database"
+    portal_url: "https://www.ncei.noaa.gov/products/microplastics"
+    download_url: "https://www.ncei.noaa.gov/data/oceans/ncei/microplastics/export"
+    temporal_coverage:
+      start: "1972-04-01"
+      end: "present"
+      test_start: "1993-01-01"  # filter to match other datasets
+    format: "csv"
+    variables: ["concentration", "particle_count", "polymer_type", "size_class", "depth"]
+    update_frequency: "weekly"  # check weekly, download if updated
+    file_size_mb: 50  # approximate size
+    processing:
+      harmonize_coords: false
+      filter_date_range: true
+    
+# Storage configuration
+storage:
+  base_path: "../ocean-data"
+  raw_data_path: "raw"
+  processed_data_path: "processed"
+  logs_path: "logs"
+  cache_path: "cache"
+  max_storage_gb: 100  # warn if exceeded
+  
+# Download configuration
+download:
+  parallel_downloads: false  # Phase 1: sequential for stability
+  max_retries: 3
+  retry_delay_seconds: 5
+  timeout_seconds: 300
+  user_agent: "Ocean-Climate-Research/1.0 (panta-rhei-data-map)"
+  
+# Processing configuration
+processing:
+  temp_dir: "/tmp/ocean_data_processing"
+  keep_temp_files: false
+  compression_level: 4  # for NetCDF files

@@ -308,9 +308,9 @@ function App() {
           // Clear progress message when data arrives
           setProgressMessage(null);
           
-          if (message.data && message.data.status === 'success') {
+          if (message.data && (message.data.status === 'success' || (message.data.data && message.data.data.data && message.data.data.data.measurements))) {
             // Transform the backend-api response to match our expected format
-            const backendData = message.data.data || [];
+            const backendData = message.data.data?.data?.measurements || [];
             const transformedBackendData = backendData.map((item: any) => ({
               latitude: message.coordinates?.lat || coordinates.lat,
               longitude: (message.coordinates as any)?.lon || coordinates.lng,
@@ -337,8 +337,10 @@ function App() {
               console.log('🌐 Fresh data downloaded and cached');
             }
           } else {
-            console.warn(`⚠️ ${message.type} request failed:`, message.data?.error);
-            setErrorMessage(`${message.type} data unavailable for selected date`);
+            // Handle different error formats from backend
+            const errorMsg = message.data?.error || message.data?.message || 'Unknown error';
+            console.warn(`⚠️ ${message.type} request failed:`, errorMsg);
+            setErrorMessage(`${message.type} data unavailable: ${errorMsg}`);
           }
           
           setIsLoading(false);
@@ -384,20 +386,36 @@ function App() {
     }
     
     if (isConnected) {
-      // Send message to backend-api climate data server with proper coordinate mapping
-      sendMessage({
-        type: 'temperature_request', // Use backend-api message types
-        payload: {
-          coordinates: {
-            lat: coords.lat,
-            lon: coords.lng // Map lng -> lon for backend compatibility
-          } as any,
-          dateRange: {
-            start: queryDate,
-            end: queryDate // Single day query
-          },
-          timestamp: new Date().toISOString()
-        }
+      // Send requests for all available data types to the backend-api climate data server
+      const dataTypes = [
+        'temperature_request',
+        'salinity_request', 
+        'wave_request',
+        'currents_request',
+        'chlorophyll_request',
+        'ph_request',
+        'biodiversity_request',
+        'microplastics_request'
+      ];
+      
+      const requestPayload = {
+        coordinates: {
+          lat: coords.lat,
+          lon: coords.lng // Map lng -> lon for backend compatibility
+        } as any,
+        dateRange: {
+          start: queryDate,
+          end: queryDate // Single day query
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      // Send requests for all data types
+      dataTypes.forEach(dataType => {
+        sendMessage({
+          type: dataType as any,
+          payload: requestPayload
+        });
       });
       
       // Development logging

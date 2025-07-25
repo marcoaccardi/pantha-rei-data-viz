@@ -1,0 +1,54 @@
+{
+  "last_updated": "2025-07-25T13:27:46.109587",
+  "datasets": {
+    "sst": {
+      "last_date": null,
+      "total_files": 2,
+      "storage_gb": 0.001,
+      "last_success": null,
+      "last_error": null,
+      "status": "not_started",
+      "last_optimization": "2025-07-25T13:27:46.027585",
+      "space_freed_mb": 1.636,
+      "final_file_size_kb": 178.1,
+      "api_ready": true
+    },
+    "waves": {
+      "last_date": null,
+      "total_files": 0,
+      "storage_gb": 0.0,
+      "last_success": null,
+      "last_error": null,
+      "status": "not_started"
+    },
+    "currents": {
+      "last_date": null,
+      "total_files": 0,
+      "storage_gb": 0.0,
+      "last_success": null,
+      "last_error": null,
+      "status": "not_started"
+    },
+    "acidity": {
+      "last_date": null,
+      "total_files": 0,
+      "storage_gb": 0.0,
+      "last_success": null,
+      "last_error": null,
+      "status": "not_started"
+    },
+    "microplastics": {
+      "last_date": null,
+      "total_files": 0,
+      "storage_mb": 0.0,
+      "last_success": null,
+      "last_error": null,
+      "status": "not_started"
+    }
+  },
+  "system": {
+    "total_storage_gb": 0.0,
+    "available_storage_gb": null,
+    "last_health_check": null
+  }
+}

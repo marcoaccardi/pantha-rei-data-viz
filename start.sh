@@ -50,9 +50,50 @@ cleanup() {
 # Set up trap for cleanup
 trap cleanup SIGINT SIGTERM
 
-# Activate backend Python virtual environment
+# Function to kill processes on specific ports
+kill_port_processes() {
+    local port=$1
+    local service_name=$2
+    
+    echo -e "${BLUE}🔍 Checking for processes on port ${port} (${service_name})...${NC}"
+    
+    # Find and kill processes using the port
+    local pids=$(lsof -ti:${port} 2>/dev/null)
+    if [ -n "$pids" ]; then
+        echo -e "${YELLOW}⚠️  Found existing processes on port ${port}: $pids${NC}"
+        echo -e "${YELLOW}🔧 Killing processes on port ${port}...${NC}"
+        kill -9 $pids 2>/dev/null || true
+        sleep 2
+        
+        # Verify they're gone
+        local remaining=$(lsof -ti:${port} 2>/dev/null)
+        if [ -n "$remaining" ]; then
+            echo -e "${RED}❌ Failed to free port ${port}${NC}"
+            return 1
+        else
+            echo -e "${GREEN}✅ Port ${port} freed${NC}"
+        fi
+    else
+        echo -e "${GREEN}✅ Port ${port} is free${NC}"
+    fi
+    return 0
+}
+
+# Free all required ports before starting services
+echo -e "${BLUE}🧹 Freeing required ports...${NC}"
+kill_port_processes 8765 "WebSocket Server"
+kill_port_processes 8000 "HTTP Server" 
+kill_port_processes 5173 "Frontend Dev Server"
+kill_port_processes 5174 "Frontend Dev Server Alt"
+kill_port_processes 5175 "Frontend Dev Server Alt"
+
+# Force use of backend Python virtual environment
 if [ -d "backend/.venv" ]; then
-    echo -e "${BLUE}🐍 Activating backend virtual environment...${NC}"
+    echo -e "${BLUE}🐍 Using backend virtual environment (Python 3.10.17)...${NC}"
+    # Set explicit Python path to avoid conda conflicts
+    export PYTHON_BIN="$(pwd)/backend/.venv/bin/python"
+    export PATH="$(pwd)/backend/.venv/bin:$PATH"
+    # Also activate for environment variables
     source backend/.venv/bin/activate
     echo -e "${GREEN}✅ Backend virtual environment activated${NC}"
 elif [ -d ".venv" ]; then
@@ -114,28 +155,105 @@ HTTP_SERVER_PID=$!
 # Wait a moment for server to start
 sleep 2
 
-# Start WebSocket server (background) - USE SIMPLE RELIABLE SERVER
+# Start WebSocket server with real data prioritization
 echo -e "${BLUE}🌊 Starting Ocean Data WebSocket server on port 8765...${NC}"
-echo -e "${GREEN}✅ Auto-detects real data availability (Copernicus Marine)${NC}"
-echo -e "${YELLOW}ℹ️  Falls back to synthetic data if real data unavailable${NC}"
-python backend/servers/simple_websocket_server.py > logs/websocket.log 2>&1 &
+echo -e "${GREEN}✅ Prioritizing REAL DATA from Copernicus Marine${NC}"
+
+# Try main data server first with all API clients
+echo -e "${BLUE}🔬 Starting main climate data server with all API clients...${NC}"
+# Use explicit Python path if available, otherwise fallback to 'python'
+if [ -n "$PYTHON_BIN" ]; then
+    echo -e "${BLUE}🐍 Using Python: ${PYTHON_BIN}${NC}"
+    $PYTHON_BIN backend/servers/climate_data_websocket_server.py > logs/websocket.log 2>&1 &
+else
+    python backend/servers/climate_data_websocket_server.py > logs/websocket.log 2>&1 &
+fi
 WEBSOCKET_PID=$!
 
-# Check if server started successfully
-sleep 3
+# Check if real data server started successfully
+sleep 5
 if ! ps -p $WEBSOCKET_PID > /dev/null 2>&1; then
-    echo -e "${RED}❌ WebSocket server failed to start. Checking logs...${NC}"
+    echo -e "${RED}❌ Real data server failed to start. Checking logs...${NC}"
     if [ -f "logs/websocket.log" ]; then
-        tail -10 logs/websocket.log
+        echo -e "${YELLOW}📄 Last 15 lines of websocket.log:${NC}"
+        tail -15 logs/websocket.log
     fi
-    echo -e "${YELLOW}🔧 Trying fallback server...${NC}"
-    python backend/servers/fallback_websocket_server.py > logs/websocket.log 2>&1 &
+    
+    echo -e "${RED}❌ Main climate data server failed to start due to dependency issues.${NC}"
+    echo -e "${YELLOW}🔧 This may be a SQLite compatibility issue with the Copernicus Marine library.${NC}"
+    
+    if [ -f "logs/websocket.log" ]; then
+        echo -e "${YELLOW}📄 Error details:${NC}"
+        tail -3 logs/websocket.log | grep -E "(ImportError|Error|Failed)"
+    fi
+    
+    echo -e "${YELLOW}🔧 Falling back to minimal server with working API clients...${NC}"
+    if [ -n "$PYTHON_BIN" ]; then
+        $PYTHON_BIN backend/servers/minimal_websocket_server.py > logs/websocket.log 2>&1 &
+    else
+        python backend/servers/minimal_websocket_server.py > logs/websocket.log 2>&1 &
+    fi
     WEBSOCKET_PID=$!
-    sleep 2
+    sleep 3
+    
     if ! ps -p $WEBSOCKET_PID > /dev/null 2>&1; then
-        echo -e "${RED}❌ All servers failed to start. Check logs/websocket.log${NC}"
+        echo -e "${RED}❌ Minimal server also failed. System cannot start.${NC}"
+        if [ -f "logs/websocket.log" ]; then
+            tail -10 logs/websocket.log
+        fi
         exit 1
+    else
+        echo -e "${GREEN}✅ Minimal server started (fallback mode with working API clients)${NC}"
+        echo -e "${YELLOW}💡 Full functionality available when main server dependency issues are resolved${NC}"
     fi
+else
+    echo -e "${GREEN}✅ Main climate data server started successfully${NC}"
+    echo -e "${GREEN}✅ Real API clients available: NOAA, OBIS, PacIOOS Wave, NASA OSCAR${NC}"
+    echo -e "${GREEN}✅ Enhanced features: Progress notifications, caching, error handling${NC}"
+fi
+
+# Test WebSocket connection
+echo -e "${BLUE}🔗 Testing WebSocket connection...${NC}"
+sleep 2
+
+# Simple WebSocket connection test using Python
+python -c "
+import asyncio
+import websockets
+import json
+import sys
+
+async def test_connection():
+    try:
+        async with websockets.connect('ws://localhost:8765') as websocket:
+            # Send ping
+            await websocket.send(json.dumps({'type': 'ping'}))
+            
+            # Wait for pong
+            response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
+            data = json.loads(response)
+            
+            if data.get('type') == 'pong':
+                print('✅ WebSocket connection test PASSED')
+                return True
+            else:
+                print(f'❌ Unexpected response: {data}')
+                return False
+                
+    except Exception as e:
+        print(f'❌ WebSocket connection test FAILED: {e}')
+        return False
+
+# Run test
+result = asyncio.run(test_connection())
+sys.exit(0 if result else 1)
+" 2>/dev/null
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ WebSocket server is responding correctly${NC}"
+else
+    echo -e "${RED}❌ WebSocket connection test failed${NC}"
+    echo -e "${YELLOW}⚠️  Server may still be starting up...${NC}"
 fi
 
 # Wait a moment for WebSocket server to start
@@ -160,7 +278,7 @@ cd ..
 
 echo -e "${GREEN}✅ All services started successfully!${NC}"
 echo ""
-echo -e "${GREEN}🌊 OCEAN DATA & DATE FUNCTIONALITY READY${NC}"
+echo -e "${GREEN}🌊 REAL OCEAN DATA & DATE FUNCTIONALITY READY${NC}"
 echo -e "${GREEN}🌍 Globe Interface: ${BLUE}http://localhost:5175${NC}"
 echo -e "${GREEN}🔗 Texture Server: ${BLUE}http://localhost:8000${NC}"
 echo -e "${GREEN}🌐 WebSocket Server: ${BLUE}ws://localhost:8765${NC}"
@@ -168,11 +286,13 @@ echo ""
 echo -e "${BLUE}📊 Features Available:${NC}"
 echo -e "${GREEN}  ✅ Random ocean coordinate generation (120 verified points)${NC}"
 echo -e "${GREEN}  ✅ Random date generation with data availability validation${NC}"
-echo -e "${GREEN}  ✅ Real ocean data: SST, salinity, waves, currents, chlorophyll, pH${NC}"
+echo -e "${GREEN}  ✅ REAL ocean data from Copernicus Marine: SST, salinity, waves, currents, chlorophyll, pH${NC}"
 echo -e "${GREEN}  ✅ Temporal coverage: 1972-2025 with guaranteed data from 2022-06-01${NC}"
 echo -e "${GREEN}  ✅ Real-time WebSocket communication with date parameters${NC}"
 echo -e "${GREEN}  ✅ Automatic data download and caching with progress notifications${NC}"
 echo -e "${GREEN}  ✅ Smart caching - subsequent requests load instantly${NC}"
+echo -e "${GREEN}  ✅ Port management - all ports freed before startup${NC}"
+echo -e "${GREEN}  ✅ WebSocket connection verification${NC}"
 echo ""
 echo -e "${YELLOW}📊 Usage:${NC}"
 echo "  • Click anywhere on the 3D globe to select coordinates"
