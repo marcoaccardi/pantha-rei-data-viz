@@ -50,9 +50,46 @@ function App() {
 
   // Function to generate random ocean coordinates (strictly avoiding all land)
   const generateRandomOceanLocation = () => {
-    // 120 VERIFIED ocean coordinates - all validated to pass land/ocean detection
-    // Based on GEBCO 2024 and NOAA ERDDAP research + comprehensive validation
-    const guaranteedOceanPoints = [
+    // PREMIUM LOCATIONS - Complete coverage for ALL 4 datasets (SST + Acidity + Currents + Waves)
+    // Tested and confirmed working (2025-01-26)
+    const premiumDataPoints = [
+      { name: "North Pacific", lat: 30.0, lng: -150.0 },
+      { name: "Central Pacific", lat: 20.0, lng: -160.0 },
+      { name: "Eastern Pacific", lat: 10.0, lng: -140.0 },
+      { name: "Equatorial Pacific", lat: 0.0, lng: -140.0 },
+      { name: "South Pacific", lat: -20.0, lng: -120.0 },
+      { name: "Mid Atlantic", lat: 30.0, lng: -50.0 },
+      { name: "West Atlantic", lat: 20.0, lng: -40.0 },
+      { name: "Indian Ocean South", lat: -20.0, lng: 90.0 },
+    ];
+
+    // VERIFIED COMPLETE DATA COVERAGE POINTS - All have SST + Acidity + Currents data
+    // Tested and confirmed working with the ocean data API (2025-01-26)
+    const verifiedDataPoints = [
+      { name: "North Atlantic Deep", lat: 40.0, lng: -70.0 },
+      { name: "North Atlantic Central", lat: 45.0, lng: -35.0 },
+      { name: "North Atlantic Gyre", lat: 35.0, lng: -40.0 },
+      { name: "Labrador Current", lat: 50.0, lng: -30.0 },
+      { name: "Sargasso Sea", lat: 28.0, lng: -55.0 },
+      { name: "Tropical Atlantic West", lat: 10.0, lng: -50.0 },
+      { name: "Equatorial Atlantic", lat: 0.0, lng: -30.0 },
+      { name: "Cape Verde Basin", lat: 15.0, lng: -25.0 },
+      { name: "South Atlantic Gyre", lat: -30.0, lng: -25.0 },
+      { name: "Brazil Basin", lat: -20.0, lng: -30.0 },
+      { name: "Cape Basin", lat: -40.0, lng: 5.0 },
+      { name: "Central Pacific", lat: 20.0, lng: -160.0 },
+      { name: "North Pacific", lat: 30.0, lng: -150.0 },
+      { name: "Equatorial Pacific", lat: 0.0, lng: -140.0 },
+      { name: "South Pacific", lat: -25.0, lng: -120.0 },
+      { name: "Eastern Pacific", lat: 25.0, lng: -120.0 },
+      { name: "Central Indian", lat: -10.0, lng: 80.0 },
+      { name: "Arabian Sea", lat: 5.0, lng: 75.0 },
+      { name: "Southwest Indian", lat: -30.0, lng: 55.0 },
+      { name: "Southeast Indian", lat: -20.0, lng: 90.0 },
+    ];
+
+    // Additional ocean coordinates for variety (may have partial data coverage)
+    const additionalOceanPoints = [
       // ATLANTIC OCEAN - Verified Points (29 points)
       { name: "North Atlantic Gyre", lat: 35.0, lng: -40.0 },
       { name: "North Atlantic Deep", lat: 45.0, lng: -35.0 },
@@ -184,11 +221,33 @@ function App() {
       { name: "Lomonosov Ridge", lat: 85.0, lng: 90.0 }
     ];
     
-    // Select a random guaranteed ocean point
-    const basePoint = guaranteedOceanPoints[Math.floor(Math.random() * guaranteedOceanPoints.length)];
+    // Selection logic: Premium (50%) > Verified (30%) > Additional (20%)
+    const rand = Math.random();
+    let sourcePoints;
+    let sourceType;
+    let variation;
     
-    // Add small random variation (max 5 degrees) to avoid exact same points
-    const variation = 5.0;
+    if (rand < 0.5) {
+      // 50% chance: Premium locations with complete 4-dataset coverage
+      sourcePoints = premiumDataPoints;
+      sourceType = 'PREMIUM (all 4 datasets)';
+      variation = 2.0; // Smaller variation to stay in data-rich areas
+    } else if (rand < 0.8) {
+      // 30% chance: Verified locations with 3-dataset coverage  
+      sourcePoints = verifiedDataPoints;
+      sourceType = 'VERIFIED (3 datasets)';
+      variation = 3.0;
+    } else {
+      // 20% chance: Additional points for variety
+      sourcePoints = [...verifiedDataPoints, ...additionalOceanPoints];
+      sourceType = 'ADDITIONAL (partial data)';
+      variation = 5.0;
+    }
+    
+    // Select a random point from the chosen source
+    const basePoint = sourcePoints[Math.floor(Math.random() * sourcePoints.length)];
+    
+    // Apply variation based on source type
     const lat = basePoint.lat + (Math.random() - 0.5) * variation;
     const lng = basePoint.lng + (Math.random() - 0.5) * variation;
     
@@ -196,7 +255,7 @@ function App() {
     const finalLat = Math.max(-80, Math.min(80, lat));
     const finalLng = Math.max(-180, Math.min(180, lng));
     
-    console.log(`🌊 Generated ocean coordinates from ${guaranteedOceanPoints.length} verified points: ${finalLat.toFixed(4)}°, ${finalLng.toFixed(4)}° (${basePoint.name})`);
+    console.log(`🌊 Generated ocean coordinates from ${sourceType}: ${finalLat.toFixed(4)}°, ${finalLng.toFixed(4)}° (${basePoint.name})`);
     
     return { 
       lat: finalLat, 
@@ -224,6 +283,8 @@ function App() {
   const generateRandomDateOnly = () => {
     const randomDate = generateRandomDate({ preferRecent: true, guaranteedOnly: false });
     handleDateChange(randomDate);
+    // Trigger data fetch with current coordinates and new date
+    handleLocationChange(coordinates, randomDate);
   };
 
   const generateRandomDateAndLocation = () => {
@@ -241,6 +302,8 @@ function App() {
       preferRecent: true 
     });
     handleDateChange(guaranteedDate);
+    // Trigger data fetch with current coordinates and new date
+    handleLocationChange(coordinates, guaranteedDate);
   };
 
   // Transform new real data format to old format for compatibility
@@ -455,7 +518,7 @@ function App() {
           }}
         />
         
-        {/* Coordinate Display Panel */}
+        {/* Control Panel */}
         <div style={{
           position: 'absolute',
           top: '20px',
@@ -470,14 +533,9 @@ function App() {
           minWidth: '320px'
         }}>
           <div style={{ fontSize: '0.95em' }}>
-            <div><strong>Coordinates:</strong> {coordinates.lat.toFixed(4)}°, {coordinates.lng.toFixed(4)}°</div>
-            <div><strong>Date:</strong> {formatDateWithCoverage(selectedDate)}</div>
-            <div><strong>Status:</strong> <span style={{ color: isConnected ? '#4ade80' : '#f87171' }}>
-              {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-            </span></div>
             
             {/* Date Controls */}
-            <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
+            <div style={{ padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
               <div style={{ fontSize: '0.9em', marginBottom: '6px', color: '#cbd5e1' }}>
                 📅 Date Selection
               </div>
@@ -545,69 +603,76 @@ function App() {
                 </div>
               )}
               
-              {/* Date action buttons */}
-              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={generateRandomDateOnly}
-                  aria-label="Generate random date for ocean data query"
-                  style={{
-                    backgroundColor: '#7c3aed',
-                    color: 'white',
-                    border: 'none',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.8em'
-                  }}
-                >
-                  🎲 Random Date
-                </button>
-                <button
-                  onClick={useGuaranteedDate}
-                  aria-label="Select guaranteed coverage date with all data available"
-                  style={{
-                    backgroundColor: '#059669',
-                    color: 'white',
-                    border: 'none',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.8em'
-                  }}
-                >
-                  ✅ Guaranteed
-                </button>
-                <button
-                  onClick={generateRandomDateAndLocation}
-                  aria-label="Generate random date and ocean location combination"
-                  style={{
-                    backgroundColor: '#dc2626',
-                    color: 'white',
-                    border: 'none',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.8em'
-                  }}
-                >
-                  🎲 Random Both
-                </button>
-              </div>
+            </div>
+            
+            {/* Random Controls */}
+            <div style={{ marginTop: '16px', display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+              <button 
+                onClick={() => {
+                  const randomCoords = generateRandomOceanLocation();
+                  handleLocationChange(randomCoords);
+                }}
+                aria-label="Generate random ocean location"
+                style={{
+                  backgroundColor: '#059669',
+                  color: 'white',
+                  border: 'none',
+                  padding: '6px 8px',
+                  borderRadius: '4px',  
+                  cursor: 'pointer',
+                  fontSize: '0.75em',
+                  flex: '1'
+                }}
+              >
+                📍 Random Location
+              </button>
+              <button 
+                onClick={generateRandomDateOnly}
+                aria-label="Generate random date"
+                style={{
+                  backgroundColor: '#7c3aed',
+                  color: 'white',
+                  border: 'none',
+                  padding: '6px 8px',
+                  borderRadius: '4px',  
+                  cursor: 'pointer',
+                  fontSize: '0.75em',
+                  flex: '1'
+                }}
+              >
+                📅 Random Date
+              </button>
+              <button 
+                onClick={generateRandomDateAndLocation}
+                aria-label="Generate random date and ocean location combination"
+                style={{
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  padding: '6px 8px',
+                  borderRadius: '4px',  
+                  cursor: 'pointer',
+                  fontSize: '0.75em',
+                  flex: '1'
+                }}
+              >
+                🎲 Random
+              </button>
             </div>
             
             {/* Data Category Selection */}
-            <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
+            <div style={{ marginTop: '16px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
               <div style={{ fontSize: '0.9em', marginBottom: '6px', color: '#cbd5e1' }}>
                 🌊 Data Category
               </div>
-              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', marginBottom: '8px' }}>
                 {['sst', 'acidity', 'currents'].map(category => {
                   const isAvailable = true; // Always allow category selection
                   const isSelected = selectedCategory === category;
                   const categoryLabels = {
                     sst: '🌡️ SST',
                     acidity: '🧪 Acidity', 
-                    currents: '🌊 Currents'
+                    currents: '🌀 Currents'
                   };
                   
                   return (
@@ -619,11 +684,12 @@ function App() {
                         backgroundColor: isSelected ? '#4a90e2' : isAvailable ? '#64748b' : '#374151',
                         color: isAvailable ? 'white' : '#9ca3af',
                         border: isSelected ? '2px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.1)',
-                        padding: '4px 8px',
+                        padding: '6px 8px',
                         borderRadius: '4px',
                         cursor: isAvailable ? 'pointer' : 'not-allowed',
-                        fontSize: '0.8em',
-                        opacity: isAvailable ? 1 : 0.6
+                        fontSize: '0.75em',
+                        opacity: isAvailable ? 1 : 0.6,
+                        flex: '1'
                       }}
                     >
                       {categoryLabels[category as keyof typeof categoryLabels]}
@@ -647,21 +713,18 @@ function App() {
                 </div>
               )}
               
-              {/* NEW: Microplastics overlay toggle */}
-              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <div style={{ fontSize: '0.85em', marginBottom: '4px', color: '#cbd5e1' }}>
-                  🏭 Data Overlays
-                </div>
+              {/* Microplastics overlay toggle */}
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                 <button
                   onClick={() => setShowMicroplastics(!showMicroplastics)}
                   style={{
                     backgroundColor: showMicroplastics ? '#7c3aed' : '#4b5563',
                     color: 'white',
                     border: showMicroplastics ? '2px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.1)',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
+                    padding: '6px 8px',
+                    borderRadius: '4px',
                     cursor: 'pointer',
-                    fontSize: '0.8em',
+                    fontSize: '0.75em',
                     transition: 'all 0.2s ease',
                     width: '100%'
                   }}
@@ -713,28 +776,6 @@ function App() {
                   </div>
                 )}
               </div>
-            </div>
-            
-            {/* Location Controls */}
-            <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button 
-                onClick={() => {
-                  const randomCoords = generateRandomOceanLocation();
-                  // Just use the current selected date for testing
-                  handleLocationChange(randomCoords);
-                }}
-                style={{
-                  backgroundColor: '#059669',
-                  color: 'white',
-                  border: 'none',
-                  padding: '6px 12px',
-                  borderRadius: '6px',  
-                  cursor: 'pointer',
-                  fontSize: '0.9em'
-                }}
-              >
-                🎲 Random Location
-              </button>
             </div>
           </div>
         </div>

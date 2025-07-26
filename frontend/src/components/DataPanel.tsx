@@ -9,6 +9,51 @@ interface DataPanelProps {
 }
 
 const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
+  const getFormattedLabel = (parameter: string, longName?: string): string => {
+    const labelMap: Record<string, string> = {
+      // SST parameters
+      'sst': 'Sea Surface Temperature',
+      'analysed_sst': 'Sea Surface Temperature',
+      'ice': 'Sea ice concentration',
+      'anom': 'Temperature anomaly',
+      'err': 'Analysis error',
+      
+      // Acidity parameters
+      'ph': 'Acidity pH',
+      'dissic': 'Dissolved inorganic carbon concentration',
+      'dic': 'Dissolved inorganic carbon',
+      'talk': 'Total alkalinity',
+      'o2': 'Dissolved oxygen',
+      'no3': 'Nitrate concentration',
+      'po4': 'Phosphate concentration',
+      'si': 'Silicate concentration',
+      
+      // Currents parameters
+      'uo': 'Eastward velocity',
+      'vo': 'Northward velocity',
+      'speed': 'Current speed',
+      'direction': 'Current direction',
+      'thetao': 'Sea water potential temperature',
+      'so': 'Sea water salinity',
+      
+      // Waves parameters
+      'VHM0': 'Wave height',
+      'VMDR': 'Mean wave direction',
+      'VTPK': 'Peak wave period',
+      'MWD': 'Mean wave direction',
+      'PP1D': 'Peak wave period',
+      'VTM10': 'Mean wave period',
+      
+      // Microplastics parameters
+      'microplastics_concentration': 'Microplastics concentration',
+      'confidence': 'Confidence level',
+      'data_source': 'Data source',
+      'concentration_class': 'Concentration class'
+    };
+    
+    return labelMap[parameter] || longName || parameter;
+  };
+
   const renderValue = (value: OceanDataValue, parameter: string): JSX.Element => {
     if (!value.valid || value.value === null) {
       return <span style={{ color: '#6b7280' }}>No data</span>;
@@ -25,6 +70,27 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       );
     }
 
+    // Special formatting for ice concentration (convert to percentage)
+    if (parameter === 'ice') {
+      if (numValue === 0 || isNaN(numValue)) {
+        return <span style={{ color: '#6b7280' }}>No data</span>;
+      }
+      return (
+        <span>
+          {(numValue * 100).toFixed(1)}%
+        </span>
+      );
+    }
+
+    // Special formatting for temperature (ensure Celsius)
+    if (parameter === 'sst' || parameter === 'analysed_sst') {
+      return (
+        <span style={{ color: classifyMeasurement(parameter, numValue).color }}>
+          {numValue.toFixed(2)} Celsius
+        </span>
+      );
+    }
+
     // Apply classification coloring for certain parameters
     const classification = classifyMeasurement(parameter, numValue);
     
@@ -37,13 +103,23 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
 
   const renderDataset = (datasetName: string, dataset: OceanPointData | { error: string }) => {
     if ('error' in dataset) {
+      const sections: Record<string, { title: string; icon: string }> = {
+        sst: { title: 'Temperature', icon: '🌡️' },
+        currents: { title: 'Currents', icon: '🌀' },
+        waves: { title: 'Waves', icon: '≋' },
+        acidity: { title: 'Ocean Chemistry', icon: '🧪' },
+        microplastics: { title: 'Microplastics', icon: '🏭' }
+      };
+      
+      const section = sections[datasetName] || { title: datasetName.toUpperCase(), icon: '📊' };
+      
       return (
         <div key={datasetName} style={{ marginBottom: '20px' }}>
-          <h4 style={{ color: '#ef4444', marginBottom: '8px' }}>
-            {datasetName.toUpperCase()} - Error
+          <h4 style={{ color: '#6b7280', marginBottom: '8px' }}>
+            {section.icon} {section.title}
           </h4>
-          <div style={{ color: '#f87171', fontSize: '0.9em' }}>
-            {dataset.error}
+          <div style={{ color: '#9ca3af', fontSize: '0.9em', fontStyle: 'italic' }}>
+            Data not available
           </div>
         </div>
       );
@@ -51,21 +127,21 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
 
     const data = dataset as OceanPointData;
     
-    // Define sections and their variables
+    // Define sections and their variables with improved organization
     const sections: Record<string, { title: string; icon: string; variables: string[] }> = {
       sst: {
-        title: 'Sea Surface Temperature',
+        title: 'Temperature',
         icon: '🌡️',
-        variables: ['sst', 'anom', 'err', 'ice']
+        variables: ['sst', 'ice']
       },
       currents: {
-        title: 'Ocean Currents',
-        icon: '🌊',
+        title: 'Currents',
+        icon: '🌀',
         variables: ['uo', 'vo', 'speed', 'direction', 'thetao', 'so']
       },
       waves: {
-        title: 'Ocean Waves',
-        icon: '🌊',
+        title: 'Waves',
+        icon: '≋',
         variables: ['VHM0', 'VMDR', 'VTPK', 'MWD', 'PP1D', 'VTM10']
       },
       acidity: {
@@ -122,17 +198,27 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
             
             return (
               <div key={varName} style={{ 
-                marginBottom: '8px',
+                marginBottom: '6px',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '4px 0',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+                alignItems: 'flex-start',
+                padding: '2px 0',
+                gap: '8px'
               }}>
-                <span style={{ color: '#9ca3af' }}>
-                  {varData.long_name || varName}:
+                <span style={{ 
+                  color: '#d1d5db', 
+                  fontSize: '0.9em',
+                  lineHeight: '1.3',
+                  minWidth: '0',
+                  flexShrink: 0
+                }}>
+                  {getFormattedLabel(varName, varData.long_name)}:
                 </span>
-                <span style={{ fontWeight: '500' }}>
+                <span style={{ 
+                  fontWeight: '500', 
+                  textAlign: 'right',
+                  lineHeight: '1.3'
+                }}>
                   {renderValue(varData, varName)}
                 </span>
               </div>

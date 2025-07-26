@@ -85,7 +85,7 @@ export async function fetchMultiPointData(
     return response.json();
   } catch (error) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       // Fallback to SST only on timeout
       console.warn('Multi-dataset request timed out, falling back to SST only');
       const fallbackParams = new URLSearchParams({
