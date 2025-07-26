@@ -591,25 +591,29 @@ class DataExtractor:
             return None
         
         if date_str is None:
-            # Return the most recent file
+            # Return the most recent valid file
             files_with_dates = []
             for f in files:
                 file_date = self._extract_date_from_filename(f.name)
-                if file_date:
+                if file_date and self._validate_dataset_file(f):
                     files_with_dates.append((file_date, f))
             
             if files_with_dates:
                 files_with_dates.sort(key=lambda x: x[0], reverse=True)
                 return files_with_dates[0][1]
             else:
-                return files[0]  # Fallback to first file
+                # Fallback: find any valid file
+                for f in files:
+                    if self._validate_dataset_file(f):
+                        return f
+                return None  # No valid files found
         
         else:
             # Find file matching the date or nearest available
             files_with_dates = []
             for f in files:
                 file_date = self._extract_date_from_filename(f.name)
-                if file_date:
+                if file_date and self._validate_dataset_file(f):
                     if file_date == date_str:
                         # Exact match found
                         return f
@@ -637,6 +641,29 @@ class DataExtractor:
                     return files_with_dates[0][1]
             
             return None
+    
+    def _validate_dataset_file(self, file_path: Path) -> bool:
+        """Validate that a dataset file has proper coordinates and variables."""
+        try:
+            with xr.open_dataset(file_path) as ds:
+                # Check that file has coordinates and variables
+                if len(ds.coords) == 0 or len(ds.data_vars) == 0:
+                    logger.warning(f"Corrupted file detected (no coords/vars): {file_path.name}")
+                    return False
+                
+                # Check for required coordinates
+                has_lat = any('lat' in coord.lower() for coord in ds.coords)
+                has_lon = any('lon' in coord.lower() for coord in ds.coords)
+                
+                if not (has_lat and has_lon):
+                    logger.warning(f"File missing lat/lon coordinates: {file_path.name}")
+                    return False
+                
+                return True
+                
+        except Exception as e:
+            logger.warning(f"Error validating file {file_path.name}: {e}")
+            return False
 
     async def extract_multi_point_data(self, datasets: List[str], lat: float, lon: float, date_str: Optional[str] = None) -> MultiDatasetResponse:
         """Extract data from multiple datasets at a single point."""
