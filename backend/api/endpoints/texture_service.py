@@ -102,9 +102,18 @@ class TextureService:
         # Strategy 1: Exact match (preferred date and resolution)
         if date and date in available and resolution in available[date]:
             date_str = date.replace('-', '')  # Convert to YYYYMMDD
-            texture_file = category_path / f"{date[:4]}" / f"{category}_texture_{date_str}_{resolution}.png"
+            year = date[:4]
+            
+            # Try with year subdirectory first
+            texture_file = category_path / year / f"{category}_texture_{date_str}_{resolution}.png"
             if texture_file.exists():
-                logger.info(f"Found exact match: {texture_file}")
+                logger.info(f"Found exact match with year dir: {texture_file}")
+                return texture_file
+                
+            # Try without year subdirectory
+            texture_file = category_path / f"{category}_texture_{date_str}_{resolution}.png"
+            if texture_file.exists():
+                logger.info(f"Found exact match without year dir: {texture_file}")
                 return texture_file
         
         # Strategy 2: Same date, different resolution
@@ -112,27 +121,54 @@ class TextureService:
             for alt_resolution in self.supported_resolutions:
                 if alt_resolution in available[date]:
                     date_str = date.replace('-', '')  # Convert to YYYYMMDD
-                    texture_file = category_path / f"{date[:4]}" / f"{category}_texture_{date_str}_{alt_resolution}.png"
+                    year = date[:4]
+                    
+                    # Try with year subdirectory
+                    texture_file = category_path / year / f"{category}_texture_{date_str}_{alt_resolution}.png"
                     if texture_file.exists():
-                        logger.info(f"Found same date, different resolution: {texture_file}")
+                        logger.info(f"Found same date, different resolution with year dir: {texture_file}")
+                        return texture_file
+                        
+                    # Try without year subdirectory
+                    texture_file = category_path / f"{category}_texture_{date_str}_{alt_resolution}.png"
+                    if texture_file.exists():
+                        logger.info(f"Found same date, different resolution without year dir: {texture_file}")
                         return texture_file
         
         # Strategy 3: Different date, same resolution
         for alt_date in sorted(available.keys(), reverse=True):  # Most recent first
             if resolution in available[alt_date]:
                 date_str = alt_date.replace('-', '')  # Convert to YYYYMMDD
-                texture_file = category_path / f"{alt_date[:4]}" / f"{category}_texture_{date_str}_{resolution}.png"
+                year = alt_date[:4]
+                
+                # Try with year subdirectory
+                texture_file = category_path / year / f"{category}_texture_{date_str}_{resolution}.png"
                 if texture_file.exists():
-                    logger.info(f"Found different date, same resolution: {texture_file}")
+                    logger.info(f"Found different date, same resolution with year dir: {texture_file}")
+                    return texture_file
+                    
+                # Try without year subdirectory
+                texture_file = category_path / f"{category}_texture_{date_str}_{resolution}.png"
+                if texture_file.exists():
+                    logger.info(f"Found different date, same resolution without year dir: {texture_file}")
                     return texture_file
         
         # Strategy 4: Any available texture for this category
         for alt_date in sorted(available.keys(), reverse=True):  # Most recent first
             for alt_resolution in available[alt_date]:
                 date_str = alt_date.replace('-', '')  # Convert to YYYYMMDD
-                texture_file = category_path / f"{alt_date[:4]}" / f"{category}_texture_{date_str}_{alt_resolution}.png"
+                year = alt_date[:4]
+                
+                # Try with year subdirectory
+                texture_file = category_path / year / f"{category}_texture_{date_str}_{alt_resolution}.png"
                 if texture_file.exists():
-                    logger.info(f"Found fallback texture: {texture_file}")
+                    logger.info(f"Found fallback texture with year dir: {texture_file}")
+                    return texture_file
+                    
+                # Try without year subdirectory
+                texture_file = category_path / f"{category}_texture_{date_str}_{alt_resolution}.png"
+                if texture_file.exists():
+                    logger.info(f"Found fallback texture without year dir: {texture_file}")
                     return texture_file
         
         logger.warning(f"No texture found for category: {category}")
@@ -204,9 +240,11 @@ class TextureService:
         # Get metadata for response headers
         metadata = self.get_texture_metadata(texture_path)
         
-        # Prepare response headers
+        # Prepare response headers - DISABLE CACHING for development
         headers = {
-            "Cache-Control": "public, max-age=3600",  # Cache for 1 hour
+            "Cache-Control": "no-cache, no-store, must-revalidate",  # Disable caching
+            "Pragma": "no-cache",
+            "Expires": "0",
             "X-Texture-Category": metadata["category"],
             "X-Texture-Date": metadata["date"],
             "X-Texture-Resolution": metadata["resolution"]

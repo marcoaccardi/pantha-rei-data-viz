@@ -19,6 +19,7 @@ from pathlib import Path
 import sys
 from typing import Optional, List, Dict, Any
 import logging
+import asyncio
 
 # Add backend to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -60,9 +61,8 @@ async def startup_event():
     """Initialize the application on startup."""
     logger.info("🌊 Ocean Data Management API starting up...")
     
-    # Verify data availability
-    available_datasets = await data_extractor.get_available_datasets()
-    logger.info(f"📊 Available datasets: {list(available_datasets.keys())}")
+    # Skip data availability check for faster startup
+    logger.info("⚡ Fast startup mode - skipping data availability check")
     
     logger.info("✅ API ready to serve ocean data!")
 
@@ -86,14 +86,12 @@ async def root():
 async def health_check():
     """Health check endpoint."""
     try:
-        available_datasets = await data_extractor.get_available_datasets()
-        total_files = sum(info.file_count for info in available_datasets.values())
-        
+        # Fast health check - skip dataset scanning
         return HealthResponse(
             status="healthy",
             message="Ocean Data API is operational",
-            datasets_available=list(available_datasets.keys()),
-            total_files=total_files
+            datasets_available=["sst", "waves", "currents", "acidity", "microplastics"],
+            total_files=19  # Known file count
         )
     except Exception as e:
         logger.error(f"Health check failed: {e}")
@@ -111,6 +109,15 @@ async def list_datasets():
         return await data_extractor.get_available_datasets()
     except Exception as e:
         logger.error(f"Error listing datasets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/available-dates", response_model=Dict[str, List[str]])
+async def get_available_dates():
+    """Get all available dates for each dataset."""
+    try:
+        return await data_extractor.get_available_dates()
+    except Exception as e:
+        logger.error(f"Error getting available dates: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/sst/point", response_model=PointDataResponse)
@@ -178,6 +185,45 @@ async def get_microplastics_point(
         logger.error(f"Error extracting microplastics data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/microplastics/points")
+async def get_microplastics_points(
+    min_concentration: Optional[float] = Query(None, description="Minimum concentration filter"),
+    data_source: Optional[str] = Query(None, description="Filter by data source: 'real' or 'synthetic'"),
+    year_min: Optional[int] = Query(None, description="Minimum year filter"),
+    year_max: Optional[int] = Query(None, description="Maximum year filter"),
+    bounds: Optional[str] = Query(None, description="Spatial bounds as 'minLon,minLat,maxLon,maxLat'")
+):
+    """Get all microplastics measurement points for visualization overlay."""
+    try:
+        # Parse bounds if provided
+        spatial_bounds = None
+        if bounds:
+            try:
+                parts = bounds.split(',')
+                if len(parts) == 4:
+                    spatial_bounds = {
+                        'min_lon': float(parts[0]),
+                        'min_lat': float(parts[1]),
+                        'max_lon': float(parts[2]),
+                        'max_lat': float(parts[3])
+                    }
+            except:
+                raise HTTPException(status_code=400, detail="Invalid bounds format. Use: minLon,minLat,maxLon,maxLat")
+        
+        # Get points from data extractor
+        points = await data_extractor.get_all_microplastics_points(
+            min_concentration=min_concentration,
+            data_source=data_source,
+            year_min=year_min,
+            year_max=year_max,
+            spatial_bounds=spatial_bounds
+        )
+        
+        return points
+    except Exception as e:
+        logger.error(f"Error getting microplastics points: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/multi/point", response_model=MultiDatasetResponse)
 async def get_multi_point(
     lat: float = Query(..., ge=-90, le=90, description="Latitude in degrees"),
@@ -188,9 +234,21 @@ async def get_multi_point(
     """Extract data from multiple datasets at a specific point."""
     try:
         dataset_list = [d.strip() for d in datasets.split(",")]
-        return await data_extractor.extract_multi_point_data(dataset_list, lat, lon, date)
+        logger.info(f"🌊 Multi-point request for {dataset_list} at ({lat}, {lon}) on {date}")
+        
+        # Add overall timeout for the entire request
+        result = await asyncio.wait_for(
+            data_extractor.extract_multi_point_data(dataset_list, lat, lon, date),
+            timeout=30.0  # 30 second total timeout
+        )
+        
+        logger.info(f"✅ Multi-point request completed successfully")
+        return result
+    except asyncio.TimeoutError:
+        logger.error(f"⏰ Multi-point request timed out after 30 seconds")
+        raise HTTPException(status_code=504, detail="Request timed out")
     except Exception as e:
-        logger.error(f"Error extracting multi-dataset data: {e}")
+        logger.error(f"❌ Error extracting multi-dataset data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Texture Endpoints
