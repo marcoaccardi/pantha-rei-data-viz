@@ -275,25 +275,30 @@ class TextureGenerator:
         
         if np.any(valid_mask):
             # Create interpolator using RegularGridInterpolator
-            # Use nearest-neighbor to preserve data values and avoid NaN spread from linear interpolation
+            # CRITICAL FIX: Use linear interpolation with proper coordinate ordering
+            # The coordinate order must match the data array dimensions: (lat, lon)
             interpolator = RegularGridInterpolator(
                 (lat, lon), data, 
-                method='nearest', 
+                method='linear',  # Use linear for smoother interpolation
                 bounds_error=False, 
                 fill_value=np.nan
             )
             
-            # Create target coordinate grids
+            # Create target coordinate grids - IMPORTANT: Use exact SST grid alignment
             target_lon_grid, target_lat_grid = np.meshgrid(target_lon, target_lat)
             
-            # Only interpolate within the source data coverage area
-            coverage_mask = ((target_lat_grid >= lat_min) & (target_lat_grid <= lat_max) &
-                           (target_lon_grid >= lon_min) & (target_lon_grid <= lon_max))
+            # Only interpolate within the source data coverage area with buffer
+            # Add small buffer to avoid edge effects
+            lat_buffer = 0.1
+            lon_buffer = 0.1
+            coverage_mask = ((target_lat_grid >= (lat_min + lat_buffer)) & (target_lat_grid <= (lat_max - lat_buffer)) &
+                           (target_lon_grid >= (lon_min + lon_buffer)) & (target_lon_grid <= (lon_max - lon_buffer)))
             
-            # Flatten grids for interpolation
+            # CRITICAL FIX: Ensure coordinate point order matches interpolator expectation
+            # RegularGridInterpolator expects points as (lat, lon) to match the (lat, lon) coordinate order
             target_points = np.column_stack([
                 target_lat_grid[coverage_mask].ravel(),
-                target_lon_grid[coverage_mask].ravel()
+                target_lon_grid[coverage_mask].ravel()  
             ])
             
             # Interpolate data
@@ -401,6 +406,137 @@ class TextureGenerator:
             self.logger.error(f"Failed to save texture {output_path}: {e}")
             return False
             
+    def resample_to_sst_grid(self, data: np.ndarray, source_lon: np.ndarray, source_lat: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Resample data to high-resolution SST-aligned coordinate grid (720x1440 with 0.25° resolution).
+        This ensures all datasets have identical coordinate systems for proper 3D globe alignment
+        while maintaining high image quality.
+        
+        Args:
+            data: Source data array (lat, lon)
+            source_lon: Source longitude coordinates
+            source_lat: Source latitude coordinates
+            
+        Returns:
+            Tuple of (resampled_data, target_lon, target_lat)
+        """
+        from scipy.interpolate import RegularGridInterpolator
+        
+        # Define high-resolution target grid with SST-aligned coordinate system
+        # Use 0.25° resolution (4x higher than original SST) while maintaining half-degree alignment
+        target_lat = np.linspace(-89.625, 89.625, 720)  # High-res latitude grid with half-degree alignment
+        target_lon = np.linspace(-179.625, 179.625, 1440)  # High-res longitude grid with half-degree alignment
+        
+        self.logger.info(f"Resampling from {data.shape} to high-resolution SST-aligned grid (720, 1440)")
+        self.logger.info(f"Source: lat {source_lat.min():.1f}°-{source_lat.max():.1f}°, lon {source_lon.min():.1f}°-{source_lon.max():.1f}°")
+        self.logger.info(f"Target: lat -89.6°-89.6°, lon -179.6°-179.6° (0.25° resolution)")
+        
+        # Create interpolator with source data
+        interpolator = RegularGridInterpolator(
+            (source_lat, source_lon), data,
+            method='linear',
+            bounds_error=False,
+            fill_value=np.nan
+        )
+        
+        # Create target coordinate grids
+        target_lon_grid, target_lat_grid = np.meshgrid(target_lon, target_lat)
+        
+        # Prepare interpolation points
+        target_points = np.column_stack([
+            target_lat_grid.ravel(),
+            target_lon_grid.ravel()
+        ])
+        
+        # Interpolate data to target grid
+        resampled_flat = interpolator(target_points)
+        resampled_data = resampled_flat.reshape(720, 1440)
+        
+        # Count valid pixels
+        source_valid = np.sum(~np.isnan(data))
+        target_valid = np.sum(~np.isnan(resampled_data))
+        self.logger.info(f"Resampling: {source_valid} → {target_valid} valid pixels")
+        
+        return resampled_data, target_lon, target_lat
+        
+    def resample_to_ultra_resolution(self, data: np.ndarray, source_lon: np.ndarray, source_lat: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Resample data to ultra-high resolution grid (4320x2041 pixels).
+        This provides maximum detail for all datasets while maintaining coordinate alignment.
+        
+        Args:
+            data: Source data array (lat, lon)
+            source_lon: Source longitude coordinates
+            source_lat: Source latitude coordinates
+            
+        Returns:
+            Tuple of (resampled_data, target_lon, target_lat)
+        """
+        from scipy.interpolate import RegularGridInterpolator
+        
+        # Define ultra-high resolution target grid
+        # 4320x2041 provides ~0.083° resolution (matching currents native resolution)
+        target_lat = np.linspace(-89.958, 89.958, 2041)  # Ultra-high res latitude
+        target_lon = np.linspace(-179.958, 179.958, 4320)  # Ultra-high res longitude
+        
+        self.logger.info(f"Ultra-resolution resampling: {data.shape} → (2041, 4320)")
+        self.logger.info(f"Source: lat {source_lat.min():.1f}°-{source_lat.max():.1f}°, lon {source_lon.min():.1f}°-{source_lon.max():.1f}°")
+        self.logger.info(f"Target: lat -90.0°-90.0°, lon -180.0°-180.0° (~0.083° resolution)")
+        
+        # Check if we're already at or near target resolution
+        source_pixels = data.shape[0] * data.shape[1]
+        target_pixels = 2041 * 4320
+        upsampling_ratio = target_pixels / source_pixels
+        
+        if upsampling_ratio > 100:
+            self.logger.warning(f"High upsampling ratio: {upsampling_ratio:.1f}x - quality may be limited")
+        elif upsampling_ratio < 1.1:
+            self.logger.info(f"Source data is already ultra-high resolution: {upsampling_ratio:.1f}x")
+        else:
+            self.logger.info(f"Reasonable upsampling ratio: {upsampling_ratio:.1f}x")
+        
+        # Create interpolator with optimal method based on upsampling ratio
+        if upsampling_ratio > 20:
+            # For heavy upsampling, use cubic for smoother results
+            method = 'cubic'
+            self.logger.info("Using cubic interpolation for heavy upsampling")
+        elif upsampling_ratio > 2:
+            # For moderate upsampling, use linear
+            method = 'linear'
+            self.logger.info("Using linear interpolation for moderate upsampling")
+        else:
+            # For minimal upsampling or downsampling, use linear
+            method = 'linear'
+            self.logger.info("Using linear interpolation for minimal resampling")
+            
+        interpolator = RegularGridInterpolator(
+            (source_lat, source_lon), data,
+            method=method,
+            bounds_error=False,
+            fill_value=np.nan
+        )
+        
+        # Create target coordinate grids
+        target_lon_grid, target_lat_grid = np.meshgrid(target_lon, target_lat)
+        
+        # Prepare interpolation points
+        target_points = np.column_stack([
+            target_lat_grid.ravel(),
+            target_lon_grid.ravel()
+        ])
+        
+        # Interpolate data to ultra-high resolution grid
+        self.logger.info("Performing interpolation... (this may take a moment)")
+        resampled_flat = interpolator(target_points)
+        resampled_data = resampled_flat.reshape(2041, 4320)
+        
+        # Count valid pixels
+        source_valid = np.sum(~np.isnan(data))
+        target_valid = np.sum(~np.isnan(resampled_data))
+        self.logger.info(f"Ultra-resolution result: {source_valid:,} → {target_valid:,} valid pixels")
+        
+        return resampled_data, target_lon, target_lat
+        
     def generate_filename(self, dataset: str, date_str: str, resolution: str = 'medium') -> str:
         """
         Generate standardized filename for texture.

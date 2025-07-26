@@ -135,7 +135,7 @@ class AcidityDownloader(BaseDataDownloader):
                 self.logger.info(f"Requesting subset for dataset: {self.dataset_id}")
                 copernicusmarine.subset(
                     dataset_id=self.dataset_id,
-                    variables=["ph", "dissic"],  # pH and dissolved inorganic carbon
+                    variables=["ph", "dissic", "talk", "o2", "no3", "po4", "si"],  # Full biogeochemistry suite
                     start_datetime=f"{date_str}T00:00:00",
                     end_datetime=f"{date_str}T23:59:59",
                     minimum_depth=0,
@@ -231,11 +231,13 @@ class AcidityDownloader(BaseDataDownloader):
         try:
             with xr.open_dataset(file_path) as ds:
                 # Check for required variables (at least pH or DIC)
-                required_vars = ["ph", "dissic"]
+                required_vars = ["ph", "dissic", "talk", "o2", "no3", "po4", "si"]
                 available_vars = [var for var in required_vars if var in ds.variables]
-                if not available_vars:
-                    self.logger.error(f"Missing all biogeochemistry variables: {required_vars}")
+                if len(available_vars) < 2:  # Need at least 2 variables
+                    self.logger.error(f"Missing most biogeochemistry variables. Available: {available_vars}")
                     return False
+                
+                self.logger.info(f"Found {len(available_vars)} biogeochemistry variables: {available_vars}")
                 
                 # Check for required dimensions
                 required_dims = ["longitude", "latitude", "time"]

@@ -93,13 +93,18 @@ class SSTTextureGenerator(TextureGenerator):
                 # Convert from Kelvin to Celsius if needed
                 if np.nanmean(sst_data) > 100:  # Likely in Kelvin
                     sst_data = sst_data - 273.15
+                
+                # ULTRA-HIGH RESOLUTION: Resample SST to ultra-resolution grid (4320x2041)
+                self.logger.info(f"Original SST data shape: {sst_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
+                self.logger.info(f"Using {'raw' if data_file == raw_sst_path else 'processed'} SST data")
+                
+                sst_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(sst_data, lon, lat)
+                self.logger.info(f"Ultra-resolution SST shape: {sst_data_ultra.shape}")
                     
-                # Generate texture with natural land masking
+                # Generate texture with natural land masking using ultra-resolution grid
                 colormap = self.get_scientific_colormap('temperature')
-                texture, metadata = self.data_to_texture(
-                    sst_data, lon, lat, colormap, 
-                    normalize_method='percentile',
-                    use_natural_land_mask=True
+                texture, metadata = self._create_standard_texture(
+                    sst_data_ultra, lon_ultra, lat_ultra, colormap, 'percentile', True
                 )
                 
                 # Add SST-specific metadata
@@ -108,7 +113,10 @@ class SSTTextureGenerator(TextureGenerator):
                     'variable': sst_var,
                     'units': 'degrees_celsius',
                     'date': date_str,
-                    'data_source': 'NOAA OISST'
+                    'data_source': 'NOAA OISST',
+                    'coordinate_resampling': f'Ultra-resolution resampling to 4320×2041 grid using {"raw" if data_file == raw_sst_path else "processed"} data',
+                    'source_resolution': f'{sst_data.shape[1]}×{sst_data.shape[0]}',
+                    'target_resolution': '4320×2041'
                 })
                 
                 # Save texture
@@ -128,10 +136,76 @@ class AcidityTextureGenerator(TextureGenerator):
         super().__init__(output_base_path)
         self.dataset_name = 'acidity'
         
+    def _enhance_land_masking(self, data: np.ndarray, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+        """
+        Apply enhanced land masking for high-resolution acidity data to remove coastal artifacts.
+        
+        Args:
+            data: pH data array
+            lon: Longitude coordinates
+            lat: Latitude coordinates
+            
+        Returns:
+            Enhanced masked data array
+        """
+        enhanced_data = data.copy()
+        
+        # Create coordinate grids
+        lon_grid, lat_grid = np.meshgrid(lon, lat)
+        
+        # Remove invalid pH values (should be between 6.0 and 9.0 for ocean)
+        invalid_ph = (data < 6.0) | (data > 9.0)
+        enhanced_data[invalid_ph] = np.nan
+        
+        # Enhanced coastal masking for major inland areas that may have pH data
+        # These represent inland seas, large lakes, or coastal artifacts that should be masked
+        inland_regions = [
+            # Great Lakes region (North America)
+            (-90, -75, 40, 50),
+            # Caspian Sea region
+            (45, 55, 35, 50),
+            # Aral Sea region  
+            (55, 65, 40, 50),
+            # Large inland areas in Siberia/Russia that may have artifacts
+            (60, 180, 60, 80),
+            # Sahara region artifacts (if any ocean data appears over North Africa)
+            (-10, 40, 15, 35),
+            # Australian inland (if any ocean data appears over central Australia)
+            (120, 145, -30, -15),
+            # Greenland interior (remove any artifacts over ice sheet)
+            (-45, -10, 70, 85),
+        ]
+        
+        for lon_min, lon_max, lat_min, lat_max in inland_regions:
+            mask = ((lon_grid >= lon_min) & (lon_grid <= lon_max) & 
+                   (lat_grid >= lat_min) & (lat_grid <= lat_max))
+            
+            # For these regions, be very conservative - only keep values if they're clearly oceanic
+            # (high confidence ocean areas near coastlines)
+            region_data = enhanced_data[mask]
+            if np.any(~np.isnan(region_data)):
+                # Count valid neighbors - if a pixel has few valid ocean neighbors, mask it
+                from scipy import ndimage
+                valid_mask = ~np.isnan(enhanced_data)
+                
+                # Apply morphological erosion to remove isolated coastal pixels
+                kernel = np.ones((3, 3))  # 3x3 kernel for neighbor check
+                eroded_mask = ndimage.binary_erosion(valid_mask, kernel)
+                
+                # Mask pixels in inland regions that don't have enough valid neighbors
+                inland_to_mask = mask & ~eroded_mask
+                enhanced_data[inland_to_mask] = np.nan
+        
+        pixels_removed = np.sum(~np.isnan(data)) - np.sum(~np.isnan(enhanced_data))
+        if pixels_removed > 0:
+            self.logger.info(f"Enhanced land masking removed {pixels_removed} coastal/inland artifacts")
+        
+        return enhanced_data
+        
     def process_netcdf_to_texture(self, input_path: Union[str, Path], 
                                  output_directory: Union[str, Path] = None) -> bool:
         """
-        Process acidity NetCDF file to pH texture.
+        Process acidity NetCDF file to pH texture with standardized resolution.
         
         Args:
             input_path: Path to acidity NetCDF file
@@ -170,13 +244,20 @@ class AcidityTextureGenerator(TextureGenerator):
                 # Remove time dimension if present
                 if ph_data.ndim > 2:
                     ph_data = np.squeeze(ph_data)
+                
+                # Apply additional land masking for coastal artifacts
+                # For high-resolution data, be more aggressive about masking coastal areas
+                self.logger.info(f"Original acidity data shape: {ph_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
+                ph_data = self._enhance_land_masking(ph_data, lon, lat)
+                
+                # ULTRA-HIGH RESOLUTION: Resample to ultra-resolution grid (4320x2041)
+                ph_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(ph_data, lon, lat)
+                self.logger.info(f"Ultra-resolution acidity shape: {ph_data_ultra.shape}")
                     
-                # Generate texture with pH-appropriate colormap and natural land masking
+                # Generate texture with pH-appropriate colormap using ultra-resolution grid
                 colormap = self.get_scientific_colormap('ph')
-                texture, metadata = self.data_to_texture(
-                    ph_data, lon, lat, colormap,
-                    normalize_method='custom',
-                    use_natural_land_mask=True
+                texture, metadata = self._create_standard_texture(
+                    ph_data_ultra, lon_ultra, lat_ultra, colormap, 'custom', True
                 )
                 
                 # Add acidity-specific metadata
@@ -186,7 +267,11 @@ class AcidityTextureGenerator(TextureGenerator):
                     'units': 'pH_scale',
                     'date': date_str,
                     'data_source': 'CMEMS Biogeochemistry',
-                    'ph_range': [7.0, 8.5]  # Typical ocean pH range
+                    'ph_range': [7.0, 8.5],  # Typical ocean pH range
+                    'resolution_note': 'Enhanced land masking applied for coastal accuracy',
+                    'coordinate_resampling': 'Ultra-resolution resampling to 4320×2041 grid for maximum detail',
+                    'source_resolution': f'{ph_data.shape[1]}×{ph_data.shape[0]}',
+                    'target_resolution': '4320×2041'
                 })
                 
                 # Save texture
@@ -254,22 +339,38 @@ class CurrentsTextureGenerator(TextureGenerator):
                 # Remove time dimension if present
                 if speed_data.ndim > 2:
                     speed_data = np.squeeze(speed_data)
+                
+                self.logger.info(f"Original currents data shape: {speed_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
+                
+                # ULTRA-HIGH RESOLUTION: Use currents data at native resolution or resample to ultra-grid
+                if speed_data.shape[0] == 2041 and speed_data.shape[1] == 4320:
+                    # Perfect! Data is already at ultra-resolution, use directly
+                    self.logger.info("Currents data is already at ultra-resolution (2041×4320) - using directly!")
+                    speed_data_ultra = speed_data
+                    lon_ultra = lon
+                    lat_ultra = lat
+                else:
+                    # Resample to ultra-resolution grid
+                    speed_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(speed_data, lon, lat)
+                    self.logger.info(f"Ultra-resolution currents shape: {speed_data_ultra.shape}")
                     
-                # Generate texture with speed-appropriate colormap and natural land masking
+                # Generate texture with speed-appropriate colormap using ultra-resolution grid
                 colormap = self.get_scientific_colormap('speed')
-                texture, metadata = self.data_to_texture(
-                    speed_data, lon, lat, colormap,
-                    normalize_method='percentile',
-                    use_natural_land_mask=True
+                texture, metadata = self._create_standard_texture(
+                    speed_data_ultra, lon_ultra, lat_ultra, colormap, 'percentile', True
                 )
                 
                 # Add currents-specific metadata
+                is_native_ultra = speed_data.shape[0] == 2041 and speed_data.shape[1] == 4320
                 metadata.update({
                     'dataset': 'ocean_currents',
                     'variable': 'current_speed',
                     'units': 'm/s',
                     'date': date_str,
-                    'data_source': 'CMEMS Ocean Physics'
+                    'data_source': 'CMEMS Ocean Physics',
+                    'coordinate_resampling': 'Native ultra-resolution (2041×4320) - no resampling needed!' if is_native_ultra else 'Ultra-resolution resampling to 4320×2041 grid',
+                    'source_resolution': f'{speed_data.shape[1]}×{speed_data.shape[0]}',
+                    'target_resolution': '4320×2041'
                 })
                 
                 # Save texture
