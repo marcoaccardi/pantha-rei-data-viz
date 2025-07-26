@@ -14,6 +14,7 @@ import tempfile
 import shutil
 import subprocess
 import json
+import time
 import warnings
 
 from .base_downloader import BaseDataDownloader
@@ -149,78 +150,121 @@ class WavesDownloader(BaseDataDownloader):
             self.logger.info(f"File already exists and is valid: {raw_file_path}")
             return True
         
-        try:
-            self.logger.info(f"Downloading CMEMS waves data for {target_date}")
-            
-            # Set up environment variables for copernicusmarine
-            env = {
-                "COPERNICUSMARINE_SERVICE_USERNAME": self.credentials["CMEMS_USERNAME"],
-                "COPERNICUSMARINE_SERVICE_PASSWORD": self.credentials["CMEMS_PASSWORD"]
-            }
-            
-            # Create temporary file for download
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.nc') as temp_file:
-                temp_path = Path(temp_file.name)
-            
-            # Generate download command
-            command = self._get_cmems_download_command(target_date, temp_path)
-            
-            # Execute copernicusmarine command
-            self.logger.info(f"Executing: {' '.join(command[:8])}...")  # Log partial command for security
-            
-            result = subprocess.run(
-                command,
-                env={**subprocess.os.environ, **env},
-                capture_output=True,
-                text=True,
-                timeout=self.download_config["timeout_seconds"]
-            )
-            
-            if result.returncode != 0:
-                self.logger.error(f"CMEMS download failed: {result.stderr}")
-                if temp_path.exists():
-                    temp_path.unlink()
-                return False
-            
-            # Validate downloaded file
-            if not temp_path.exists() or not self._validate_netcdf_file(temp_path):
-                self.logger.error(f"Downloaded file is invalid or missing: {temp_path}")
-                if temp_path.exists():
-                    temp_path.unlink()
-                return False
-            
-            # Move to final location
-            shutil.move(str(temp_path), str(raw_file_path))
-            
-            # Get file size for logging
-            file_size_mb = raw_file_path.stat().st_size / (1024 * 1024)
-            self.logger.info(f"Successfully downloaded {filename} ({file_size_mb:.1f} MB)")
-            
-            # Process the downloaded file
-            success = self._process_downloaded_file(raw_file_path, target_date)
-            
-            if success:
-                # Update file count and storage stats
-                current_status = self.get_status()
-                new_file_count = current_status.get("total_files", 0) + 1
-                new_storage_gb = self.get_storage_usage()
+        # Retry logic for large waves files
+        max_retries = self.download_config.get("max_retries", 3)
+        retry_delay = self.download_config.get("retry_delay_seconds", 5)
+        
+        for attempt in range(max_retries):
+            try:
+                self.logger.info(f"Downloading CMEMS waves data for {target_date} (attempt {attempt + 1}/{max_retries})")
                 
-                self.update_status(
-                    total_files=new_file_count,
-                    storage_gb=round(new_storage_gb, 3)
+                # Set up environment variables for copernicusmarine
+                env = {
+                    "COPERNICUSMARINE_SERVICE_USERNAME": self.credentials["CMEMS_USERNAME"],
+                    "COPERNICUSMARINE_SERVICE_PASSWORD": self.credentials["CMEMS_PASSWORD"]
+                }
+                
+                # Create temporary file for download
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.nc') as temp_file:
+                    temp_path = Path(temp_file.name)
+                
+                # Generate download command
+                command = self._get_cmems_download_command(target_date, temp_path)
+                
+                # Execute copernicusmarine command with extended timeout for large waves files
+                self.logger.info(f"Executing: {' '.join(command[:8])}...")  # Log partial command for security
+                
+                # Use longer timeout for waves (25MB files) - up to 10 minutes
+                waves_timeout = max(600, self.download_config["timeout_seconds"])
+                self.logger.info(f"Using extended timeout of {waves_timeout} seconds for large waves file")
+                
+                result = subprocess.run(
+                    command,
+                    env={**subprocess.os.environ, **env},
+                    capture_output=True,
+                    text=True,
+                    timeout=waves_timeout
                 )
-            
-            return success
-            
-        except subprocess.TimeoutExpired:
-            self.logger.error(f"Download timeout for {filename}")
-            return False
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"CMEMS command error downloading {filename}: {e}")
-            return False
-        except Exception as e:
-            self.logger.error(f"Unexpected error downloading {filename}: {e}")
-            return False
+                
+                if result.returncode != 0:
+                    self.logger.error(f"CMEMS download failed (attempt {attempt + 1}): {result.stderr}")
+                    if temp_path.exists():
+                        temp_path.unlink()
+                    if attempt < max_retries - 1:
+                        self.logger.info(f"Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        return False
+                
+                # Validate downloaded file
+                if not temp_path.exists() or not self._validate_netcdf_file(temp_path):
+                    self.logger.error(f"Downloaded file is invalid or missing (attempt {attempt + 1}): {temp_path}")
+                    if temp_path.exists():
+                        temp_path.unlink()
+                    if attempt < max_retries - 1:
+                        self.logger.info(f"Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        return False
+                
+                # Success - move to final location
+                shutil.move(str(temp_path), str(raw_file_path))
+                
+                # Get file size for logging
+                file_size_mb = raw_file_path.stat().st_size / (1024 * 1024)
+                self.logger.info(f"Successfully downloaded {filename} ({file_size_mb:.1f} MB)")
+                
+                # Process the downloaded file
+                success = self._process_downloaded_file(raw_file_path, target_date)
+                
+                if success:
+                    # Update file count and storage stats
+                    current_status = self.get_status()
+                    new_file_count = current_status.get("total_files", 0) + 1
+                    new_storage_gb = self.get_storage_usage()
+                    
+                    self.update_status(
+                        total_files=new_file_count,
+                        storage_gb=round(new_storage_gb, 3)
+                    )
+                
+                return success
+                
+            except subprocess.TimeoutExpired:
+                self.logger.error(f"Download timeout for {filename} (attempt {attempt + 1})")
+                if temp_path.exists():
+                    temp_path.unlink()
+                if attempt < max_retries - 1:
+                    self.logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    return False
+            except subprocess.CalledProcessError as e:
+                self.logger.error(f"CMEMS command error downloading {filename} (attempt {attempt + 1}): {e}")
+                if temp_path.exists():
+                    temp_path.unlink()
+                if attempt < max_retries - 1:
+                    self.logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    return False
+            except Exception as e:
+                self.logger.error(f"Unexpected error downloading {filename} (attempt {attempt + 1}): {e}")
+                if temp_path.exists():
+                    temp_path.unlink()
+                if attempt < max_retries - 1:
+                    self.logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    return False
+        
+        # If we get here, all retries failed
+        return False
     
     def _validate_netcdf_file(self, file_path: Path) -> bool:
         """Validate that NetCDF file is readable and contains expected wave data."""
