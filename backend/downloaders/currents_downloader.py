@@ -38,10 +38,9 @@ class CurrentsDownloader(BaseDataDownloader):
         # Processing configuration
         self.needs_coord_harmonization = self.dataset_config["processing"]["harmonize_coords"]
         
-        # Create processed data directories if needed
-        if self.needs_coord_harmonization:
-            self.harmonized_path = self.processed_data_path / "unified_coords" / "currents"
-            self.harmonized_path.mkdir(parents=True, exist_ok=True)
+        # Always create harmonized path for consistency, even if coordinates don't need conversion
+        self.harmonized_path = self.processed_data_path / "unified_coords" / "currents"
+        self.harmonized_path.mkdir(parents=True, exist_ok=True)
         
         # Load credentials directly from .env file
         env_file = self.config_path / "credentials.env"

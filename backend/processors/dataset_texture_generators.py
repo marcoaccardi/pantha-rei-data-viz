@@ -94,10 +94,21 @@ class SSTTextureGenerator(TextureGenerator):
                 if np.nanmean(sst_data) > 100:  # Likely in Kelvin
                     sst_data = sst_data - 273.15
                 
-                # ULTRA-HIGH RESOLUTION: Resample SST to ultra-resolution grid (4320x2041)
                 self.logger.info(f"Original SST data shape: {sst_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
                 self.logger.info(f"Using {'raw' if data_file == raw_sst_path else 'processed'} SST data")
                 
+                # COORDINATE VALIDATION: Ensure data dimensions match coordinate array lengths
+                if len(lat) != sst_data.shape[0] or len(lon) != sst_data.shape[1]:
+                    self.logger.warning(f"SST dimension mismatch: data {sst_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                    # Check if data needs to be transposed
+                    if len(lat) == sst_data.shape[1] and len(lon) == sst_data.shape[0]:
+                        self.logger.info("Transposing SST data to match coordinate dimensions")
+                        sst_data = sst_data.T
+                    else:
+                        self.logger.error(f"Cannot resolve SST dimension mismatch: data {sst_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                        return False
+                
+                # STANDARDIZED COORDINATE SYSTEM: Resample SST to ultra-resolution grid (4320x2041)
                 sst_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(sst_data, lon, lat)
                 self.logger.info(f"Ultra-resolution SST shape: {sst_data_ultra.shape}")
                     
@@ -245,12 +256,23 @@ class AcidityTextureGenerator(TextureGenerator):
                 if ph_data.ndim > 2:
                     ph_data = np.squeeze(ph_data)
                 
-                # Apply additional land masking for coastal artifacts
-                # For high-resolution data, be more aggressive about masking coastal areas
                 self.logger.info(f"Original acidity data shape: {ph_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
+                
+                # COORDINATE VALIDATION: Ensure data dimensions match coordinate array lengths
+                if len(lat) != ph_data.shape[0] or len(lon) != ph_data.shape[1]:
+                    self.logger.warning(f"Acidity dimension mismatch: data {ph_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                    # Check if data needs to be transposed
+                    if len(lat) == ph_data.shape[1] and len(lon) == ph_data.shape[0]:
+                        self.logger.info("Transposing acidity data to match coordinate dimensions")
+                        ph_data = ph_data.T
+                    else:
+                        self.logger.error(f"Cannot resolve acidity dimension mismatch: data {ph_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                        return False
+                
+                # Apply additional land masking for coastal artifacts after coordinate validation
                 ph_data = self._enhance_land_masking(ph_data, lon, lat)
                 
-                # ULTRA-HIGH RESOLUTION: Resample to ultra-resolution grid (4320x2041)
+                # STANDARDIZED COORDINATE SYSTEM: Resample to ultra-resolution grid (4320x2041)
                 ph_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(ph_data, lon, lat)
                 self.logger.info(f"Ultra-resolution acidity shape: {ph_data_ultra.shape}")
                     
@@ -294,7 +316,13 @@ class CurrentsTextureGenerator(TextureGenerator):
     def process_netcdf_to_texture(self, input_path: Union[str, Path], 
                                  output_directory: Union[str, Path] = None) -> bool:
         """
-        Process currents NetCDF file to current speed texture.
+        Process currents NetCDF file to current speed texture with corrected coordinate alignment.
+        
+        CRITICAL FIXES APPLIED:
+        - Validates coordinate-data dimension alignment
+        - Removes ultra-resolution shortcut that skipped coordinate harmonization
+        - Forces standardized coordinate system for perfect alignment with other datasets
+        - Applies coordinate validation and correction
         
         Args:
             input_path: Path to currents NetCDF file
@@ -336,41 +364,70 @@ class CurrentsTextureGenerator(TextureGenerator):
                 lat = ds.lat.values if 'lat' in ds.coords else ds.latitude.values
                 lon = ds.lon.values if 'lon' in ds.coords else ds.longitude.values
                 
-                # Remove time dimension if present
+                # Remove time dimension if present - Enhanced handling for multiple dimensions
+                self.logger.info(f"Raw currents data shape: {speed_data.shape}")
+                
+                # Handle multiple dimensions properly
                 if speed_data.ndim > 2:
-                    speed_data = np.squeeze(speed_data)
+                    self.logger.info(f"Reducing {speed_data.ndim}D data to 2D")
+                    if speed_data.ndim == 3:
+                        # Could be (time, lat, lon) or (depth, lat, lon) - take first slice
+                        speed_data = speed_data[0, :, :]
+                        self.logger.info("Extracted first slice from 3D data (time/depth=0)")
+                    elif speed_data.ndim == 4:
+                        # Could be (time, depth, lat, lon) - take first time and depth
+                        speed_data = speed_data[0, 0, :, :]
+                        self.logger.info("Extracted first slice from 4D data (time=0, depth=0)")
+                    else:
+                        # For higher dimensions, squeeze and take first 2D slice
+                        speed_data = np.squeeze(speed_data)
+                        if speed_data.ndim > 2:
+                            speed_data = speed_data[0, :, :] if speed_data.ndim == 3 else speed_data[0, 0, :, :]
+                        self.logger.info(f"Squeezed and extracted 2D data, final shape: {speed_data.shape}")
                 
-                self.logger.info(f"Original currents data shape: {speed_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
+                self.logger.info(f"Processed currents data shape: {speed_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
+                self.logger.info(f"Coordinate ranges - Lat: {lat.min():.3f}° to {lat.max():.3f}°, Lon: {lon.min():.3f}° to {lon.max():.3f}°")
                 
-                # ULTRA-HIGH RESOLUTION: Use currents data at native resolution or resample to ultra-grid
-                if speed_data.shape[0] == 2041 and speed_data.shape[1] == 4320:
-                    # Perfect! Data is already at ultra-resolution, use directly
-                    self.logger.info("Currents data is already at ultra-resolution (2041×4320) - using directly!")
-                    speed_data_ultra = speed_data
-                    lon_ultra = lon
-                    lat_ultra = lat
-                else:
-                    # Resample to ultra-resolution grid
-                    speed_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(speed_data, lon, lat)
-                    self.logger.info(f"Ultra-resolution currents shape: {speed_data_ultra.shape}")
+                # CRITICAL FIX: Validate and correct coordinate-data alignment
+                # Ensure data dimensions match coordinate array lengths
+                if len(lat) != speed_data.shape[0] or len(lon) != speed_data.shape[1]:
+                    self.logger.warning(f"Dimension mismatch detected: data {speed_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                    # Check if data needs to be transposed
+                    if len(lat) == speed_data.shape[1] and len(lon) == speed_data.shape[0]:
+                        self.logger.info("Transposing data to match coordinate dimensions")
+                        speed_data = speed_data.T
+                    else:
+                        self.logger.error(f"Cannot resolve dimension mismatch: data {speed_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                        return False
+                
+                # STANDARDIZED COORDINATE SYSTEM: Always resample to global standard grid
+                # This ensures perfect alignment with other datasets (SST, acidity, etc.)
+                self.logger.info("Applying standardized coordinate system harmonization for alignment")
+                
+                # Resample to ultra-resolution grid with EXACT SST alignment
+                speed_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(speed_data, lon, lat)
+                self.logger.info(f"Standardized currents shape: {speed_data_ultra.shape}")
+                self.logger.info(f"Standardized coordinate ranges - Lat: {lat_ultra.min():.3f}° to {lat_ultra.max():.3f}°, Lon: {lon_ultra.min():.3f}° to {lon_ultra.max():.3f}°")
                     
-                # Generate texture with speed-appropriate colormap using ultra-resolution grid
+                # Generate texture with speed-appropriate colormap using standardized grid
                 colormap = self.get_scientific_colormap('speed')
                 texture, metadata = self._create_standard_texture(
                     speed_data_ultra, lon_ultra, lat_ultra, colormap, 'percentile', True
                 )
                 
-                # Add currents-specific metadata
-                is_native_ultra = speed_data.shape[0] == 2041 and speed_data.shape[1] == 4320
+                # Add currents-specific metadata with coordinate alignment info
                 metadata.update({
                     'dataset': 'ocean_currents',
                     'variable': 'current_speed',
                     'units': 'm/s',
                     'date': date_str,
                     'data_source': 'CMEMS Ocean Physics',
-                    'coordinate_resampling': 'Native ultra-resolution (2041×4320) - no resampling needed!' if is_native_ultra else 'Ultra-resolution resampling to 4320×2041 grid',
+                    'coordinate_alignment': 'Standardized to global grid for perfect alignment with other datasets',
+                    'coordinate_resampling': 'Ultra-resolution resampling to 4320×2041 grid with coordinate validation',
                     'source_resolution': f'{speed_data.shape[1]}×{speed_data.shape[0]}',
-                    'target_resolution': '4320×2041'
+                    'target_resolution': '4320×2041',
+                    'coordinate_validation': 'Applied dimension validation and correction',
+                    'alignment_note': 'Fixed coordinate system alignment issue for proper globe visualization'
                 })
                 
                 # Save texture

@@ -224,6 +224,9 @@ class TextureGenerator:
         # Flip texture vertically to correct orientation for globe mapping
         texture = np.flipud(texture)
         
+        # VALIDATE TEXTURE COORDINATE ALIGNMENT for debugging
+        self._validate_texture_alignment(data, lon, lat, texture)
+        
         # Create metadata
         valid_pixels = int(np.sum(~np.isnan(data)))
         total_pixels = data.size
@@ -328,6 +331,9 @@ class TextureGenerator:
         
         # Flip texture vertically to correct orientation for globe mapping
         texture = np.flipud(texture)
+        
+        # VALIDATE TEXTURE COORDINATE ALIGNMENT for debugging
+        self._validate_texture_alignment(global_data, target_lon, target_lat, texture)
         
         # Create metadata
         valid_pixels = int(np.sum(~np.isnan(global_data)))
@@ -567,3 +573,54 @@ class TextureGenerator:
             True if successful
         """
         raise NotImplementedError("Subclasses must implement process_netcdf_to_texture")
+    
+    def _validate_texture_alignment(self, data: np.ndarray, lon: np.ndarray, lat: np.ndarray, texture: np.ndarray) -> None:
+        """
+        Validate texture coordinate alignment for debugging alignment issues.
+        
+        Args:
+            data: Original data array (lat, lon)
+            lon: Longitude coordinates
+            lat: Latitude coordinates  
+            texture: Generated texture array (height, width, channels)
+        """
+        try:
+            # Log coordinate system info for debugging
+            self.logger.info(f"TEXTURE ALIGNMENT VALIDATION:")
+            self.logger.info(f"  Data shape: {data.shape} (lat={data.shape[0]}, lon={data.shape[1]})")
+            self.logger.info(f"  Coordinate arrays: lat={len(lat)}, lon={len(lon)}")
+            self.logger.info(f"  Texture shape: {texture.shape} (height={texture.shape[0]}, width={texture.shape[1]})")
+            self.logger.info(f"  Latitude range: {lat.min():.3f}° to {lat.max():.3f}°")
+            self.logger.info(f"  Longitude range: {lon.min():.3f}° to {lon.max():.3f}°")
+            
+            # Validate that coordinate ranges match expected global values
+            expected_lat_range = (-89.958, 89.958)  # Ultra-resolution target
+            expected_lon_range = (-179.958, 179.958)  # Ultra-resolution target
+            
+            lat_range_diff = abs(lat.min() - expected_lat_range[0]) + abs(lat.max() - expected_lat_range[1])
+            lon_range_diff = abs(lon.min() - expected_lon_range[0]) + abs(lon.max() - expected_lon_range[1])
+            
+            if lat_range_diff < 0.1 and lon_range_diff < 0.1:
+                self.logger.info("  ✅ Coordinate ranges match expected global ultra-resolution grid")
+            else:
+                self.logger.warning(f"  ⚠️ Coordinate ranges differ from expected: lat_diff={lat_range_diff:.3f}, lon_diff={lon_range_diff:.3f}")
+            
+            # Validate texture dimensions match expected ultra-resolution
+            expected_texture_shape = (2041, 4320, 4)  # (height, width, RGBA channels)
+            if texture.shape == expected_texture_shape:
+                self.logger.info("  ✅ Texture dimensions match expected ultra-resolution (2041×4320×4)")
+            else:
+                self.logger.warning(f"  ⚠️ Texture dimensions {texture.shape} differ from expected {expected_texture_shape}")
+            
+            # Check coordinate ordering (latitude should be increasing from -90 to +90 after standardization)
+            lat_increasing = np.all(np.diff(lat) > 0)
+            lon_increasing = np.all(np.diff(lon) > 0)  
+            
+            self.logger.info(f"  Coordinate ordering: lat_increasing={lat_increasing}, lon_increasing={lon_increasing}")
+            if lat_increasing and lon_increasing:
+                self.logger.info("  ✅ Coordinate arrays are properly ordered")
+            else:
+                self.logger.warning("  ⚠️ Coordinate arrays may have ordering issues")
+                
+        except Exception as e:
+            self.logger.warning(f"Texture alignment validation failed: {e}")

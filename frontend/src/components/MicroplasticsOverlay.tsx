@@ -28,6 +28,7 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
   const [points, setPoints] = useState<MicroplasticsPoint[]>([]);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [zoomScale, setZoomScale] = useState(1);
 
   // Color mapping for concentration levels
   const getConcentrationColor = (concentrationClass: string): THREE.Color => {
@@ -47,28 +48,37 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
     }
   };
 
-  // Point size based on concentration
-  const getPointScale = (concentrationClass: string, dataSource: string): number => {
+  // Point size based on concentration with zoom scaling
+  const getPointScale = (concentrationClass: string, dataSource: string, zoomScale: number = 1): number => {
     const baseScale = dataSource === 'real' ? 1.0 : 0.8; // Synthetic points slightly smaller
     
+    let concentrationScale: number;
     switch (concentrationClass) {
       case 'Very Low':
-        return 0.8 * baseScale;
+        concentrationScale = 0.8;
+        break;
       case 'Low':
-        return 1.0 * baseScale;
+        concentrationScale = 1.0;
+        break;
       case 'Medium':
-        return 1.2 * baseScale;
+        concentrationScale = 1.2;
+        break;
       case 'High':
-        return 1.5 * baseScale;
+        concentrationScale = 1.5;
+        break;
       case 'Very High':
-        return 2.0 * baseScale;
+        concentrationScale = 2.0;
+        break;
       default:
-        return 1.0 * baseScale;
+        concentrationScale = 1.0;
     }
+    
+    // Apply zoom scaling - points get larger when zoomed out, smaller when zoomed in
+    return concentrationScale * baseScale * zoomScale;
   };
 
-  // Convert lat/lon to 3D sphere coordinates
-  const latLonToVector3 = (lat: number, lon: number, radius: number = 1.003): THREE.Vector3 => {
+  // Convert lat/lon to 3D sphere coordinates - positioned above texture layers
+  const latLonToVector3 = (lat: number, lon: number, radius: number = 1.004): THREE.Vector3 => {
     const phi = (90 - lat) * (Math.PI / 180);
     const theta = (lon + 180) * (Math.PI / 180);
     
@@ -77,6 +87,19 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
     const y = radius * Math.cos(phi);
     
     return new THREE.Vector3(x, y, z);
+  };
+
+  // Calculate zoom scale based on camera distance
+  const calculateZoomScale = (camera: THREE.Camera): number => {
+    const distance = camera.position.length();
+    // Scale correctly: closer = smaller dots, farther = larger dots (for visibility)
+    const minScale = 0.5;  // When zoomed in (close)
+    const maxScale = 1.2;  // When zoomed out (far)
+    const minDistance = 2.0;
+    const maxDistance = 10.0;
+    
+    const normalizedDistance = Math.max(0, Math.min(1, (distance - minDistance) / (maxDistance - minDistance)));
+    return minScale + (normalizedDistance * (maxScale - minScale));
   };
 
   // Load microplastics data
@@ -138,20 +161,19 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
     loadPoints();
   }, []);
 
-  // Update instanced mesh
+  // Update instanced mesh with zoom scaling
   useEffect(() => {
     if (!meshRef.current || points.length === 0) return;
 
     const mesh = meshRef.current;
     const tempObject = new THREE.Object3D();
-    const tempColor = new THREE.Color();
 
     points.forEach((point, i) => {
       // Set position
       tempObject.position.set(point.position[0], point.position[1], point.position[2]);
       
-      // Set scale based on concentration
-      const scale = getPointScale(point.concentrationClass, point.dataSource) * 0.01;
+      // Set scale based on concentration and zoom level
+      const scale = getPointScale(point.concentrationClass, point.dataSource, zoomScale) * 0.004;
       tempObject.scale.set(scale, scale, scale);
       
       tempObject.updateMatrix();
@@ -170,11 +192,47 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
 
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  }, [points]);
+  }, [points, zoomScale]);
 
-  // Handle hover interactions
+  // Handle hover interactions, zoom tracking, and visibility culling
   useFrame(() => {
     if (!meshRef.current || !visible || points.length === 0) return;
+
+    // Update zoom scale based on camera distance
+    const currentZoomScale = calculateZoomScale(camera);
+    if (Math.abs(currentZoomScale - zoomScale) > 0.05) { // Only update if significant change
+      setZoomScale(currentZoomScale);
+    }
+
+    // Update visibility based on camera position (cull back-facing dots)
+    const cameraPosition = camera.position.clone().normalize();
+    const mesh = meshRef.current;
+    const tempObject = new THREE.Object3D();
+
+    points.forEach((point, i) => {
+      // Check if point is facing the camera
+      const pointPosition = new THREE.Vector3(point.position[0], point.position[1], point.position[2]);
+      const pointNormal = pointPosition.clone().normalize();
+      const dotProduct = pointNormal.dot(cameraPosition);
+      
+      // Hide points on the back side (negative dot product means facing away)
+      const isVisible = dotProduct > -0.1; // Small threshold for edge cases
+      
+      if (isVisible) {
+        // Set normal scale
+        const scale = getPointScale(point.concentrationClass, point.dataSource, zoomScale) * 0.004;
+        tempObject.scale.set(scale, scale, scale);
+      } else {
+        // Hide by setting scale to zero
+        tempObject.scale.set(0, 0, 0);
+      }
+      
+      tempObject.position.set(point.position[0], point.position[1], point.position[2]);
+      tempObject.updateMatrix();
+      mesh.setMatrixAt(i, tempObject.matrix);
+    });
+
+    mesh.instanceMatrix.needsUpdate = true;
 
     // Cast ray from mouse position
     raycaster.setFromCamera(pointer, camera);
@@ -196,15 +254,16 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
     }
   });
 
-  // Create geometry and material
+  // Create geometry and material - proper depth handling for visibility
   const geometry = useMemo(() => new THREE.SphereGeometry(1, 16, 16), []);
   const material = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
         transparent: true,
-        opacity: 0.8,
-        depthWrite: false,
-        depthTest: true,
+        opacity: 0.9,
+        depthWrite: true,  // Enable depth writing
+        depthTest: true,   // Enable depth testing to hide back-side dots
+        side: THREE.FrontSide,
       }),
     []
   );
@@ -218,6 +277,7 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
       <instancedMesh
         ref={meshRef}
         args={[geometry, material, points.length]}
+        renderOrder={100} // Moderate render order with proper depth testing
         onClick={(event) => {
           if (event.instanceId !== undefined && onPointClick) {
             onPointClick(points[event.instanceId]);
