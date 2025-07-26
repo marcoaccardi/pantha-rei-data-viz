@@ -86,8 +86,6 @@ echo -e "${BLUE}🧹 Freeing required ports...${NC}"
 kill_port_processes 8765 "WebSocket Server"
 kill_port_processes 8000 "HTTP Server" 
 kill_port_processes 5173 "Frontend Dev Server"
-kill_port_processes 5174 "Frontend Dev Server Alt"
-kill_port_processes 5175 "Frontend Dev Server Alt"
 
 # Force use of backend Python virtual environment with uv
 cd backend
