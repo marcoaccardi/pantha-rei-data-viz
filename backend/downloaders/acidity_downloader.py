@@ -131,14 +131,14 @@ class AcidityDownloader(BaseDataDownloader):
                     self.logger.error(f"CMEMS authentication failed: {auth_error}")
                     raise
                 
-                # Use copernicusmarine Python API
+                # Use copernicusmarine Python API - request only available variables
                 self.logger.info(f"Requesting subset for dataset: {self.dataset_id}")
                 copernicusmarine.subset(
                     dataset_id=self.dataset_id,
-                    variables=["ph", "dissic", "talk", "o2", "no3", "po4", "si"],  # Full biogeochemistry suite
+                    variables=["ph", "dissic"],  # Start with core variables, add more later when found
                     start_datetime=f"{date_str}T00:00:00",
                     end_datetime=f"{date_str}T23:59:59",
-                    minimum_depth=0,
+                    minimum_depth=0.5,  # Adjust depth to match dataset bounds
                     maximum_depth=5,  # Surface layer only
                     output_filename=str(temp_path)
                 )

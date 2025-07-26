@@ -115,8 +115,8 @@ class WavesDownloader(BaseDataDownloader):
             "copernicusmarine", "subset",
             "--dataset-id", self.dataset_id,
             "--variable", "VHM0",  # Significant wave height
-            "--variable", "MWD",   # Mean wave direction (corrected from VMDR)
-            "--variable", "PP1D",  # Peak wave period (corrected from VTPK)
+            "--variable", "VMDR",  # Mean wave direction (use VMDR instead of MWD)
+            "--variable", "VTPK",  # Peak wave period (use VTPK instead of PP1D)
             "--start-datetime", f"{date_str}T00:00:00",
             "--end-datetime", f"{date_str}T23:59:59",
             "--output-filename", str(output_file),

@@ -65,95 +65,11 @@ class MicroplasticsDownloader(BaseDataDownloader):
     def _get_filename_for_date(self, target_date: date) -> str:
         """
         Get filename for microplastics data.
-        Since microplastics is a complete database rather than daily files,
-        we use a quarterly update pattern.
+        Since microplastics is a complete database, use simple naming.
         """
-        # Use quarterly naming convention since data is updated quarterly
-        quarter = (target_date.month - 1) // 3 + 1
-        return f"microplastics_database_Q{quarter}_{target_date.year}.csv"
+        return f"microplastics_database_{target_date.year}.csv"
     
-    def _get_quarterly_dates(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[date]:
-        """
-        Generate quarterly download dates since microplastics data is updated quarterly.
-        
-        Args:
-            start_date: Optional start date (YYYY-MM-DD)
-            end_date: Optional end date (YYYY-MM-DD)
-            
-        Returns:
-            List of quarterly dates for downloads
-        """
-        current_status = self.get_status()
-        
-        # Determine start date
-        if start_date:
-            start = datetime.strptime(start_date, "%Y-%m-%d").date()
-        elif current_status["last_date"]:
-            # Start from quarter after last successful download
-            last_date = datetime.strptime(current_status["last_date"], "%Y-%m-%d").date()
-            # Move to next quarter
-            if last_date.month <= 3:
-                start = date(last_date.year, 4, 1)
-            elif last_date.month <= 6:
-                start = date(last_date.year, 7, 1)
-            elif last_date.month <= 9:
-                start = date(last_date.year, 10, 1)
-            else:
-                start = date(last_date.year + 1, 1, 1)
-        else:
-            # First time download - use test start date
-            test_start = datetime.strptime(self.test_start_date, "%Y-%m-%d").date()
-            start = date(test_start.year, ((test_start.month - 1) // 3) * 3 + 1, 1)
-        
-        # Determine end date
-        if end_date:
-            end = datetime.strptime(end_date, "%Y-%m-%d").date()
-        else:
-            # Download up to current quarter
-            today = date.today()
-            end = date(today.year, ((today.month - 1) // 3) * 3 + 1, 1)
-        
-        # Generate quarterly dates
-        quarterly_dates = []
-        current_date = start
-        
-        while current_date <= end:
-            quarterly_dates.append(current_date)
-            
-            # Move to next quarter
-            if current_date.month == 1:
-                current_date = date(current_date.year, 4, 1)
-            elif current_date.month == 4:
-                current_date = date(current_date.year, 7, 1)
-            elif current_date.month == 7:
-                current_date = date(current_date.year, 10, 1)
-            else:
-                current_date = date(current_date.year + 1, 1, 1)
-        
-        self.logger.info(f"Found {len(quarterly_dates)} quarterly periods to check: {[d.strftime('%Y-Q%d') for d in quarterly_dates]}")
-        return quarterly_dates
     
-    def get_date_range_to_download(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[date]:
-        """
-        Override base method to use quarterly logic for microplastics data.
-        
-        Args:
-            start_date: Optional start date override (YYYY-MM-DD)
-            end_date: Optional end date override (YYYY-MM-DD)
-            
-        Returns:
-            List of quarterly dates that need to be downloaded
-        """
-        quarterly_dates = self._get_quarterly_dates(start_date, end_date)
-        
-        # Filter out dates where files already exist
-        dates_to_download = []
-        for quarterly_date in quarterly_dates:
-            if not self._file_exists_for_date(quarterly_date):
-                dates_to_download.append(quarterly_date)
-        
-        self.logger.info(f"Found {len(dates_to_download)} quarters needing download")
-        return dates_to_download
     
     def download_date(self, target_date: date) -> bool:
         """
@@ -166,10 +82,8 @@ class MicroplasticsDownloader(BaseDataDownloader):
         Returns:
             True if successful, False otherwise
         """
-        # Create year/quarter directory structure
-        quarter = (target_date.month - 1) // 3 + 1
-        year_quarter = f"{target_date.year}/Q{quarter}"
-        output_dir = self.raw_data_path / year_quarter
+        # Create simple year directory structure
+        output_dir = self.raw_data_path / str(target_date.year)
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Define file paths
@@ -182,7 +96,7 @@ class MicroplasticsDownloader(BaseDataDownloader):
             return True
         
         try:
-            self.logger.info(f"Downloading NCEI microplastics database for Q{quarter} {target_date.year}")
+            self.logger.info(f"Downloading NCEI microplastics database for {target_date.year}")
             
             # For now, we'll simulate the download since the interactive portal requires manual export
             # In a production system, this would either:
@@ -443,14 +357,10 @@ class MicroplasticsDownloader(BaseDataDownloader):
         lats = np.random.uniform(-70, 70, n_samples)  # Avoid polar regions
         lons = np.random.uniform(-180, 180, n_samples)
         
-        # Generate dates within the quarter
-        quarter = (target_date.month - 1) // 3 + 1
-        start_month = (quarter - 1) * 3 + 1
-        end_month = quarter * 3
-        
+        # Generate dates throughout the year
         dates = []
         for _ in range(n_samples):
-            month = np.random.randint(start_month, end_month + 1)
+            month = np.random.randint(1, 13)
             day = np.random.randint(1, 29)  # Avoid month-end issues
             year = target_date.year
             # Filter to test date range if needed
@@ -576,12 +486,10 @@ class MicroplasticsDownloader(BaseDataDownloader):
                 
                 if len(processed_df) < len(df):
                     # Save filtered version
-                    quarter = (target_date.month - 1) // 3 + 1
-                    year_quarter = f"{target_date.year}/Q{quarter}"
-                    filtered_dir = self.processed_csv_path / year_quarter
+                    filtered_dir = self.processed_csv_path / str(target_date.year)
                     filtered_dir.mkdir(parents=True, exist_ok=True)
                     
-                    filtered_filename = f"microplastics_filtered_Q{quarter}_{target_date.year}.csv"
+                    filtered_filename = f"microplastics_filtered_{target_date.year}.csv"
                     filtered_file_path = filtered_dir / filtered_filename
                     
                     processed_df.to_csv(filtered_file_path, index=False)
@@ -756,7 +664,7 @@ class MicroplasticsDownloader(BaseDataDownloader):
                 "first_date": None,
                 "last_date": None,
                 "total_records": 0,
-                "quarters_downloaded": []
+                "years_downloaded": []
             }
         
         all_dates = []
@@ -771,12 +679,11 @@ class MicroplasticsDownloader(BaseDataDownloader):
                     all_dates.extend(dates)
                     total_records += len(df)
                 
-                # Extract quarter from filename
+                # Extract year from filename
                 filename = file_path.name
-                if "_Q" in filename:
-                    quarter_info = filename.split("_Q")[1].split("_")[0]
+                if "microplastics_database_" in filename:
                     year = filename.split("_")[-1].split(".")[0]
-                    quarters.append(f"{year}-Q{quarter_info}")
+                    quarters.append(year)
                     
             except Exception as e:
                 self.logger.warning(f"Could not process file {file_path}: {e}")
@@ -787,7 +694,7 @@ class MicroplasticsDownloader(BaseDataDownloader):
                 "first_date": None,
                 "last_date": None,
                 "total_records": 0,
-                "quarters_downloaded": quarters
+                "years_downloaded": quarters
             }
         
         all_dates.sort()
@@ -796,7 +703,7 @@ class MicroplasticsDownloader(BaseDataDownloader):
             "first_date": all_dates[0].strftime("%Y-%m-%d"),
             "last_date": all_dates[-1].strftime("%Y-%m-%d"),
             "total_records": total_records,
-            "quarters_downloaded": sorted(quarters),
+            "years_downloaded": sorted(quarters),
             "date_span_years": (all_dates[-1] - all_dates[0]).days / 365.25
         }
     
