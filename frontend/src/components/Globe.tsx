@@ -61,16 +61,23 @@ const GlobeMesh: React.FC<{
   onLocationClick: (coords: Coordinates) => void;
   isLoading: boolean;
   selectedCoordinates?: Coordinates;
-  showSSTOverlay?: boolean;
-}> = ({ onLocationClick, isLoading, selectedCoordinates, showSSTOverlay = false }) => {
+  showDataOverlay?: boolean;
+  dataCategory?: string;
+}> = ({ onLocationClick, isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst' }) => {
   const meshRef = useRef<Mesh>(null);
   const sstMeshRef = useRef<Mesh>(null);
   const { camera, gl } = useThree();
   const raycaster = new Raycaster();
   const mouse = new Vector2();
 
-  // Load textures using the texture loader hook
-  const { earthTexture, sstTexture } = useTextureLoader();
+  // Load textures using the texture loader hook - pass external category
+  const { earthTexture, dataTexture, selectedCategory } = useTextureLoader(dataCategory);
+
+  // Debug: Log when dataTexture changes
+  React.useEffect(() => {
+    console.log(`🌍 Globe received dataTexture for category: ${selectedCategory}`);
+    console.log(`🌍 DataTexture object:`, dataTexture);
+  }, [dataTexture, selectedCategory]);
 
   const handleClick = useCallback((event: any) => {
     if (!meshRef.current || isLoading) return;
@@ -107,12 +114,12 @@ const GlobeMesh: React.FC<{
         />
       </mesh>
       
-      {/* SST Overlay Layer */}
-      {showSSTOverlay && (
+      {/* Data Overlay Layer */}
+      {showDataOverlay && (
         <mesh ref={sstMeshRef}>
           <sphereGeometry args={[1.001, 64, 64]} />
           <meshStandardMaterial
-            map={sstTexture}
+            map={dataTexture}
             transparent
             opacity={0.7}
           />
@@ -133,7 +140,9 @@ const Globe: React.FC<GlobeProps> = ({
   coordinates, 
   onLocationChange, 
   isLoading = false,
-  showSSTOverlay = false,
+  showDataOverlay = false,
+  dataCategory = 'sst',
+  showSSTOverlay = false, // Legacy support
   onZoomFunctionsReady
 }) => {
   const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | undefined>(coordinates);
@@ -180,7 +189,8 @@ const Globe: React.FC<GlobeProps> = ({
         onLocationClick={handleLocationClick}
         isLoading={isLoading}
         selectedCoordinates={selectedCoordinates}
-        showSSTOverlay={showSSTOverlay}
+        showDataOverlay={showDataOverlay || showSSTOverlay} // Support legacy prop
+        dataCategory={dataCategory}
       />
     </Scene>
   );

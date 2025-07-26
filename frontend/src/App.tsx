@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, startTransition } from 'react';
 import Globe from './components/Globe';
 import { useWebSocket } from './hooks/useWebSocket';
+import { useTextureLoader } from './hooks/useTextureLoader';
 import type { Coordinates, ClimateDataResponse, OceanMeasurement, DateRange } from './utils/types';
 import { 
   generateRandomDate, 
@@ -16,8 +17,17 @@ function App() {
   const [climateData, setClimateData] = useState<ClimateDataResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
-  const [showSSTOverlay, setShowSSTOverlay] = useState(false); // Keep disabled due to texture loading issues
+  const [showDataOverlay, setShowDataOverlay] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Texture management
+  const { 
+    selectedCategory, 
+    availableCategories, 
+    changeCategory, 
+    getAvailableOptions,
+    metadata 
+  } = useTextureLoader();
   
   // Date management state
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -372,16 +382,20 @@ function App() {
   });
 
   const handleLocationChange = useCallback((coords: Coordinates, useDate?: string) => {
-    setCoordinates(coords);
-    setIsLoading(true);
+    startTransition(() => {
+      setCoordinates(coords);
+      setIsLoading(true);
+    });
     
     const queryDate = useDate || selectedDate;
     
     // Validate date before sending WebSocket message
     const dateValidation = validateDate(queryDate);
     if (!dateValidation.isValid) {
-      setErrorMessage(`Cannot query data: ${dateValidation.errors.join(', ')}`);
-      setIsLoading(false);
+      startTransition(() => {
+        setErrorMessage(`Cannot query data: ${dateValidation.errors.join(', ')}`);
+        setIsLoading(false);
+      });
       return;
     }
     
@@ -422,8 +436,12 @@ function App() {
       console.log(`📡 Requesting ocean data for: ${coords.lat.toFixed(4)}°N, ${coords.lng.toFixed(4)}°E on ${queryDate}`);
       console.log(`📊 Expected data coverage: ${getDataAvailabilityDescription(queryDate)}`);
     } else {
-      setErrorMessage('WebSocket not connected. Unable to fetch data.');
-      setIsLoading(false);
+      // WebSocket disabled - show informational message instead of error
+      console.log('📡 WebSocket disabled - data fetching via REST API not yet implemented for this interface');
+      startTransition(() => {
+        setErrorMessage('Data fetching via WebSocket disabled. Ocean data visualization is available through textures.');
+        setIsLoading(false);
+      });
     }
   }, [selectedDate, isConnected, sendMessage]);
 
@@ -434,7 +452,8 @@ function App() {
           coordinates={coordinates}
           onLocationChange={handleLocationChange}
           isLoading={isLoading}
-          showSSTOverlay={showSSTOverlay}
+          showDataOverlay={showDataOverlay}
+          dataCategory={selectedCategory}
           onZoomFunctionsReady={() => {}}
         />
         
@@ -578,23 +597,61 @@ function App() {
               </div>
             </div>
             
+            {/* Data Category Selection */}
+            <div style={{ marginTop: '12px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.9em', marginBottom: '6px', color: '#cbd5e1' }}>
+                🌊 Data Category
+              </div>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                {['sst', 'acidity', 'currents'].map(category => {
+                  const isAvailable = availableCategories.includes(category);
+                  const isSelected = selectedCategory === category;
+                  const categoryLabels = {
+                    sst: '🌡️ SST',
+                    acidity: '🧪 Acidity', 
+                    currents: '🌊 Currents'
+                  };
+                  
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => isAvailable && startTransition(() => changeCategory(category))}
+                      disabled={!isAvailable}
+                      style={{
+                        backgroundColor: isSelected ? '#4a90e2' : isAvailable ? '#64748b' : '#374151',
+                        color: isAvailable ? 'white' : '#9ca3af',
+                        border: isSelected ? '2px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.1)',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        cursor: isAvailable ? 'pointer' : 'not-allowed',
+                        fontSize: '0.8em',
+                        opacity: isAvailable ? 1 : 0.6
+                      }}
+                    >
+                      {categoryLabels[category as keyof typeof categoryLabels]}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Texture info */}
+              {metadata && (
+                <div style={{ fontSize: '0.75em', color: '#94a3b8' }}>
+                  {selectedCategory && metadata.summary.categories[selectedCategory] ? (
+                    <div>
+                      Selected: {selectedCategory.toUpperCase()} | 
+                      {' '}{metadata.summary.categories[selectedCategory].texture_count} textures | 
+                      {' '}Latest: {metadata.summary.categories[selectedCategory].latest_date || 'N/A'}
+                    </div>
+                  ) : (
+                    <div>Loading texture metadata...</div>
+                  )}
+                </div>
+              )}
+            </div>
+            
             {/* Location Controls */}
             <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button 
-                onClick={() => setShowSSTOverlay(!showSSTOverlay)}
-                style={{
-                  backgroundColor: showSSTOverlay ? '#4a90e2' : '#64748b',
-                  color: 'white',
-                  border: 'none',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.9em'
-                }}
-              >
-                {showSSTOverlay ? '🌡️ Hide SST Overlay' : '🌡️ Show SST Overlay'}
-              </button>
-              
               <button 
                 onClick={() => {
                   const randomCoords = generateRandomOceanLocation();

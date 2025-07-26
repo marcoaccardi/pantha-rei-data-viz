@@ -16,7 +16,7 @@ class Coordinates(BaseModel):
 
 class DataValue(BaseModel):
     """Individual data value with metadata."""
-    value: Optional[float] = Field(None, description="Data value")
+    value: Optional[Union[float, str]] = Field(None, description="Data value (numeric or categorical)")
     units: str = Field(..., description="Units of measurement")
     long_name: str = Field(..., description="Descriptive name of the variable")
     valid: bool = Field(..., description="Whether the value is valid (not NaN)")

@@ -98,7 +98,9 @@ export interface GlobeProps {
   coordinates?: Coordinates;
   onLocationChange?: (coords: Coordinates) => void;
   isLoading?: boolean;
-  showSSTOverlay?: boolean;
+  showDataOverlay?: boolean;
+  dataCategory?: string;
+  showSSTOverlay?: boolean; // Legacy prop for backward compatibility
   onZoomFunctionsReady?: (zoomIn: () => void, zoomOut: () => void) => void;
 }
 

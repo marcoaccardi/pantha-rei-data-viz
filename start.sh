@@ -17,6 +17,9 @@ if [ ! -d "frontend" ]; then
     exit 1
 fi
 
+# Store the root directory
+ROOT_DIR=$(pwd)
+
 # Create logs directory if it doesn't exist
 if [ ! -d "logs" ]; then
     echo -e "${BLUE}📁 Creating logs directory...${NC}"
@@ -33,9 +36,8 @@ NC='\033[0m' # No Color
 # Function to handle cleanup on exit
 cleanup() {
     echo -e "\n${YELLOW}Shutting down services...${NC}"
-    kill $WEBSOCKET_PID 2>/dev/null
+    kill $API_PID 2>/dev/null
     kill $FRONTEND_PID 2>/dev/null
-    kill $HTTP_SERVER_PID 2>/dev/null
     
     # Deactivate virtual environment if it was activated
     if [ -n "$VIRTUAL_ENV" ]; then
@@ -87,22 +89,25 @@ kill_port_processes 5173 "Frontend Dev Server"
 kill_port_processes 5174 "Frontend Dev Server Alt"
 kill_port_processes 5175 "Frontend Dev Server Alt"
 
-# Force use of backend Python virtual environment
-if [ -d "backend/.venv" ]; then
-    echo -e "${BLUE}🐍 Using backend virtual environment (Python 3.10.17)...${NC}"
-    # Set explicit Python path to avoid conda conflicts
-    export PYTHON_BIN="$(pwd)/backend/.venv/bin/python"
-    export PATH="$(pwd)/backend/.venv/bin:$PATH"
-    # Also activate for environment variables
-    source backend/.venv/bin/activate
-    echo -e "${GREEN}✅ Backend virtual environment activated${NC}"
-elif [ -d ".venv" ]; then
-    echo -e "${BLUE}🐍 Activating root virtual environment...${NC}"
+# Force use of backend Python virtual environment with uv
+cd backend
+if [ -d ".venv" ]; then
+    echo -e "${BLUE}🐍 Using backend virtual environment (uv managed)...${NC}"
+    # Use uv to activate environment
     source .venv/bin/activate
-    echo -e "${GREEN}✅ Root virtual environment activated${NC}"
+    # Set explicit Python path to avoid conda conflicts
+    export PYTHON_BIN="$ROOT_DIR/backend/.venv/bin/python"
+    export PATH="$ROOT_DIR/backend/.venv/bin:$PATH"
+    echo -e "${GREEN}✅ Backend virtual environment activated${NC}"
 else
-    echo -e "${YELLOW}⚠️  No virtual environment found, using system Python${NC}"
+    echo -e "${YELLOW}⚠️  Backend .venv not found, creating with uv...${NC}"
+    uv venv
+    source .venv/bin/activate
+    export PYTHON_BIN="$ROOT_DIR/backend/.venv/bin/python"
+    export PATH="$ROOT_DIR/backend/.venv/bin:$PATH"
+    echo -e "${GREEN}✅ Created and activated uv virtual environment${NC}"
 fi
+cd "$ROOT_DIR"
 
 # Check if Python is available
 if ! command -v python &> /dev/null; then
@@ -116,26 +121,24 @@ echo -e "${BLUE}🐍 Using Python: ${PYTHON_PATH}${NC}"
 
 # Check if required Python packages are installed
 echo -e "${BLUE}📦 Checking Python dependencies...${NC}"
-if ! python -c "import websockets, requests, numpy, pandas, asyncio, json, pathlib" 2>/dev/null; then
+if ! python -c "import fastapi, uvicorn, requests, numpy, pandas, asyncio, json, pathlib" 2>/dev/null; then
     echo -e "${YELLOW}⚠️  Some Python dependencies missing. Installing from requirements.txt...${NC}"
     
-    # Check backend requirements first
+    # Use uv for package installation
     if [ -f "backend/requirements.txt" ]; then
-        echo -e "${BLUE}📦 Installing backend dependencies...${NC}"
-        pip install -r backend/requirements.txt
-    elif [ -f "requirements.txt" ]; then
-        pip install -r requirements.txt
+        echo -e "${BLUE}📦 Installing backend dependencies with uv...${NC}"
+        cd backend && uv pip install -r requirements.txt && cd "$ROOT_DIR"
     else
         echo -e "${YELLOW}⚠️  requirements.txt not found, installing essential packages...${NC}"
-        pip install websockets requests numpy pandas python-dotenv
+        cd backend && uv pip install fastapi uvicorn requests numpy pandas python-dotenv && cd "$ROOT_DIR"
     fi
 fi
 
 # Check for Copernicus Marine CLI (required for real data)
 echo -e "${BLUE}🌊 Checking Copernicus Marine CLI...${NC}"
 if ! python -c "import copernicusmarine" 2>/dev/null; then
-    echo -e "${YELLOW}⚠️  Copernicus Marine CLI not found. Installing...${NC}"
-    pip install copernicusmarine
+    echo -e "${YELLOW}⚠️  Copernicus Marine CLI not found. Installing with uv...${NC}"
+    cd backend && uv pip install copernicusmarine && cd "$ROOT_DIR"
     echo -e "${GREEN}✅ Copernicus Marine CLI installed${NC}"
 else
     echo -e "${GREEN}✅ Copernicus Marine CLI available${NC}"
@@ -147,112 +150,46 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
-# Start HTTP server for textures (background)
-echo -e "${BLUE}🔗 Starting texture server on port 8000...${NC}"
-python -m http.server 8000 --directory . > /dev/null 2>&1 &
-HTTP_SERVER_PID=$!
+# Start FastAPI backend server
+echo -e "${BLUE}🌊 Starting Ocean Data API server on port 8000...${NC}"
+echo -e "${GREEN}✅ Using FastAPI with real data from Copernicus Marine${NC}"
 
-# Wait a moment for server to start
-sleep 2
-
-# Start WebSocket server with real data prioritization
-echo -e "${BLUE}🌊 Starting Ocean Data WebSocket server on port 8765...${NC}"
-echo -e "${GREEN}✅ Prioritizing REAL DATA from Copernicus Marine${NC}"
-
-# Try main data server first with all API clients
-echo -e "${BLUE}🔬 Starting main climate data server with all API clients...${NC}"
+# Start the FastAPI server
+echo -e "${BLUE}🔬 Starting FastAPI ocean data server...${NC}"
 # Use explicit Python path if available, otherwise fallback to 'python'
 if [ -n "$PYTHON_BIN" ]; then
     echo -e "${BLUE}🐍 Using Python: ${PYTHON_BIN}${NC}"
-    $PYTHON_BIN backend/servers/climate_data_websocket_server.py > logs/websocket.log 2>&1 &
+    cd backend && $PYTHON_BIN -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
 else
-    python backend/servers/climate_data_websocket_server.py > logs/websocket.log 2>&1 &
+    cd backend && python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
 fi
-WEBSOCKET_PID=$!
+API_PID=$!
+cd "$ROOT_DIR"
 
-# Check if real data server started successfully
+# Check if API server started successfully
 sleep 5
-if ! ps -p $WEBSOCKET_PID > /dev/null 2>&1; then
-    echo -e "${RED}❌ Real data server failed to start. Checking logs...${NC}"
-    if [ -f "logs/websocket.log" ]; then
-        echo -e "${YELLOW}📄 Last 15 lines of websocket.log:${NC}"
-        tail -15 logs/websocket.log
+if ! ps -p $API_PID > /dev/null 2>&1; then
+    echo -e "${RED}❌ API server failed to start. Checking logs...${NC}"
+    if [ -f "logs/api.log" ]; then
+        echo -e "${YELLOW}📄 Last 15 lines of api.log:${NC}"
+        tail -15 logs/api.log
     fi
-    
-    echo -e "${RED}❌ Main climate data server failed to start due to dependency issues.${NC}"
-    echo -e "${YELLOW}🔧 This may be a SQLite compatibility issue with the Copernicus Marine library.${NC}"
-    
-    if [ -f "logs/websocket.log" ]; then
-        echo -e "${YELLOW}📄 Error details:${NC}"
-        tail -3 logs/websocket.log | grep -E "(ImportError|Error|Failed)"
-    fi
-    
-    echo -e "${YELLOW}🔧 Falling back to minimal server with working API clients...${NC}"
-    if [ -n "$PYTHON_BIN" ]; then
-        $PYTHON_BIN backend/servers/minimal_websocket_server.py > logs/websocket.log 2>&1 &
-    else
-        python backend/servers/minimal_websocket_server.py > logs/websocket.log 2>&1 &
-    fi
-    WEBSOCKET_PID=$!
-    sleep 3
-    
-    if ! ps -p $WEBSOCKET_PID > /dev/null 2>&1; then
-        echo -e "${RED}❌ Minimal server also failed. System cannot start.${NC}"
-        if [ -f "logs/websocket.log" ]; then
-            tail -10 logs/websocket.log
-        fi
-        exit 1
-    else
-        echo -e "${GREEN}✅ Minimal server started (fallback mode with working API clients)${NC}"
-        echo -e "${YELLOW}💡 Full functionality available when main server dependency issues are resolved${NC}"
-    fi
+    exit 1
 else
-    echo -e "${GREEN}✅ Main climate data server started successfully${NC}"
-    echo -e "${GREEN}✅ Real API clients available: NOAA, OBIS, PacIOOS Wave, NASA OSCAR${NC}"
-    echo -e "${GREEN}✅ Enhanced features: Progress notifications, caching, error handling${NC}"
+    echo -e "${GREEN}✅ FastAPI ocean data server started successfully${NC}"
+    echo -e "${GREEN}✅ API available at: http://localhost:8000${NC}"
+    echo -e "${GREEN}✅ API docs at: http://localhost:8000/docs${NC}"
 fi
 
-# Test WebSocket connection
-echo -e "${BLUE}🔗 Testing WebSocket connection...${NC}"
+# Test API connection
+echo -e "${BLUE}🔗 Testing API connection...${NC}"
 sleep 2
 
-# Simple WebSocket connection test using Python
-python -c "
-import asyncio
-import websockets
-import json
-import sys
-
-async def test_connection():
-    try:
-        async with websockets.connect('ws://localhost:8765') as websocket:
-            # Send ping
-            await websocket.send(json.dumps({'type': 'ping'}))
-            
-            # Wait for pong
-            response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
-            data = json.loads(response)
-            
-            if data.get('type') == 'pong':
-                print('✅ WebSocket connection test PASSED')
-                return True
-            else:
-                print(f'❌ Unexpected response: {data}')
-                return False
-                
-    except Exception as e:
-        print(f'❌ WebSocket connection test FAILED: {e}')
-        return False
-
-# Run test
-result = asyncio.run(test_connection())
-sys.exit(0 if result else 1)
-" 2>/dev/null
-
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ WebSocket server is responding correctly${NC}"
+# Simple API connection test using curl
+if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ API server is responding correctly${NC}"
 else
-    echo -e "${RED}❌ WebSocket connection test failed${NC}"
+    echo -e "${RED}❌ API connection test failed${NC}"
     echo -e "${YELLOW}⚠️  Server may still be starting up...${NC}"
 fi
 
@@ -261,6 +198,17 @@ sleep 3
 
 # Navigate to frontend directory and start React app
 echo -e "${BLUE}⚛️  Starting React Three Fiber frontend...${NC}"
+
+# Debug: Ensure we're in the correct directory
+echo -e "${BLUE}🔍 Current directory: $(pwd)${NC}"
+echo -e "${BLUE}🔍 Looking for frontend directory...${NC}"
+
+if [ ! -d "frontend" ]; then
+    echo -e "${RED}❌ frontend directory not found${NC}"
+    echo -e "${YELLOW}📁 Available directories: $(ls -la | grep ^d)${NC}"
+    exit 1
+fi
+
 cd frontend
 
 # Check if node_modules exists, install if not
@@ -270,25 +218,25 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Start development server (background)
-npm run dev > ../logs/frontend.log 2>&1 &
+npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 
 # Return to root directory
-cd ..
+cd "$ROOT_DIR"
 
 echo -e "${GREEN}✅ All services started successfully!${NC}"
 echo ""
 echo -e "${GREEN}🌊 REAL OCEAN DATA & DATE FUNCTIONALITY READY${NC}"
-echo -e "${GREEN}🌍 Globe Interface: ${BLUE}http://localhost:5175${NC}"
-echo -e "${GREEN}🔗 Texture Server: ${BLUE}http://localhost:8000${NC}"
-echo -e "${GREEN}🌐 WebSocket Server: ${BLUE}ws://localhost:8765${NC}"
+echo -e "${GREEN}🌍 Globe Interface: ${BLUE}http://localhost:5173${NC}"
+echo -e "${GREEN}🔗 API Server: ${BLUE}http://localhost:8000${NC}"
+echo -e "${GREEN}📖 API Documentation: ${BLUE}http://localhost:8000/docs${NC}"
 echo ""
 echo -e "${BLUE}📊 Features Available:${NC}"
 echo -e "${GREEN}  ✅ Random ocean coordinate generation (120 verified points)${NC}"
 echo -e "${GREEN}  ✅ Random date generation with data availability validation${NC}"
 echo -e "${GREEN}  ✅ REAL ocean data from Copernicus Marine: SST, salinity, waves, currents, chlorophyll, pH${NC}"
 echo -e "${GREEN}  ✅ Temporal coverage: 1972-2025 with guaranteed data from 2022-06-01${NC}"
-echo -e "${GREEN}  ✅ Real-time WebSocket communication with date parameters${NC}"
+echo -e "${GREEN}  ✅ Real-time REST API communication with date parameters${NC}"
 echo -e "${GREEN}  ✅ Automatic data download and caching with progress notifications${NC}"
 echo -e "${GREEN}  ✅ Smart caching - subsequent requests load instantly${NC}"
 echo -e "${GREEN}  ✅ Port management - all ports freed before startup${NC}"
@@ -304,7 +252,7 @@ echo "  • Rotate, zoom, and pan the globe with mouse controls"
 echo "  • Ocean data will be fetched automatically for selected locations and dates"
 echo ""
 echo -e "${YELLOW}📄 Logs:${NC}"
-echo "  • WebSocket server: tail -f logs/websocket.log"
+echo "  • API server: tail -f logs/api.log"
 echo "  • Frontend: tail -f logs/frontend.log"
 echo ""
 echo -e "${RED}Press Ctrl+C to stop all services${NC}"

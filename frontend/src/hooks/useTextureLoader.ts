@@ -1,88 +1,155 @@
 import { useLoader } from '@react-three/fiber';
-import { TextureLoader, Texture } from 'three';
-import { useMemo, useState, useEffect } from 'react';
+import { TextureLoader } from 'three';
+import { useMemo, useState, useEffect, startTransition } from 'react';
 
 interface TextureOptions {
   resolution?: 'preview' | 'low' | 'medium' | 'high';
   date?: string;
+  category?: 'sst' | 'acidity' | 'currents';
 }
 
-// Available texture files based on actual directory listing
-const AVAILABLE_TEXTURES = [
-  '/textures/sst/erddap_sst_texture_20250618.png',
-  '/textures/sst/erddap_sst_texture_20250618_medium.png',
-  '/textures/sst/erddap_sst_texture_20250618_low.png',
-  '/textures/sst/erddap_sst_texture_20250618_preview.png',
-  '/textures/sst/erddap_sst_texture_20250716_medium.png',
-  '/textures/sst/erddap_sst_texture_20250716_low.png',
-  '/textures/sst/erddap_sst_texture_20250716_preview.png'
-];
-
-// Function to find best available texture
-function findBestAvailableTexture(preferredDate = '20250716', preferredResolution = 'medium'): string {
-  const textureServerUrl = 'http://localhost:5173';
-  
-  // First try: exact match
-  const exactMatch = `/textures/sst/erddap_sst_texture_${preferredDate}_${preferredResolution}.png`;
-  if (AVAILABLE_TEXTURES.includes(exactMatch)) {
-    console.log(`🎯 Found exact texture match: ${exactMatch}`);
-    return `${textureServerUrl}${exactMatch}`;
-  }
-
-  // Second try: same date, different resolution
-  const sameDate = AVAILABLE_TEXTURES.filter(path => path.includes(preferredDate));
-  if (sameDate.length > 0) {
-    console.log(`📅 Found same date texture: ${sameDate[0]}`);
-    return `${textureServerUrl}${sameDate[0]}`;
-  }
-
-  // Third try: different date, same resolution
-  const sameResolution = AVAILABLE_TEXTURES.filter(path => path.includes(`_${preferredResolution}.png`));
-  if (sameResolution.length > 0) {
-    console.log(`🔍 Found same resolution texture: ${sameResolution[0]}`);
-    return `${textureServerUrl}${sameResolution[0]}`;
-  }
-
-  // Fallback: use first available texture
-  const fallback = AVAILABLE_TEXTURES[0];
-  console.log(`🔄 Using fallback texture: ${fallback}`);
-  return `${textureServerUrl}${fallback}`;
-}
-
-export function useTextureLoader() {
-  // Use Vite dev server on port 5173 for texture loading
-  const textureServerUrl = 'http://localhost:5173';
-  
-  // Load NASA Earth texture (this should always work)
-  const earthTexture = useLoader(TextureLoader, `${textureServerUrl}/textures/earth/nasa_world_topo_bathy.jpg`);
-  
-  // Load the default SST texture (medium resolution, latest available date)
-  const defaultSSTPath = findBestAvailableTexture('20250716', 'medium');
-  const sstTexture = useLoader(TextureLoader, defaultSSTPath);
-  
-  // Function to load specific SST texture with intelligent fallback
-  const loadSSTTexture = (options: TextureOptions = {}) => {
-    const { resolution = 'medium', date = '20250618' } = options;
-    
-    const bestPath = useMemo(() => {
-      return findBestAvailableTexture(date, resolution);
-    }, [resolution, date]);
-    
-    return useLoader(TextureLoader, bestPath);
+interface TextureMetadata {
+  available_textures: Record<string, Record<string, string[]>>;
+  summary: {
+    total_categories: number;
+    categories: Record<string, any>;
+    total_textures: number;
   };
+}
 
+// Configuration
+const API_BASE_URL = 'http://localhost:8000';
+
+// Function to construct API texture URL
+function buildTextureApiUrl(category: string, date?: string, resolution: string = 'medium'): string {
+  const params = new URLSearchParams();
+  if (date) params.append('date', date);
+  params.append('resolution', resolution);
+  
+  return `${API_BASE_URL}/textures/${category}?${params.toString()}`;
+}
+
+// Function to get texture metadata from API
+async function fetchTextureMetadata(): Promise<TextureMetadata | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/textures/metadata`);
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.warn('Failed to fetch texture metadata from API:', error);
+    return null;
+  }
+}
+
+export function useTextureLoader(externalCategory?: string) {
+  // State for texture metadata
+  const [metadata, setMetadata] = useState<TextureMetadata | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('sst');
+  const [selectedDate, setSelectedDate] = useState<string | undefined>();
+  const [selectedResolution, setSelectedResolution] = useState<string>('medium');
+  
+  // Use external category if provided, otherwise use internal state
+  const activeCategory = externalCategory || selectedCategory;
+  
+  // Load NASA Earth texture from API server
+  const earthTexture = useLoader(TextureLoader, `${API_BASE_URL}/textures/earth/nasa_world_topo_bathy.jpg`);
+  
+  // Fetch texture metadata on mount
+  useEffect(() => {
+    fetchTextureMetadata().then(setMetadata);
+  }, []);
+  
+  // Build current texture URL based on selections
+  const currentTextureUrl = useMemo(() => {
+    if (!metadata || !activeCategory) {
+      // Fallback to SST via API
+      return buildTextureApiUrl('sst', undefined, 'medium');
+    }
+    
+    return buildTextureApiUrl(activeCategory, selectedDate, selectedResolution);
+  }, [metadata, activeCategory, selectedDate, selectedResolution]);
+  
+  // Load current data texture via API
+  const dataTexture = useLoader(TextureLoader, currentTextureUrl);
+  
+  // Function to change texture category with deferred updates
+  const changeCategory = (category: string, date?: string, resolution: string = 'medium') => {
+    startTransition(() => {
+      setSelectedCategory(category);
+      setSelectedDate(date);
+      setSelectedResolution(resolution);
+    });
+  };
+  
+  // Get available options for current category
+  const getAvailableOptions = (category: string) => {
+    if (!metadata?.available_textures[category]) {
+      return { dates: [], resolutions: [] };
+    }
+    
+    const categoryData = metadata.available_textures[category];
+    const dates = Object.keys(categoryData);
+    const allResolutions = new Set<string>();
+    
+    Object.values(categoryData).forEach(resolutions => {
+      resolutions.forEach(res => allResolutions.add(res));
+    });
+    
+    return {
+      dates: dates.sort(),
+      resolutions: Array.from(allResolutions)
+    };
+  };
+  
   // Log successful texture loading
   useEffect(() => {
-    if (sstTexture) {
-      console.log(`✅ Successfully loaded SST texture: ${defaultSSTPath}`);
+    if (dataTexture) {
+      console.log(`✅ Successfully loaded ${activeCategory} texture: ${currentTextureUrl}`);
+      console.log(`🔄 Texture object:`, dataTexture);
     }
-  }, [sstTexture, defaultSSTPath]);
+  }, [dataTexture, activeCategory, currentTextureUrl]);
+
+  // Log category changes
+  useEffect(() => {
+    console.log(`🎯 Category changed to: ${activeCategory}`);
+    console.log(`📍 Current texture URL: ${currentTextureUrl}`);
+  }, [activeCategory, currentTextureUrl]);
+  
+  // Log metadata loading
+  useEffect(() => {
+    if (metadata) {
+      console.log('📊 Texture metadata loaded:', metadata.summary);
+    }
+  }, [metadata]);
 
   return {
+    // Textures
     earthTexture,
-    sstTexture,
-    loadSSTTexture,
-    availableTextures: AVAILABLE_TEXTURES,
-    currentSSTPath: defaultSSTPath
+    dataTexture, // Current data overlay texture
+    
+    // Category management
+    selectedCategory: activeCategory, // Return the active category (external or internal)
+    selectedDate,
+    selectedResolution,
+    changeCategory,
+    
+    // Available options
+    metadata,
+    getAvailableOptions,
+    availableCategories: metadata ? Object.keys(metadata.available_textures).filter(cat => 
+      Object.keys(metadata.available_textures[cat]).length > 0
+    ) : [],
+    
+    // Current texture info
+    currentTextureUrl,
+    
+    // Legacy compatibility (for SST)
+    sstTexture: dataTexture, // Alias for backward compatibility
+    loadSSTTexture: (options: TextureOptions = {}) => {
+      changeCategory('sst', options.date, options.resolution);
+      return dataTexture;
+    }
   };
 }

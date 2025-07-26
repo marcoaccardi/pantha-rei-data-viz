@@ -8,6 +8,12 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
+      // Proxy all API endpoints and textures to backend
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false
+      },
       '/textures': {
         target: 'http://localhost:8000',
         changeOrigin: true,

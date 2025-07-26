@@ -21,7 +21,6 @@ from processors.dataset_texture_generators import (
     SSTTextureGenerator,
     AcidityTextureGenerator, 
     CurrentsTextureGenerator,
-    WavesTextureGenerator,
     MicroplasticsTextureGenerator
 )
 
@@ -53,7 +52,6 @@ class TextureBatchProcessor:
             'sst': SSTTextureGenerator(self.textures_output_path),
             'acidity': AcidityTextureGenerator(self.textures_output_path),
             'currents': CurrentsTextureGenerator(self.textures_output_path),
-            'waves': WavesTextureGenerator(self.textures_output_path),
             'microplastics': MicroplasticsTextureGenerator(self.textures_output_path)
         }
         
@@ -281,7 +279,7 @@ def main():
     """Main entry point for texture generation script."""
     parser = argparse.ArgumentParser(description="Generate textures from ocean data")
     parser.add_argument('--dataset', '-d', type=str, 
-                       choices=['sst', 'acidity', 'currents', 'waves', 'microplastics'],
+                       choices=['sst', 'acidity', 'currents', 'microplastics'],
                        help='Process specific dataset only')
     parser.add_argument('--force', '-f', action='store_true',
                        help='Force regeneration even if texture exists')

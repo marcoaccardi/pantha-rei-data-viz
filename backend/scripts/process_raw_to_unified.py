@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from processors.acidity_processor import AcidityProcessor
 from processors.currents_processor import CurrentsProcessor
+from processors.waves_processor import WavesProcessor
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -111,6 +112,53 @@ def process_currents_files():
     logger.info(f"Processed {processed_count} currents files")
     return processed_count
 
+def process_waves_files():
+    """Process all raw waves files to unified coordinates."""
+    logger.info("Processing waves files...")
+    
+    processor = WavesProcessor()
+    
+    # Find raw waves files
+    raw_waves_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/waves")
+    output_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/waves")
+    
+    if not raw_waves_path.exists():
+        logger.warning(f"No raw waves directory found: {raw_waves_path}")
+        return 0
+    
+    # Find all NetCDF files
+    raw_files = list(raw_waves_path.rglob("*.nc"))
+    logger.info(f"Found {len(raw_files)} raw waves files")
+    
+    processed_count = 0
+    
+    for raw_file in raw_files:
+        try:
+            # Create output path maintaining directory structure
+            relative_path = raw_file.relative_to(raw_waves_path)
+            output_file = output_path / relative_path.parent / f"waves_processed_{raw_file.stem.split('_')[-1]}.nc"
+            
+            # Skip if already processed
+            if output_file.exists():
+                logger.info(f"Skipping already processed: {output_file.name}")
+                continue
+            
+            logger.info(f"Processing: {raw_file.name}")
+            
+            success = processor.process_file(raw_file, output_file)
+            
+            if success:
+                processed_count += 1
+                logger.info(f"✓ Successfully processed: {output_file.name}")
+            else:
+                logger.error(f"✗ Failed to process: {raw_file.name}")
+                
+        except Exception as e:
+            logger.error(f"Error processing {raw_file.name}: {e}")
+    
+    logger.info(f"Processed {processed_count} waves files")
+    return processed_count
+
 def main():
     """Process all raw data files."""
     logger.info("Starting raw data processing...")
@@ -122,6 +170,9 @@ def main():
     
     # Process currents files  
     total_processed += process_currents_files()
+    
+    # Process waves files
+    total_processed += process_waves_files()
     
     logger.info(f"Processing complete: {total_processed} files processed total")
     

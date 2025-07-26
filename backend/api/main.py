@@ -13,7 +13,7 @@ All data is served from harmonized NetCDF files with unified coordinate systems.
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 from pathlib import Path
 import sys
@@ -28,6 +28,7 @@ from api.models.responses import (
     HealthResponse, ErrorResponse
 )
 from api.endpoints.data_extractor import DataExtractor
+from api.endpoints.texture_service import texture_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -164,11 +165,24 @@ async def get_acidity_point(
         logger.error(f"Error extracting acidity data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/microplastics/point", response_model=PointDataResponse)
+async def get_microplastics_point(
+    lat: float = Query(..., ge=-90, le=90, description="Latitude in degrees"),
+    lon: float = Query(..., ge=-180, le=180, description="Longitude in degrees"),
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (nearest available if not specified)")
+):
+    """Extract microplastics data at a specific point. Includes real data (1993-2019) and synthetic predictions (2019-2025)."""
+    try:
+        return await data_extractor.extract_point_data("microplastics", lat, lon, date)
+    except Exception as e:
+        logger.error(f"Error extracting microplastics data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/multi/point", response_model=MultiDatasetResponse)
 async def get_multi_point(
     lat: float = Query(..., ge=-90, le=90, description="Latitude in degrees"),
     lon: float = Query(..., ge=-180, le=180, description="Longitude in degrees"),
-    datasets: str = Query("sst,waves,currents,acidity", description="Comma-separated list of datasets"),
+    datasets: str = Query("sst,waves,currents,acidity,microplastics", description="Comma-separated list of datasets"),
     date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (latest if not specified)")
 ):
     """Extract data from multiple datasets at a specific point."""
@@ -177,6 +191,65 @@ async def get_multi_point(
         return await data_extractor.extract_multi_point_data(dataset_list, lat, lon, date)
     except Exception as e:
         logger.error(f"Error extracting multi-dataset data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Texture Endpoints
+
+@app.get("/textures/earth/nasa_world_topo_bathy.jpg")
+async def get_earth_texture():
+    """Serve the NASA Earth texture file."""
+    earth_texture_path = Path(__file__).parent.parent.parent / "ocean-data" / "textures" / "earth" / "nasa_world_topo_bathy.jpg"
+    
+    if not earth_texture_path.exists():
+        logger.error(f"Earth texture not found at: {earth_texture_path}")
+        raise HTTPException(status_code=404, detail="Earth texture not found")
+    
+    return FileResponse(
+        path=str(earth_texture_path),
+        media_type="image/jpeg",
+        filename="nasa_world_topo_bathy.jpg"
+    )
+
+@app.get("/textures/{category}")
+async def get_texture(
+    category: str,
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (latest if not specified)"),
+    resolution: str = Query("medium", description="Texture resolution: preview, low, medium, high")
+):
+    """Serve texture image for specified category, date, and resolution."""
+    try:
+        return texture_service.serve_texture(category, date, resolution)
+    except Exception as e:
+        logger.error(f"Error serving texture: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/textures/list/{category}")
+async def list_category_textures(category: str):
+    """List all available textures for a specific category."""
+    try:
+        available = texture_service.get_available_textures()
+        if category not in available:
+            raise HTTPException(status_code=404, detail=f"Category not found: {category}")
+        
+        return {
+            "category": category,
+            "available_dates": list(available[category].keys()),
+            "textures": available[category]
+        }
+    except Exception as e:
+        logger.error(f"Error listing textures for category {category}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/textures/metadata")
+async def get_texture_metadata():
+    """Get metadata and summary of all available textures."""
+    try:
+        return {
+            "available_textures": texture_service.get_available_textures(),
+            "summary": texture_service.get_texture_summary()
+        }
+    except Exception as e:
+        logger.error(f"Error getting texture metadata: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.exception_handler(HTTPException)

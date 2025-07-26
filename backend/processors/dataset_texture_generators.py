@@ -24,10 +24,10 @@ class SSTTextureGenerator(TextureGenerator):
     def process_netcdf_to_texture(self, input_path: Union[str, Path], 
                                  output_directory: Union[str, Path] = None) -> bool:
         """
-        Process SST NetCDF file to thermal texture.
+        Process SST NetCDF file to thermal texture using high-resolution raw data.
         
         Args:
-            input_path: Path to SST NetCDF file
+            input_path: Path to SST NetCDF file (uses corresponding raw file for higher resolution)
             output_directory: Output directory (optional)
             
         Returns:
@@ -49,8 +49,18 @@ class SSTTextureGenerator(TextureGenerator):
             else:
                 output_directory = Path(output_directory)
                 
+            # Try to find corresponding high-resolution raw file first
+            raw_sst_path = Path(f"/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/sst/{date_str[:4]}/{date_str[4:6]}/oisst-avhrr-v02r01.{date_str}.nc")
+            
+            if raw_sst_path.exists():
+                self.logger.info(f"Using high-resolution raw SST data: {raw_sst_path}")
+                data_file = raw_sst_path
+            else:
+                self.logger.warning(f"Raw SST file not found, falling back to processed file: {input_path}")
+                data_file = input_path
+                
             # Load data
-            with xr.open_dataset(input_path) as ds:
+            with xr.open_dataset(data_file) as ds:
                 # Get SST variable (try different possible names)
                 sst_var = None
                 for var_name in ['sst', 'analysed_sst', 'sea_surface_temperature']:
@@ -59,7 +69,7 @@ class SSTTextureGenerator(TextureGenerator):
                         break
                         
                 if sst_var is None:
-                    self.logger.error(f"No SST variable found in {input_path}")
+                    self.logger.error(f"No SST variable found in {data_file}")
                     return False
                     
                 sst_data = ds[sst_var].values
@@ -69,6 +79,16 @@ class SSTTextureGenerator(TextureGenerator):
                 # Remove time dimension if present
                 if sst_data.ndim > 2:
                     sst_data = np.squeeze(sst_data)
+                    
+                # Handle coordinate transformation if using raw data (0-360° to -180-180°)
+                if data_file == raw_sst_path and lon.max() > 180:
+                    self.logger.info("Converting longitude coordinates from 0-360° to -180-180°")
+                    # Reorder longitude and corresponding data
+                    lon_adjusted = np.where(lon > 180, lon - 360, lon)
+                    # Sort by longitude
+                    lon_sort_idx = np.argsort(lon_adjusted)
+                    lon = lon_adjusted[lon_sort_idx]
+                    sst_data = sst_data[:, lon_sort_idx] if sst_data.ndim == 2 else sst_data[lon_sort_idx]
                     
                 # Convert from Kelvin to Celsius if needed
                 if np.nanmean(sst_data) > 100:  # Likely in Kelvin
@@ -262,82 +282,6 @@ class CurrentsTextureGenerator(TextureGenerator):
             self.logger.error(f"Failed to process currents file {input_path}: {e}")
             return False
 
-class WavesTextureGenerator(TextureGenerator):
-    """Generator for Ocean Waves textures."""
-    
-    def __init__(self, output_base_path: Union[str, Path] = None):
-        super().__init__(output_base_path)
-        self.dataset_name = 'waves'
-        
-    def process_netcdf_to_texture(self, input_path: Union[str, Path], 
-                                 output_directory: Union[str, Path] = None) -> bool:
-        """
-        Process waves NetCDF file to wave height texture.
-        
-        Args:
-            input_path: Path to waves NetCDF file
-            output_directory: Output directory (optional)
-            
-        Returns:
-            True if successful
-        """
-        try:
-            input_path = Path(input_path)
-            
-            # Extract date from filename
-            date_match = re.search(r'(\d{8})', input_path.name)
-            if not date_match:
-                self.logger.error(f"Cannot extract date from filename: {input_path.name}")
-                return False
-            date_str = date_match.group(1)
-            
-            # Set output directory
-            if output_directory is None:
-                output_directory = self.output_base_path / self.dataset_name / date_str[:4]
-            else:
-                output_directory = Path(output_directory)
-                
-            # Load data
-            with xr.open_dataset(input_path) as ds:
-                # Get significant wave height (VHM0)
-                if 'VHM0' not in ds.data_vars:
-                    self.logger.error(f"No VHM0 (wave height) variable found in {input_path}")
-                    return False
-                    
-                wave_data = ds['VHM0'].values
-                lat = ds.latitude.values if 'latitude' in ds.coords else ds.lat.values
-                lon = ds.longitude.values if 'longitude' in ds.coords else ds.lon.values
-                
-                # Remove time dimension if present
-                if wave_data.ndim > 2:
-                    wave_data = np.squeeze(wave_data)
-                    
-                # Generate texture with wave height colormap and natural land masking
-                colormap = self.get_scientific_colormap('height')
-                texture, metadata = self.data_to_texture(
-                    wave_data, lon, lat, colormap,
-                    normalize_method='percentile',
-                    use_natural_land_mask=True
-                )
-                
-                # Add waves-specific metadata
-                metadata.update({
-                    'dataset': 'ocean_waves',
-                    'variable': 'significant_wave_height',
-                    'units': 'm',
-                    'date': date_str,
-                    'data_source': 'CMEMS Wave Model'
-                })
-                
-                # Save texture
-                filename = self.generate_filename(self.dataset_name, date_str)
-                output_path = output_directory / filename
-                
-                return self.save_texture(texture, output_path, metadata)
-                
-        except Exception as e:
-            self.logger.error(f"Failed to process waves file {input_path}: {e}")
-            return False
 
 class MicroplasticsTextureGenerator(TextureGenerator):
     """Generator for Microplastics concentration textures."""

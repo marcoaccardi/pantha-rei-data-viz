@@ -59,6 +59,18 @@ class DataExtractor:
                 "variables": ["ph", "dissic"],
                 "file_pattern": "acidity_harmonized_*.nc",
                 "spatial_resolution": "0.25° degree"
+            },
+            "microplastics": {
+                "name": "Marine Microplastics",
+                "description": "NOAA microplastics data (1993-2019) combined with GAN-generated synthetic data (2019-2025)",
+                "variables": ["microplastics_concentration", "confidence", "data_source"],
+                "file_pattern": "microplastics_complete_1993_2025.nc",
+                "spatial_resolution": "Point data (harmonized coordinates)",
+                "temporal_coverage": "1993-2025",
+                "data_reliability": {
+                    "real_data": "1993-2019 (confidence=1.0)",
+                    "synthetic_data": "2019-2025 (confidence=0.7)"
+                }
             }
         }
         
@@ -70,26 +82,39 @@ class DataExtractor:
         
         for dataset_id, config in self.dataset_config.items():
             try:
-                # Find available files
-                dataset_path = self.data_path / dataset_id
-                files = list(dataset_path.rglob(config["file_pattern"])) if dataset_path.exists() else []
-                
-                # Get date range
-                dates = []
-                for file_path in files:
-                    try:
-                        date_str = self._extract_date_from_filename(file_path.name)
-                        if date_str:
-                            dates.append(date_str)
-                    except:
-                        continue
-                
-                dates.sort()
-                
-                temporal_coverage = {
-                    "start": dates[0] if dates else "No data",
-                    "end": dates[-1] if dates else "No data"
-                }
+                # Special handling for microplastics
+                if dataset_id == "microplastics":
+                    microplastics_path = self.data_path / "microplastics" / "unified" / "microplastics_complete_1993_2025.nc"
+                    files = [microplastics_path] if microplastics_path.exists() else []
+                    
+                    # Fixed temporal coverage for microplastics
+                    temporal_coverage = {
+                        "start": "1993-01-01",
+                        "end": "2025-12-31"
+                    }
+                    latest_date = "2025-12-31"
+                else:
+                    # Standard file handling for other datasets
+                    dataset_path = self.data_path / dataset_id
+                    files = list(dataset_path.rglob(config["file_pattern"])) if dataset_path.exists() else []
+                    
+                    # Get date range
+                    dates = []
+                    for file_path in files:
+                        try:
+                            date_str = self._extract_date_from_filename(file_path.name)
+                            if date_str:
+                                dates.append(date_str)
+                        except:
+                            continue
+                    
+                    dates.sort()
+                    
+                    temporal_coverage = {
+                        "start": dates[0] if dates else "No data",
+                        "end": dates[-1] if dates else "No data"
+                    }
+                    latest_date = dates[-1] if dates else None
                 
                 datasets[dataset_id] = DatasetInfo(
                     name=config["name"],
@@ -98,7 +123,7 @@ class DataExtractor:
                     temporal_coverage=temporal_coverage,
                     spatial_resolution=config["spatial_resolution"],
                     file_count=len(files),
-                    latest_date=dates[-1] if dates else None
+                    latest_date=latest_date
                 )
                 
             except Exception as e:
@@ -155,6 +180,11 @@ class DataExtractor:
         start_time = time.time()
         
         try:
+            # Special handling for microplastics point data
+            if dataset == "microplastics":
+                return self._extract_microplastics_point_data(file_path, lat, lon, start_time)
+            
+            # Standard gridded data extraction
             with xr.open_dataset(file_path) as ds:
                 # Determine coordinate names (different datasets use different names)
                 lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
@@ -212,6 +242,113 @@ class DataExtractor:
             logger.error(f"Error extracting data from {file_path}: {e}")
             raise
 
+    def _extract_microplastics_point_data(self, file_path: Path, lat: float, lon: float, start_time: float) -> PointDataResponse:
+        """Extract microplastics point data with nearest neighbor matching."""
+        try:
+            with xr.open_dataset(file_path) as ds:
+                # Get coordinate arrays
+                lats = ds['latitude'].values
+                lons = ds['longitude'].values
+                
+                # Calculate distances to all points
+                lat_diff = lats - lat
+                lon_diff = lons - lon
+                distances = np.sqrt(lat_diff**2 + lon_diff**2)
+                
+                # Find nearest point
+                nearest_idx = np.argmin(distances)
+                
+                # Check if nearest point is within reasonable distance (5 degrees)
+                min_distance = distances[nearest_idx]
+                if min_distance > 5.0:
+                    # No nearby data point found
+                    extraction_time = (time.time() - start_time) * 1000
+                    return PointDataResponse(
+                        dataset="microplastics",
+                        location=Coordinates(lat=lat, lon=lon),
+                        actual_location=Coordinates(lat=lat, lon=lon),
+                        date="no-data",
+                        data={},
+                        extraction_time_ms=round(extraction_time, 2),
+                        file_source=str(file_path)
+                    )
+                
+                # Extract data at nearest point
+                actual_lat = float(lats[nearest_idx])
+                actual_lon = float(lons[nearest_idx])
+                
+                # Get data values
+                concentration = float(ds['microplastics_concentration'].values[nearest_idx])
+                confidence = float(ds['confidence'].values[nearest_idx])
+                data_source = str(ds['data_source'].values[nearest_idx])
+                
+                # Get date from time coordinate
+                time_val = ds['time'].values[nearest_idx]  
+                if hasattr(time_val, 'strftime'):
+                    data_date = time_val.strftime('%Y-%m-%d')
+                else:
+                    # Handle numpy datetime64
+                    dt = np.datetime64(time_val, 'D')
+                    data_date = str(dt)
+                
+                # Build response data
+                data = {
+                    "microplastics_concentration": DataValue(
+                        value=concentration if not np.isnan(concentration) else None,
+                        units="pieces/m³",
+                        long_name="Microplastics Concentration",
+                        valid=not np.isnan(concentration)
+                    ),
+                    "confidence": DataValue(
+                        value=confidence if not np.isnan(confidence) else None,
+                        units="ratio",
+                        long_name="Data Confidence Level",
+                        valid=not np.isnan(confidence)
+                    ),
+                    "data_source": DataValue(
+                        value=data_source,
+                        units="category",
+                        long_name="Data Source Type (real/synthetic)",
+                        valid=True
+                    )
+                }
+                
+                # Add concentration classification
+                if not np.isnan(concentration):
+                    if concentration <= 0.0005:
+                        class_text = "Very Low"
+                    elif concentration <= 0.005:
+                        class_text = "Low"
+                    elif concentration <= 1.0:
+                        class_text = "Medium"
+                    elif concentration <= 100.0:
+                        class_text = "High"
+                    else:
+                        class_text = "Very High"
+                    
+                    data["concentration_class"] = DataValue(
+                        value=class_text,
+                        units="category",
+                        long_name="Concentration Classification",
+                        valid=True
+                    )
+                
+                extraction_time = (time.time() - start_time) * 1000
+                
+                return PointDataResponse(
+                    dataset="microplastics", 
+                    location=Coordinates(lat=lat, lon=lon),
+                    actual_location=Coordinates(lat=actual_lat, lon=actual_lon),
+                    date=data_date,
+                    data=data,
+                    extraction_time_ms=round(extraction_time, 2),
+                    file_source=str(file_path)
+                )
+                
+        except Exception as e:
+            logger.error(f"Error extracting microplastics data from {file_path}: {e}")
+            raise
+
     def _get_data_date(self, ds: xr.Dataset, file_path: Path) -> str:
         """Get the date from dataset or filename."""
         # Try to get from dataset time coordinate
@@ -232,6 +369,12 @@ class DataExtractor:
 
     async def _find_dataset_file(self, dataset: str, date_str: Optional[str] = None) -> Optional[Path]:
         """Find the appropriate file for the dataset and date."""
+        # Special handling for microplastics - single file with all data
+        if dataset == "microplastics":
+            microplastics_path = self.data_path / "microplastics" / "unified" / "microplastics_complete_1993_2025.nc"
+            return microplastics_path if microplastics_path.exists() else None
+        
+        # Standard file finding for other datasets
         dataset_path = self.data_path / dataset
         if not dataset_path.exists():
             return None

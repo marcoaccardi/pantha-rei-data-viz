@@ -56,8 +56,7 @@ class TextureGenerator:
             'speed': 'cmocean.speed',          # Sequential for speed magnitude
             'ph': 'cmocean.matter',            # Sequential for pH/chemistry
             'acidity': 'cmocean.matter',
-            'height': 'cmocean.amp',           # Sequential for wave height
-            'waves': 'cmocean.amp',
+            'height': 'cmocean.amp',           # Sequential for height data
             'concentration': 'cmocean.dense',   # Sequential for concentrations
             'microplastics': 'cmocean.dense',
             'default': 'viridis'
@@ -165,6 +164,7 @@ class TextureGenerator:
                        use_natural_land_mask: bool = True) -> Tuple[np.ndarray, Dict[str, Any]]:
         """
         Convert data array to texture with color mapping using natural NaN patterns for land.
+        Handles different coordinate ranges (e.g., limited coverage -80°/80° vs SST -90°/90°).
         
         Args:
             data: 2D data array (lat, lon)
@@ -181,10 +181,187 @@ class TextureGenerator:
         if data.ndim > 2:
             data = np.squeeze(data)
             
+        # Check coordinate ranges
+        lat_min, lat_max = float(lat.min()), float(lat.max())
+        lon_min, lon_max = float(lon.min()), float(lon.max())
+        
+        # Determine if we need to expand to full global coverage
+        is_limited_coverage = lat_min > -85 or lat_max < 85
+        
+        if is_limited_coverage:
+            # For limited coverage data (like -80°/80° range), expand to global texture
+            texture, metadata = self._create_expanded_global_texture(
+                data, lon, lat, colormap, normalize_method, use_natural_land_mask
+            )
+        else:
+            # Standard processing for full global coverage
+            texture, metadata = self._create_standard_texture(
+                data, lon, lat, colormap, normalize_method, use_natural_land_mask
+            )
+        
+        return texture, metadata
+    
+    def _create_standard_texture(self, data: np.ndarray, lon: np.ndarray, lat: np.ndarray,
+                                colormap: str, normalize_method: str, use_natural_land_mask: bool) -> Tuple[np.ndarray, Dict[str, Any]]:
+        """Create texture for full global coverage data (like SST)."""
         # Normalize data (only valid ocean data, preserve NaN for land)
         norm_data, norm_params = self.normalize_data(data, method=normalize_method)
         
         # Get colormap
+        cmap = self._get_colormap(colormap)
+            
+        # Set NaN values (land areas) to be transparent white
+        if use_natural_land_mask:
+            cmap = cmap.copy()
+            cmap.set_bad(color='white', alpha=0.0)
+            
+        # Apply colormap to normalized data
+        rgba_data = cmap(norm_data)
+        
+        # Convert to uint8
+        texture = (rgba_data * 255).astype(np.uint8)
+        
+        # Flip texture vertically to correct orientation for globe mapping
+        texture = np.flipud(texture)
+        
+        # Create metadata
+        valid_pixels = int(np.sum(~np.isnan(data)))
+        total_pixels = data.size
+        ocean_coverage = (valid_pixels / total_pixels) * 100
+        
+        metadata = {
+            'normalization': norm_params,
+            'colormap': colormap,
+            'shape': texture.shape,
+            'coordinate_range': {
+                'lat_min': float(lat.min()),
+                'lat_max': float(lat.max()),
+                'lon_min': float(lon.min()),
+                'lon_max': float(lon.max())
+            },
+            'data_range': {
+                'original_min': float(np.nanmin(data)),
+                'original_max': float(np.nanmax(data)),
+                'valid_pixels': valid_pixels,
+                'total_pixels': total_pixels,
+                'ocean_coverage_percent': round(ocean_coverage, 1)
+            },
+            'natural_land_mask': use_natural_land_mask,
+            'land_mask_method': 'natural_nan_transparency' if use_natural_land_mask else 'none',
+            'texture_type': 'standard_global'
+        }
+        
+        return texture, metadata
+    
+    def _create_expanded_global_texture(self, data: np.ndarray, lon: np.ndarray, lat: np.ndarray,
+                                       colormap: str, normalize_method: str, use_natural_land_mask: bool) -> Tuple[np.ndarray, Dict[str, Any]]:
+        """Create texture for limited coverage data expanded to global range."""
+        from scipy.interpolate import RegularGridInterpolator
+        
+        # Define target global grid (180x360 for consistency with SST)
+        target_lat = np.linspace(-89.5, 89.5, 180)
+        target_lon = np.linspace(-179.5, 179.5, 360)
+        
+        # Initialize global data array with NaN (for areas outside source coverage)
+        global_data = np.full((180, 360), np.nan)
+        
+        # Get source coordinate ranges
+        lat_min, lat_max = float(lat.min()), float(lat.max())
+        lon_min, lon_max = float(lon.min()), float(lon.max())
+        
+        # Use proper interpolation for data within coverage area
+        # Create interpolator for valid (non-NaN) data only
+        valid_mask = ~np.isnan(data)
+        
+        if np.any(valid_mask):
+            # Create interpolator using RegularGridInterpolator
+            # Use nearest-neighbor to preserve data values and avoid NaN spread from linear interpolation
+            interpolator = RegularGridInterpolator(
+                (lat, lon), data, 
+                method='nearest', 
+                bounds_error=False, 
+                fill_value=np.nan
+            )
+            
+            # Create target coordinate grids
+            target_lon_grid, target_lat_grid = np.meshgrid(target_lon, target_lat)
+            
+            # Only interpolate within the source data coverage area
+            coverage_mask = ((target_lat_grid >= lat_min) & (target_lat_grid <= lat_max) &
+                           (target_lon_grid >= lon_min) & (target_lon_grid <= lon_max))
+            
+            # Flatten grids for interpolation
+            target_points = np.column_stack([
+                target_lat_grid[coverage_mask].ravel(),
+                target_lon_grid[coverage_mask].ravel()
+            ])
+            
+            # Interpolate data
+            interpolated_values = interpolator(target_points)
+            
+            # Place interpolated values back into global grid
+            global_data[coverage_mask] = interpolated_values.reshape(-1)
+        
+        # For areas outside source coverage (polar regions), keep as NaN (will appear as white/transparent)
+        
+        # Normalize the expanded data
+        norm_data, norm_params = self.normalize_data(global_data, method=normalize_method)
+        
+        # Get colormap
+        cmap = self._get_colormap(colormap)
+            
+        # Set NaN values to be transparent white
+        if use_natural_land_mask:
+            cmap = cmap.copy()
+            cmap.set_bad(color='white', alpha=0.0)
+            
+        # Apply colormap
+        rgba_data = cmap(norm_data)
+        
+        # Convert to uint8
+        texture = (rgba_data * 255).astype(np.uint8)
+        
+        # Flip texture vertically to correct orientation for globe mapping
+        texture = np.flipud(texture)
+        
+        # Create metadata
+        valid_pixels = int(np.sum(~np.isnan(global_data)))
+        total_pixels = global_data.size
+        ocean_coverage = (valid_pixels / total_pixels) * 100
+        
+        metadata = {
+            'normalization': norm_params,
+            'colormap': colormap,
+            'shape': texture.shape,
+            'source_coordinate_range': {
+                'lat_min': float(lat.min()),
+                'lat_max': float(lat.max()),
+                'lon_min': float(lon.min()),
+                'lon_max': float(lon.max())
+            },
+            'target_coordinate_range': {
+                'lat_min': -89.5,
+                'lat_max': 89.5,
+                'lon_min': -179.5,
+                'lon_max': 179.5
+            },
+            'data_range': {
+                'original_min': float(np.nanmin(data)),
+                'original_max': float(np.nanmax(data)),
+                'valid_pixels': valid_pixels,
+                'total_pixels': total_pixels,
+                'ocean_coverage_percent': round(ocean_coverage, 1)
+            },
+            'natural_land_mask': use_natural_land_mask,
+            'land_mask_method': 'natural_nan_transparency' if use_natural_land_mask else 'none',
+            'texture_type': 'expanded_global',
+            'expansion_note': 'Limited coverage data expanded to global 180x360 grid'
+        }
+        
+        return texture, metadata
+    
+    def _get_colormap(self, colormap: str):
+        """Get matplotlib colormap object."""
         try:
             if colormap.startswith('cmocean.'):
                 cmap_name = colormap.split('.')[1]
@@ -194,43 +371,7 @@ class TextureGenerator:
         except (AttributeError, ValueError):
             self.logger.warning(f"Colormap {colormap} not found, using viridis")
             cmap = plt.get_cmap('viridis')
-            
-        # Set NaN values (land areas) to be transparent
-        if use_natural_land_mask:
-            cmap = cmap.copy()  # Create a copy to avoid modifying the original
-            cmap.set_bad(alpha=0.0)  # Make NaN values transparent
-            
-        # Apply colormap to normalized data (NaN values will be transparent)
-        rgba_data = cmap(norm_data)
-        
-        # Convert to uint8
-        texture = (rgba_data * 255).astype(np.uint8)
-        
-        # Flip texture vertically to correct orientation for globe mapping
-        # (matplotlib origin is bottom-left, but texture mapping expects top-left)
-        texture = np.flipud(texture)
-        
-        # Count valid ocean pixels (non-NaN)
-        valid_pixels = int(np.sum(~np.isnan(data)))
-        total_pixels = data.size
-        ocean_coverage = (valid_pixels / total_pixels) * 100
-        
-        metadata = {
-            'normalization': norm_params,
-            'colormap': colormap,
-            'shape': texture.shape,
-            'data_range': {
-                'original_min': float(np.nanmin(data)),
-                'original_max': float(np.nanmax(data)),
-                'valid_pixels': valid_pixels,
-                'total_pixels': total_pixels,
-                'ocean_coverage_percent': round(ocean_coverage, 1)
-            },
-            'natural_land_mask': use_natural_land_mask,
-            'land_mask_method': 'natural_nan_transparency' if use_natural_land_mask else 'none'
-        }
-        
-        return texture, metadata
+        return cmap
         
     def save_texture(self, texture: np.ndarray, output_path: Union[str, Path],
                     metadata: Dict[str, Any]) -> bool:
