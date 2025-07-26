@@ -82,8 +82,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   };
 
   useEffect(() => {
-    // Temporarily disable WebSocket connection - using REST API instead
-    console.log('WebSocket disabled - using REST API for data fetching');
+    // Simulate connection when using REST API instead
+    console.log('Using REST API for data fetching - simulating connected state');
+    setIsConnected(true);
     
     return () => {
       disconnect();

@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, startTransition } from 'react';
 import Globe from './components/Globe';
+import DataPanel from './components/DataPanel';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useTextureLoader } from './hooks/useTextureLoader';
-import type { Coordinates, ClimateDataResponse, OceanMeasurement, DateRange } from './utils/types';
+import { fetchMultiPointData, transformToLegacyFormat, getLatestAvailableDate } from './services/oceanDataService';
+import type { Coordinates, ClimateDataResponse, OceanMeasurement, DateRange, MultiDatasetOceanResponse } from './utils/types';
 import { 
   generateRandomDate, 
   validateDate, 
@@ -15,10 +17,14 @@ import {
 function App() {
   const [coordinates, setCoordinates] = useState<Coordinates>({ lat: 0, lng: 0 });
   const [climateData, setClimateData] = useState<ClimateDataResponse[]>([]);
+  const [oceanData, setOceanData] = useState<MultiDatasetOceanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [showDataOverlay, setShowDataOverlay] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [showMicroplastics, setShowMicroplastics] = useState(false);
+  const [hoveredMicroplastic, setHoveredMicroplastic] = useState<any>(null);
   
   // Texture management
   const { 
@@ -381,69 +387,55 @@ function App() {
     }
   });
 
-  const handleLocationChange = useCallback((coords: Coordinates, useDate?: string) => {
+  const handleLocationChange = useCallback(async (coords: Coordinates, useDate?: string) => {
     startTransition(() => {
       setCoordinates(coords);
       setIsLoading(true);
+      setApiError(null);
     });
     
     const queryDate = useDate || selectedDate;
     
-    // Validate date before sending WebSocket message
-    const dateValidation = validateDate(queryDate);
-    if (!dateValidation.isValid) {
+    try {
+      // Fetch data from REST API
+      console.log(`📡 Fetching ocean data for: ${coords.lat.toFixed(4)}°N, ${coords.lng.toFixed(4)}°E on ${queryDate}`);
+      
+      const response = await fetchMultiPointData(coords.lat, coords.lng, queryDate);
+      
       startTransition(() => {
-        setErrorMessage(`Cannot query data: ${dateValidation.errors.join(', ')}`);
+        setOceanData(response);
+        
+        // Transform to legacy format for backward compatibility
+        const legacyData = transformToLegacyFormat(response, coords);
+        setClimateData(legacyData);
+        
         setIsLoading(false);
+        setErrorMessage(null);
+        setApiError(null);
       });
-      return;
-    }
-    
-    if (isConnected) {
-      // Send requests for all available data types to the backend-api climate data server
-      const dataTypes = [
-        'temperature_request',
-        'salinity_request', 
-        'wave_request',
-        'currents_request',
-        'chlorophyll_request',
-        'ph_request',
-        'biodiversity_request',
-        'microplastics_request'
-      ];
       
-      const requestPayload = {
-        coordinates: {
-          lat: coords.lat,
-          lon: coords.lng // Map lng -> lon for backend compatibility
-        } as any,
-        dateRange: {
-          start: queryDate,
-          end: queryDate // Single day query
-        },
-        timestamp: new Date().toISOString()
-      };
+      console.log(`✅ Ocean data retrieved successfully in ${response.total_extraction_time_ms}ms`);
+      console.log(`📊 Datasets retrieved:`, Object.keys(response.datasets));
       
-      // Send requests for all data types
-      dataTypes.forEach(dataType => {
-        sendMessage({
-          type: dataType as any,
-          payload: requestPayload
+    } catch (error) {
+      console.error('❌ Error fetching ocean data:', error);
+      
+      // Don't show error for testing - just log it
+      startTransition(() => {
+        setIsLoading(false);
+        // Still show the panel but with no data
+        setOceanData({
+          location: { lat: coords.lat, lon: coords.lng },
+          date: queryDate,
+          datasets: {},
+          total_extraction_time_ms: 0
         });
-      });
-      
-      // Development logging
-      console.log(`📡 Requesting ocean data for: ${coords.lat.toFixed(4)}°N, ${coords.lng.toFixed(4)}°E on ${queryDate}`);
-      console.log(`📊 Expected data coverage: ${getDataAvailabilityDescription(queryDate)}`);
-    } else {
-      // WebSocket disabled - show informational message instead of error
-      console.log('📡 WebSocket disabled - data fetching via REST API not yet implemented for this interface');
-      startTransition(() => {
-        setErrorMessage('Data fetching via WebSocket disabled. Ocean data visualization is available through textures.');
-        setIsLoading(false);
+        setClimateData([]);
+        // Only show brief error message
+        setApiError('Data temporarily unavailable - backend may be starting up');
       });
     }
-  }, [selectedDate, isConnected, sendMessage]);
+  }, [selectedDate]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
@@ -455,6 +447,12 @@ function App() {
           showDataOverlay={showDataOverlay}
           dataCategory={selectedCategory}
           onZoomFunctionsReady={() => {}}
+          showMicroplastics={showMicroplastics}
+          onMicroplasticsPointHover={setHoveredMicroplastic}
+          onMicroplasticsPointClick={(point) => {
+            console.log('Microplastic point clicked:', point);
+            // Could open a detail panel here
+          }}
         />
         
         {/* Coordinate Display Panel */}
@@ -604,7 +602,7 @@ function App() {
               </div>
               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
                 {['sst', 'acidity', 'currents'].map(category => {
-                  const isAvailable = availableCategories.includes(category);
+                  const isAvailable = true; // Always allow category selection
                   const isSelected = selectedCategory === category;
                   const categoryLabels = {
                     sst: '🌡️ SST',
@@ -648,6 +646,73 @@ function App() {
                   )}
                 </div>
               )}
+              
+              {/* NEW: Microplastics overlay toggle */}
+              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div style={{ fontSize: '0.85em', marginBottom: '4px', color: '#cbd5e1' }}>
+                  🏭 Data Overlays
+                </div>
+                <button
+                  onClick={() => setShowMicroplastics(!showMicroplastics)}
+                  style={{
+                    backgroundColor: showMicroplastics ? '#7c3aed' : '#4b5563',
+                    color: 'white',
+                    border: showMicroplastics ? '2px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.1)',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.8em',
+                    transition: 'all 0.2s ease',
+                    width: '100%'
+                  }}
+                >
+                  {showMicroplastics ? '🏭 Hide Microplastics' : '🏭 Show Microplastics'}
+                </button>
+                {showMicroplastics && (
+                  <div style={{ fontSize: '0.7em', color: '#94a3b8', marginTop: '4px' }}>
+                    14,487 measurement points (1993-2025)
+                  </div>
+                )}
+                
+                {/* Microplastics hover info in side panel */}
+                {showMicroplastics && hoveredMicroplastic && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px',
+                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                    border: '1px solid rgba(124, 58, 237, 0.3)',
+                    borderRadius: '6px',
+                    fontSize: '0.75em'
+                  }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#a855f7' }}>
+                      📍 Measurement Details
+                    </div>
+                    <div style={{ marginBottom: '2px' }}>
+                      <strong>Concentration:</strong> {hoveredMicroplastic.concentration.toFixed(3)} pieces/m³
+                    </div>
+                    <div style={{ marginBottom: '2px' }}>
+                      <strong>Class:</strong> <span style={{ 
+                        color: hoveredMicroplastic.concentrationClass === 'Very High' ? '#ff4444' :
+                               hoveredMicroplastic.concentrationClass === 'High' ? '#ff9944' :
+                               hoveredMicroplastic.concentrationClass === 'Medium' ? '#ff44aa' :
+                               hoveredMicroplastic.concentrationClass === 'Low' ? '#9944ff' : '#bb88ff'
+                      }}>{hoveredMicroplastic.concentrationClass}</span>
+                    </div>
+                    <div style={{ marginBottom: '2px' }}>
+                      <strong>Date:</strong> {hoveredMicroplastic.date}
+                    </div>
+                    <div style={{ marginBottom: '2px' }}>
+                      <strong>Source:</strong> {hoveredMicroplastic.dataSource === 'real' ? '✅ Real Data' : '⚠️ Synthetic'}
+                    </div>
+                    <div style={{ marginBottom: '2px' }}>
+                      <strong>Confidence:</strong> {(hoveredMicroplastic.confidence * 100).toFixed(0)}%
+                    </div>
+                    <div>
+                      <strong>Location:</strong> {hoveredMicroplastic.coordinates[1].toFixed(2)}°, {hoveredMicroplastic.coordinates[0].toFixed(2)}°
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Location Controls */}
@@ -655,6 +720,7 @@ function App() {
               <button 
                 onClick={() => {
                   const randomCoords = generateRandomOceanLocation();
+                  // Just use the current selected date for testing
                   handleLocationChange(randomCoords);
                 }}
                 style={{
@@ -701,354 +767,12 @@ function App() {
           </div>
         )}
         
-        {/* Data Display Panel */}
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          maxWidth: '400px',
-          minWidth: '350px',
-          zIndex: 1000,
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          
-          {isLoading && (
-            <div style={{ padding: '10px', textAlign: 'center', color: '#fbbf24' }}>
-              {progressMessage ? (
-                <>
-                  ⏳ {progressMessage}
-                  {progressMessage.includes('Downloading') && (
-                    <div style={{ fontSize: '0.8em', marginTop: '4px', color: '#94a3b8' }}>
-                      First-time data download - this will be cached for future use
-                    </div>
-                  )}
-                </>
-              ) : (
-                '⏳ Loading climate data...'
-              )}
-            </div>
-          )}
-          
-          {climateData.length > 0 && (
-            <div>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '1.2em', color: '#4a90e2' }}>
-                Marine & Climate Data ({climateData.length} parameters)
-              </h3>
-              <div style={{ 
-                maxHeight: '500px', 
-                overflowY: 'auto', 
-                paddingRight: '8px',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#4a5568 #2d3748'
-              }}>
-                {(() => {
-                  // Group data by category for better organization
-                  const groupedData = climateData.reduce((groups, data) => {
-                    const category = data.data_source || 'Other';
-                    if (!groups[category]) groups[category] = [];
-                    groups[category].push(data);
-                    return groups;
-                  }, {} as Record<string, typeof climateData>);
-
-                  // Enhanced category configuration for comprehensive oceanographic data
-                  const categoryConfig = {
-                    // Ocean Physical Parameters
-                    'NOAA_Coral_Reef_Watch': { icon: '🌡️', color: '#ff6b6b', title: '🌊 Ocean Physical' },
-                    'OSCAR_Ocean_Currents': { icon: '🌊', color: '#4ecdc4', title: '🌊 Ocean Physical' },
-                    'Wave_Analysis_Model': { icon: '🌊', color: '#45b7d1', title: '🌊 Ocean Physical' },
-                    'NOAA_WaveWatch': { icon: '🌊', color: '#45b7d1', title: '🌊 Ocean Physical' },
-                    
-                    // Marine Biogeochemistry
-                    'Marine_Biology_Model': { icon: '🌿', color: '#26d0ce', title: '🧪 Marine Biogeochemistry' },
-                    'NOAA_CoastWatch': { icon: '🧪', color: '#4ade80', title: '🧪 Marine Biogeochemistry' },
-                    'Ocean_Chemistry_Model': { icon: '🧪', color: '#10b981', title: '🧪 Marine Biogeochemistry' },
-                    
-                    // Coral Reef Monitoring
-                    'Coral_Reef_Watch': { icon: '🪸', color: '#ff9500', title: '🪸 Coral Reef Monitoring' },
-                    'NOAA_Coral_Bleaching': { icon: '🪸', color: '#ff6b35', title: '🪸 Coral Reef Monitoring' },
-                    
-                    // Atmospheric & Climate
-                    'National_Weather_Service': { icon: '🌡️', color: '#fbbf24', title: '🌍 Atmospheric & Climate' },
-                    'NOAA_Weather': { icon: '🌡️', color: '#f59e0b', title: '🌍 Atmospheric & Climate' },
-                    
-                    // Ocean Pollution
-                    'NOAA_Ocean_Acidification': { icon: '🏭', color: '#f87171', title: '🏭 Ocean Pollution' },
-                    'Marine_Pollution_Monitor': { icon: '🏭', color: '#ef4444', title: '🏭 Ocean Pollution' },
-                    
-                    // Fallback categories
-                    'Ocean_Chemistry': { icon: '🧪', color: '#4ade80', title: '🧪 Marine Biogeochemistry' },
-                    'Marine_Pollution': { icon: '🏭', color: '#f87171', title: '🏭 Ocean Pollution' },
-                    'Ocean_Health': { icon: '🌿', color: '#10b981', title: '🧪 Marine Biogeochemistry' },  
-                    'Marine': { icon: '🌊', color: '#3b82f6', title: '🌊 Ocean Physical' },
-                    'Weather': { icon: '🌡️', color: '#fbbf24', title: '🌍 Atmospheric & Climate' },
-                    'Location_Info': { icon: '📍', color: '#8b5cf6', title: '📍 Location Info' },
-                    
-                    // Real data sources (new format)
-                    'Real': { icon: '✅', color: '#22c55e', title: '✅ Real Data Sources' },
-                    'Fallback_Ocean_Circulation_Model': { icon: '🔄', color: '#8b5cf6', title: '🔄 Fallback Models' }
-                  };
-
-                  return Object.entries(groupedData).map(([category, categoryData]) => {
-                    const config = (categoryConfig as any)[category] || { icon: '📊', color: '#6b7280', title: category.replace('_', ' ') };
-                    
-                    return (
-                      <div key={category} style={{ marginBottom: '20px' }}>
-                        <h4 style={{ 
-                          fontSize: '1em', 
-                          color: config.color, 
-                          margin: '10px 0 8px 0',
-                          fontWeight: '600',
-                          borderBottom: `2px solid ${config.color}20`,
-                          paddingBottom: '4px'
-                        }}>
-                          {config.icon} {config.title} ({categoryData.length})
-                        </h4>
-                        {categoryData.map((data, index) => {
-                          const displayValue = typeof data.value === 'number' ? 
-                            data.value.toFixed(2) : data.value;
-                          
-                          // Enhanced quality color coding for Real vs Synthetic data
-                          const qualityColor = 
-                            data.quality === 'Real' || data.quality === 'R' ? '#22c55e' :  // Green for Real data
-                            data.quality === 'High' || data.quality === 'Good' || data.quality === 'V' ? '#4ade80' :
-                            data.quality === 'Synthetic' || data.quality === 'S' ? '#ef4444' :  // Red for Synthetic
-                            data.quality === 'Medium' ? '#3b82f6' :
-                            data.quality === 'Satellite' || data.quality === 'C' ? '#fbbf24' : 
-                            data.quality === 'Fallback' || data.quality === 'Estimated' ? '#f97316' : '#6b7280';
-                          
-                          // Quality indicator with emphasis on Real vs Synthetic
-                          const qualityDisplay = 
-                            data.quality === 'Real' || data.quality === 'R' ? '✅ REAL DATA' :
-                            data.quality === 'Synthetic' || data.quality === 'S' ? '⚠️ SYNTHETIC' :
-                            data.quality;
-                          
-                          // Enhanced parameter-specific formatting for all oceanographic data
-                          let formattedValue = `${displayValue} ${data.units}`;
-                          let parameterIcon = '';
-                          let contextualInfo = '';
-                          
-                          // 🌊 Ocean Physical Parameters
-                          if (data.parameter === 'sea_surface_temperature' || data.parameter === 'analysed_sst') {
-                            parameterIcon = '🌡️';
-                            const temp = parseFloat(displayValue);
-                            if (temp < 15) contextualInfo = ' (Cold Water)';
-                            else if (temp > 28) contextualInfo = ' (Warm Tropical)';
-                            else contextualInfo = ' (Temperate)';
-                            
-                          } else if (data.parameter === 'ocean_current_speed' || data.parameter === 'current_speed') {
-                            parameterIcon = '🌊';
-                            const speed = parseFloat(displayValue);
-                            if (speed < 0.1) contextualInfo = ' (Slow)';
-                            else if (speed > 0.5) contextualInfo = ' (Fast)';
-                            else contextualInfo = ' (Moderate)';
-                            
-                          } else if (data.parameter === 'ocean_current_direction' || data.parameter === 'current_direction') {
-                            parameterIcon = '🧭';
-                            const direction = parseFloat(displayValue);
-                            const compass = direction < 45 ? 'N' : direction < 135 ? 'E' : direction < 225 ? 'S' : direction < 315 ? 'W' : 'N';
-                            contextualInfo = ` (${compass})`;
-                            
-                          } else if (data.parameter === 'significant_wave_height' || data.parameter === 'wave_height') {
-                            parameterIcon = '🌊';
-                            const height = parseFloat(displayValue);
-                            if (height < 1) contextualInfo = ' (Calm)';
-                            else if (height > 3) contextualInfo = ' (Rough)';
-                            else contextualInfo = ' (Moderate)';
-                            
-                          } else if (data.parameter === 'wave_period') {
-                            parameterIcon = '⏱️';
-                            
-                          } else if (data.parameter === 'wave_direction') {
-                            parameterIcon = '🧭';
-                            
-                          // 🧪 Marine Biogeochemistry  
-                          } else if (data.parameter === 'chlorophyll_a_concentration' || data.parameter === 'chlorophyll') {
-                            parameterIcon = '🌿';
-                            const chl = parseFloat(displayValue);
-                            if (chl < 0.5) contextualInfo = ' (Low Productivity)';
-                            else if (chl > 2.0) contextualInfo = ' (High Productivity)';
-                            else contextualInfo = ' (Moderate Productivity)';
-                            
-                          } else if (data.parameter === 'ocean_ph' || data.parameter === 'ph') {
-                            parameterIcon = '🧪';
-                            const phValue = parseFloat(displayValue);
-                            if (phValue < 7.8) contextualInfo = ' (Acidic - Climate Impact)';
-                            else if (phValue > 8.2) contextualInfo = ' (Basic)';
-                            else contextualInfo = ' (Normal Ocean pH)';
-                            
-                          } else if (data.parameter === 'salinity') {
-                            parameterIcon = '🧂';
-                            const sal = parseFloat(displayValue);
-                            if (sal < 34) contextualInfo = ' (Low Salinity)';
-                            else if (sal > 36) contextualInfo = ' (High Salinity)';
-                            else contextualInfo = ' (Normal Salinity)';
-                            
-                          } else if (data.parameter === 'dissolved_oxygen' || data.parameter === 'o2') {
-                            parameterIcon = '💨';
-                            const oxygen = parseFloat(displayValue);
-                            if (oxygen < 150) contextualInfo = ' (Low - Hypoxic Risk)';
-                            else if (oxygen > 300) contextualInfo = ' (High)';
-                            else contextualInfo = ' (Normal)';
-                            
-                          } else if (data.parameter === 'nitrate' || data.parameter === 'no3') {
-                            parameterIcon = '🔬';
-                            contextualInfo = ' (Nutrient)';
-                            
-                          } else if (data.parameter === 'phosphate' || data.parameter === 'po4') {
-                            parameterIcon = '🔬';
-                            contextualInfo = ' (Nutrient)';
-                            
-                          } else if (data.parameter === 'silicate' || data.parameter === 'si') {
-                            parameterIcon = '🔬';
-                            contextualInfo = ' (Nutrient)';
-                            
-                          } else if (data.parameter === 'iron' || data.parameter === 'fe') {
-                            parameterIcon = '⚗️';
-                            contextualInfo = ' (Limiting Nutrient)';
-                            
-                          } else if (data.parameter === 'phytoplankton_carbon' || data.parameter === 'phyc') {
-                            parameterIcon = '🦠';
-                            contextualInfo = ' (Marine Life)';
-                            
-                          } else if (data.parameter === 'net_primary_productivity' || data.parameter === 'nppv') {
-                            parameterIcon = '🌱';
-                            contextualInfo = ' (Ecosystem Productivity)';
-                            
-                          } else if (data.parameter === 'surface_partial_pressure_co2' || data.parameter === 'spco2') {
-                            parameterIcon = '💨';
-                            contextualInfo = ' (Carbon Cycle)';
-                            
-                          // 🪸 Coral Reef Monitoring
-                          } else if (data.parameter === 'degree_heating_weeks' || data.parameter === 'dhw') {
-                            parameterIcon = '🪸';
-                            const dhw = parseFloat(displayValue);
-                            if (dhw < 4) contextualInfo = ' (No Bleaching Risk)';
-                            else if (dhw < 8) contextualInfo = ' (Moderate Bleaching Risk)';
-                            else contextualInfo = ' (High Bleaching Risk)';
-                            
-                          } else if (data.parameter === 'hotspot') {
-                            parameterIcon = '🔥';
-                            contextualInfo = ' (Thermal Stress)';
-                            
-                          } else if (data.parameter === 'bleaching_alert_area') {
-                            parameterIcon = '⚠️';
-                            
-                          // 🌍 Atmospheric & Climate
-                          } else if (data.parameter === 'air_temperature') {
-                            parameterIcon = '🌡️';
-                            
-                          } else if (data.parameter === 'humidity') {
-                            parameterIcon = '💧';
-                            
-                          } else if (data.parameter === 'wind_speed') {
-                            parameterIcon = '💨';
-                            const wind = parseFloat(displayValue);
-                            if (wind < 5) contextualInfo = ' (Light)';
-                            else if (wind > 15) contextualInfo = ' (Strong)';
-                            else contextualInfo = ' (Moderate)';
-                            
-                          } else if (data.parameter === 'wind_direction') {
-                            parameterIcon = '🧭';
-                            
-                          } else if (data.parameter === 'atmospheric_pressure') {
-                            parameterIcon = '📏';
-                            
-                          } else if (data.parameter === 'precipitation') {
-                            parameterIcon = '🌧️';
-                            
-                          } else if (data.parameter === 'cloud_cover') {
-                            parameterIcon = '☁️';
-                            
-                          // 🏭 Ocean Pollution
-                          } else if (data.parameter === 'microplastic_concentration' || data.parameter === 'microplastics_density') {
-                            parameterIcon = '🏭';
-                            const density = parseFloat(displayValue);
-                            if (density > 10) contextualInfo = ' (High Pollution)';
-                            else if (density > 5) contextualInfo = ' (Medium Pollution)';
-                            else contextualInfo = ' (Low Pollution)';
-                            
-                          } else if (data.parameter === 'ocean_co2_concentration' || data.parameter === 'co2_seawater') {
-                            parameterIcon = '💨';
-                            contextualInfo = ' (Ocean Acidification)';
-                            
-                          } else if (data.parameter === 'carbonate_saturation') {
-                            parameterIcon = '🧪';
-                            const carb = parseFloat(displayValue);
-                            if (carb < 1) contextualInfo = ' (Corrosive)';
-                            else contextualInfo = ' (Stable)';
-                            
-                          } else if (data.parameter === 'aragonite_saturation_state') {
-                            parameterIcon = '🐚';
-                            const arag = parseFloat(displayValue);
-                            if (arag < 1) contextualInfo = ' (Shell Dissolution Risk)';
-                            else contextualInfo = ' (Shell Formation OK)';
-                            
-                          // Default cases
-                          } else if (data.parameter.includes('temperature')) {
-                            parameterIcon = '🌡️';
-                          } else if (data.parameter.includes('current')) {
-                            parameterIcon = '🌊';
-                          } else if (data.parameter.includes('wave')) {
-                            parameterIcon = '🌊';
-                          } else {
-                            parameterIcon = '📊';
-                          }
-                          
-                          formattedValue = `${displayValue} ${data.units}${contextualInfo}`;
-
-                          return (
-                            <div key={`${category}-${index}`} style={{ 
-                              marginBottom: '8px', 
-                              fontSize: '0.85em',
-                              padding: '10px',
-                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                              borderRadius: '8px',
-                              borderLeft: `4px solid ${qualityColor}`,
-                              transition: 'all 0.2s ease'
-                            }}>
-                              <div style={{ 
-                                fontWeight: 'bold', 
-                                color: '#e2e8f0',
-                                marginBottom: '4px',
-                                fontSize: '0.95em'
-                              }}>
-                                {parameterIcon} {data.description || data.parameter.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </div>
-                              <div style={{ 
-                                color: '#cbd5e1', 
-                                fontSize: '1.2em', 
-                                margin: '6px 0',
-                                fontWeight: '600'
-                              }}>
-                                {formattedValue}
-                              </div>
-                              <div style={{ fontSize: '0.75em', color: '#94a3b8', lineHeight: '1.4' }}>
-                                <div>Source: {data.data_source.replace(/_/g, ' ')}</div>
-                                <div>Quality: <span style={{ color: qualityColor, fontWeight: '600' }}>{qualityDisplay}</span>
-                                {data.confidence && ` | Confidence: ${(data.confidence * 100).toFixed(0)}%`}</div>
-                                <div>Zone: {data.climate_zone}</div>
-                                {data.quality === 'Real' || data.quality === 'R' ? 
-                                  <div style={{ color: '#22c55e', fontWeight: '600', fontSize: '0.8em' }}>
-                                    🔗 Live from NOAA ERDDAP
-                                  </div> : null
-                                }
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Comprehensive Data Panel */}
+        <DataPanel 
+          data={oceanData}
+          isLoading={isLoading}
+          error={apiError}
+        />
       </div>
     </div>
   );

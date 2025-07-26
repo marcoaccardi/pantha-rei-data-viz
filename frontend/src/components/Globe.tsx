@@ -1,11 +1,11 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { Mesh, Raycaster, Vector2, Vector3, TextureLoader } from 'three';
+import { Mesh, TextureLoader } from 'three';
 import Scene from './Scene';
+import MicroplasticsOverlay from './MicroplasticsOverlay';
 import { useGlobeCamera } from '../hooks/useGlobeCamera';
 import { useTextureLoader } from '../hooks/useTextureLoader';
-import { vector3ToLatLng } from '../utils/coordinates';
 import type { GlobeProps, Coordinates } from '../utils/types';
 
 const LoadingIndicator: React.FC = () => {
@@ -58,17 +58,16 @@ const PositionMarker: React.FC<{ coordinates: Coordinates }> = ({ coordinates })
 };
 
 const GlobeMesh: React.FC<{
-  onLocationClick: (coords: Coordinates) => void;
   isLoading: boolean;
   selectedCoordinates?: Coordinates;
   showDataOverlay?: boolean;
   dataCategory?: string;
-}> = ({ onLocationClick, isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst' }) => {
+  showMicroplastics?: boolean;
+  onMicroplasticsPointHover?: (point: any) => void;
+  onMicroplasticsPointClick?: (point: any) => void;
+}> = ({ isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst', showMicroplastics = false, onMicroplasticsPointHover, onMicroplasticsPointClick }) => {
   const meshRef = useRef<Mesh>(null);
   const sstMeshRef = useRef<Mesh>(null);
-  const { camera, gl } = useThree();
-  const raycaster = new Raycaster();
-  const mouse = new Vector2();
 
   // Load textures using the texture loader hook - pass external category
   const { earthTexture, dataTexture, selectedCategory } = useTextureLoader(dataCategory);
@@ -79,26 +78,6 @@ const GlobeMesh: React.FC<{
     console.log(`🌍 DataTexture object:`, dataTexture);
   }, [dataTexture, selectedCategory]);
 
-  const handleClick = useCallback((event: any) => {
-    if (!meshRef.current || isLoading) return;
-    
-    // Stop propagation to prevent camera controls from interfering
-    event.stopPropagation();
-
-    const rect = gl.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(meshRef.current);
-
-    if (intersects.length > 0) {
-      const point = intersects[0].point;
-      const coords = vector3ToLatLng(point);
-      onLocationClick(coords);
-    }
-  }, [camera, gl, onLocationClick, isLoading]);
-
   // Remove auto-rotation - globe should only rotate with user interaction
 
   return (
@@ -106,7 +85,6 @@ const GlobeMesh: React.FC<{
       {/* NASA Earth Base Layer */}
       <mesh
         ref={meshRef}
-        onClick={handleClick}
       >
         <sphereGeometry args={[1, 64, 64]} />
         <meshStandardMaterial 
@@ -131,6 +109,13 @@ const GlobeMesh: React.FC<{
         <PositionMarker coordinates={selectedCoordinates} />
       )}
       
+      {/* Microplastics overlay - renders above all other layers */}
+      <MicroplasticsOverlay
+        visible={showMicroplastics}
+        onPointHover={onMicroplasticsPointHover}
+        onPointClick={onMicroplasticsPointClick}
+      />
+      
       {isLoading && <LoadingIndicator />}
     </group>
   );
@@ -143,16 +128,14 @@ const Globe: React.FC<GlobeProps> = ({
   showDataOverlay = false,
   dataCategory = 'sst',
   showSSTOverlay = false, // Legacy support
-  onZoomFunctionsReady
+  onZoomFunctionsReady,
+  showMicroplastics = false,
+  onMicroplasticsPointHover,
+  onMicroplasticsPointClick
 }) => {
   const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | undefined>(coordinates);
   const { animateToCoordinates, orbitControlsRef, resetView, zoomIn, zoomOut } = useGlobeCamera();
 
-  const handleLocationClick = useCallback((coords: Coordinates) => {
-    setSelectedCoordinates(coords);
-    animateToCoordinates(coords);
-    onLocationChange?.(coords);
-  }, [animateToCoordinates, onLocationChange]);
 
   // Animate to coordinates when they change externally
   React.useEffect(() => {
@@ -186,11 +169,13 @@ const Globe: React.FC<GlobeProps> = ({
       />
       
       <GlobeMesh 
-        onLocationClick={handleLocationClick}
         isLoading={isLoading}
         selectedCoordinates={selectedCoordinates}
         showDataOverlay={showDataOverlay || showSSTOverlay} // Support legacy prop
         dataCategory={dataCategory}
+        showMicroplastics={showMicroplastics}
+        onMicroplasticsPointHover={onMicroplasticsPointHover}
+        onMicroplasticsPointClick={onMicroplasticsPointClick}
       />
     </Scene>
   );

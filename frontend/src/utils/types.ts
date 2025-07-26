@@ -73,6 +73,7 @@ export interface WebSocketMessage {
   data?: any;
   coordinates?: Coordinates;
   timestamp?: string;
+  cached?: boolean;
 }
 
 export interface OceanMeasurement {
@@ -85,6 +86,40 @@ export interface OceanMeasurement {
   quality: string; // 'R' for Real, 'S' for Synthetic
   confidence: number;
   zone: string;
+}
+
+// Comprehensive ocean data types for the new data panel
+export interface OceanDataValue {
+  value: number | string | null;
+  units: string;
+  long_name: string;
+  valid: boolean;
+}
+
+export interface OceanPointData {
+  dataset: string;
+  location: {
+    lat: number;
+    lon: number;
+  };
+  actual_location: {
+    lat: number;
+    lon: number;
+  };
+  date: string;
+  data: Record<string, OceanDataValue>;
+  extraction_time_ms: number;
+  file_source: string;
+}
+
+export interface MultiDatasetOceanResponse {
+  location: {
+    lat: number;
+    lon: number;
+  };
+  date: string;
+  datasets: Record<string, OceanPointData | { error: string }>;
+  total_extraction_time_ms: number;
 }
 
 export interface TextureInfo {
@@ -102,6 +137,9 @@ export interface GlobeProps {
   dataCategory?: string;
   showSSTOverlay?: boolean; // Legacy prop for backward compatibility
   onZoomFunctionsReady?: (zoomIn: () => void, zoomOut: () => void) => void;
+  showMicroplastics?: boolean;
+  onMicroplasticsPointHover?: (point: any) => void;
+  onMicroplasticsPointClick?: (point: any) => void;
 }
 
 export interface AnimationConfig {

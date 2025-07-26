@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect, startTransition } from 'react';
 interface TextureOptions {
   resolution?: 'preview' | 'low' | 'medium' | 'high';
   date?: string;
-  category?: 'sst' | 'acidity' | 'currents';
+  category?: 'sst' | 'acidity' | 'currents' | 'waves';
 }
 
 interface TextureMetadata {
@@ -26,7 +26,9 @@ function buildTextureApiUrl(category: string, date?: string, resolution: string 
   if (date) params.append('date', date);
   params.append('resolution', resolution);
   
-  return `${API_BASE_URL}/textures/${category}?${params.toString()}`;
+  const url = `${API_BASE_URL}/textures/${category}?${params.toString()}`;
+  console.log(`🌐 Built texture API URL: ${url}`);
+  return url;
 }
 
 // Function to get texture metadata from API
@@ -47,7 +49,7 @@ export function useTextureLoader(externalCategory?: string) {
   // State for texture metadata
   const [metadata, setMetadata] = useState<TextureMetadata | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('sst');
-  const [selectedDate, setSelectedDate] = useState<string | undefined>();
+  const [selectedDate, setSelectedDate] = useState<string | undefined>('2024-07-24'); // Default to ultra-resolution date
   const [selectedResolution, setSelectedResolution] = useState<string>('medium');
   
   // Use external category if provided, otherwise use internal state
@@ -63,15 +65,24 @@ export function useTextureLoader(externalCategory?: string) {
   
   // Build current texture URL based on selections
   const currentTextureUrl = useMemo(() => {
-    if (!metadata || !activeCategory) {
-      // Fallback to SST via API
-      return buildTextureApiUrl('sst', undefined, 'medium');
-    }
+    // Always use API for texture serving
+    const apiUrl = buildTextureApiUrl(activeCategory, selectedDate, selectedResolution);
     
-    return buildTextureApiUrl(activeCategory, selectedDate, selectedResolution);
-  }, [metadata, activeCategory, selectedDate, selectedResolution]);
+    console.log(`🔧 Texture URL construction:`, {
+      activeCategory,
+      selectedDate, 
+      selectedResolution,
+      apiUrl
+    });
+    
+    // Return stable URL to prevent infinite re-renders
+    return apiUrl;
+  }, [activeCategory, selectedDate, selectedResolution]);
   
-  // Load current data texture via API
+  // Log the URL being loaded
+  console.log(`🔍 Loading texture from URL: ${currentTextureUrl}`);
+  
+  // Load current data texture
   const dataTexture = useLoader(TextureLoader, currentTextureUrl);
   
   // Function to change texture category with deferred updates
