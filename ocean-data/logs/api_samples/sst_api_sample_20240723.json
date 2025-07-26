@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-07-25T13:27:46.029842",
+  "timestamp": "2025-07-26T15:57:34.281983",
   "date": "2024-07-23",
-  "file_source": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/2024/07/sst_harmonized_20240723.nc",
+  "file_source": "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/sst/2024/07/sst_harmonized_20240723.nc",
   "file_size_kb": 178.1,
   "sample_extractions": [
     {
@@ -40,7 +40,7 @@
           "valid": false
         }
       },
-      "extraction_time_ms": 13.77
+      "extraction_time_ms": 1.21
     },
     {
       "location": "North Atlantic",
@@ -78,7 +78,7 @@
           "valid": false
         }
       },
-      "extraction_time_ms": 1.04
+      "extraction_time_ms": 0.94
     },
     {
       "location": "Southern Ocean",
@@ -116,7 +116,7 @@
           "valid": true
         }
       },
-      "extraction_time_ms": 2.96
+      "extraction_time_ms": 1.36
     }
   ],
   "data_structure": {
@@ -154,8 +154,8 @@
     }
   },
   "api_readiness": {
-    "average_extraction_time_ms": 5.92,
-    "max_extraction_time_ms": 13.77,
+    "average_extraction_time_ms": 1.17,
+    "max_extraction_time_ms": 1.36,
     "performance_grade": "excellent",
     "ready_for_api": true
   }

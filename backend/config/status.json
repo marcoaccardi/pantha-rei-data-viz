@@ -1,15 +1,15 @@
 {
-  "last_updated": "2025-07-25T18:42:38.696976",
+  "last_updated": "2025-07-26T17:41:38.927272",
   "datasets": {
     "sst": {
-      "last_date": "2024-01-17",
-      "total_files": 8,
-      "storage_gb": 0.001,
-      "last_success": "2025-07-25T15:37:31.338814",
+      "last_date": "2024-04-30",
+      "total_files": 215,
+      "storage_gb": 0.296,
+      "last_success": "2025-07-26T17:00:28.390496",
       "last_error": null,
       "status": "up_to_date",
-      "last_optimization": "2025-07-25T15:37:31.321415",
-      "space_freed_mb": 1.651,
+      "last_optimization": "2025-07-26T17:00:28.371010",
+      "space_freed_mb": 0.178,
       "final_file_size_kb": 179.1,
       "api_ready": true
     },
@@ -24,23 +24,23 @@
       "ready_for_testing": true
     },
     "currents": {
-      "last_date": "2024-07-25",
+      "last_date": "2024-01-01",
       "total_files": 0,
       "storage_gb": 0.0,
-      "last_success": "2025-07-25T18:42:38.694659",
+      "last_success": "2025-07-26T17:28:42.691760",
       "last_error": null,
-      "status": "success"
+      "status": "active"
     },
     "acidity": {
-      "last_date": "2024-01-06",
-      "total_files": 8,
-      "storage_gb": 0.029,
-      "last_success": "2025-07-25T16:41:11.646860",
+      "last_date": "2024-03-24",
+      "total_files": 43,
+      "storage_gb": 0.798,
+      "last_success": "2025-07-26T17:41:38.926880",
       "last_error": null,
-      "status": "up_to_date",
-      "last_optimization": "2025-07-25T18:15:29.683268",
+      "status": "active",
+      "last_optimization": "2025-07-26T17:41:38.918099",
       "space_freed_mb": 0,
-      "final_file_size_kb": 30679.2,
+      "final_file_size_kb": 23018.0,
       "api_ready": true
     },
     "microplastics": {
@@ -49,7 +49,7 @@
       "storage_mb": 0.0,
       "last_success": "2025-07-25T16:58:39.786415",
       "last_error": null,
-      "status": "up_to_date",
+      "status": "downloading",
       "last_optimization": "2025-07-25T17:56:48.211213",
       "space_freed_mb": 0.006,
       "final_file_size_kb": 6.5,

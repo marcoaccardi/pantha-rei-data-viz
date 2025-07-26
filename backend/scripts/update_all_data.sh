@@ -275,9 +275,9 @@ result = downloader.download_date_range('$start_date', '$end_date')"
     fi
     
     python_script="$python_script
-print(f'Downloaded: {result[\"downloaded\"]}')
-print(f'Failed: {result[\"failed\"]}')
-if result['errors']:
+print(f'Downloaded: {result.get(\"downloaded\", 0)}')
+print(f'Failed: {result.get(\"failed\", 0)}')
+if result.get('errors'):
     print('Errors:')
     for error in result['errors']:
         print(f'  {error}')"
@@ -304,8 +304,8 @@ if result['errors']:
         log_info "$dataset: Download completed successfully"
         
         # Show summary from log
-        local downloaded=$(grep "Downloaded:" "$log_file" | cut -d' ' -f2 || echo "0")
-        local failed=$(grep "Failed:" "$log_file" | cut -d' ' -f2 || echo "0")
+        local downloaded=$(grep "Downloaded:" "$log_file" | tail -1 | cut -d' ' -f2 || echo "0")
+        local failed=$(grep "Failed:" "$log_file" | tail -1 | cut -d' ' -f2 || echo "0")
         
         if [ "$downloaded" -gt 0 ]; then
             log_info "$dataset: Successfully downloaded $downloaded files"
