@@ -34,7 +34,7 @@ datasets:
       test_start: "2024-01-01"
     spatial_resolution: 0.083  # 1/12 degrees
     coordinate_system: "-180-180"
-    variables: ["VHM0", "MWD", "PP1D"]  # significant height, direction, period (corrected names)
+    variables: ["VHM0", "VMDR", "VTPK"]  # significant height, direction, period (actual CMEMS names)
     update_frequency: "daily"
     file_size_mb: 25  # approximate size per file
     processing:
