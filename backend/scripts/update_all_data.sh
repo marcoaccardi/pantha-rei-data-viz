@@ -291,9 +291,6 @@ download_dataset() {
         "acidity_current")
             dataset_class="AcidityCurrentDownloader"
             ;;
-        "glodap_ph")
-            dataset_class="GLODAPDownloader"
-            ;;
         "microplastics")
             dataset_class="MicroplasticsDownloader"
             ;;
@@ -312,8 +309,6 @@ elif '$dataset' == 'acidity_historical':
     from downloaders.acidity_historical_downloader import ${dataset_class}
 elif '$dataset' == 'acidity_current':
     from downloaders.acidity_current_downloader import ${dataset_class}
-elif '$dataset' == 'glodap_ph':
-    from downloaders.glodap_downloader import ${dataset_class}
 else:
     from downloaders.${dataset}_downloader import ${dataset_class}
 

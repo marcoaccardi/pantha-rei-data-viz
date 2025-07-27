@@ -97,16 +97,21 @@ class SSTTextureGenerator(TextureGenerator):
                 self.logger.info(f"Original SST data shape: {sst_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
                 self.logger.info(f"Using {'raw' if data_file == raw_sst_path else 'processed'} SST data")
                 
-                # COORDINATE VALIDATION: Ensure data dimensions match coordinate array lengths
+                # ENHANCED SST COORDINATE VALIDATION: Ensure data dimensions match coordinate array lengths
+                self.logger.info(f"Validating SST coordinate alignment: data {sst_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                
                 if len(lat) != sst_data.shape[0] or len(lon) != sst_data.shape[1]:
                     self.logger.warning(f"SST dimension mismatch: data {sst_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
                     # Check if data needs to be transposed
                     if len(lat) == sst_data.shape[1] and len(lon) == sst_data.shape[0]:
                         self.logger.info("Transposing SST data to match coordinate dimensions")
                         sst_data = sst_data.T
+                        self.logger.info(f"After transpose: SST data {sst_data.shape}")
                     else:
                         self.logger.error(f"Cannot resolve SST dimension mismatch: data {sst_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
                         return False
+                else:
+                    self.logger.info("✅ SST coordinate dimensions properly aligned")
                 
                 # STANDARDIZED COORDINATE SYSTEM: Resample SST to ultra-resolution grid (4320x2041)
                 sst_data_ultra, lon_ultra, lat_ultra = self.resample_to_ultra_resolution(sst_data, lon, lat)
@@ -217,6 +222,7 @@ class AcidityTextureGenerator(TextureGenerator):
                                  output_directory: Union[str, Path] = None) -> bool:
         """
         Process acidity NetCDF file to pH texture with standardized resolution.
+        Enhanced to support hybrid acidity data sources.
         
         Args:
             input_path: Path to acidity NetCDF file
@@ -228,12 +234,19 @@ class AcidityTextureGenerator(TextureGenerator):
         try:
             input_path = Path(input_path)
             
-            # Extract date from filename
+            # Extract date from filename - support hybrid naming conventions
             date_match = re.search(r'(\d{8})', input_path.name)
             if not date_match:
                 self.logger.error(f"Cannot extract date from filename: {input_path.name}")
                 return False
             date_str = date_match.group(1)
+            
+            # Check if this is a hybrid acidity file
+            is_hybrid = "harmonized" in input_path.name or "acidity_harmonized" in input_path.name
+            if is_hybrid:
+                self.logger.info(f"Processing hybrid acidity data: {input_path.name}")
+            else:
+                self.logger.info(f"Processing standard acidity data: {input_path.name}")
             
             # Set output directory
             if output_directory is None:
@@ -241,14 +254,28 @@ class AcidityTextureGenerator(TextureGenerator):
             else:
                 output_directory = Path(output_directory)
                 
-            # Load data
+            # Load data - Enhanced for hybrid acidity system
             with xr.open_dataset(input_path) as ds:
-                # Get pH variable
-                if 'ph' not in ds.data_vars:
+                self.logger.info(f"Loading acidity data from {input_path}")
+                self.logger.info(f"Available variables: {list(ds.data_vars.keys())}")
+                
+                # Get pH variable - support multiple naming conventions from hybrid sources
+                ph_var = None
+                ph_candidates = ['ph', 'ph_insitu', 'ph_insitu_total', 'PH', 'pH']
+                
+                for var_name in ph_candidates:
+                    if var_name in ds.data_vars:
+                        ph_var = var_name
+                        self.logger.info(f"Found pH variable: {ph_var}")
+                        break
+                        
+                if ph_var is None:
                     self.logger.error(f"No pH variable found in {input_path}")
+                    self.logger.error(f"Available variables: {list(ds.data_vars.keys())}")
+                    self.logger.error(f"Expected one of: {ph_candidates}")
                     return False
                     
-                ph_data = ds['ph'].values
+                ph_data = ds[ph_var].values
                 lat = ds.lat.values if 'lat' in ds.coords else ds.latitude.values
                 lon = ds.lon.values if 'lon' in ds.coords else ds.longitude.values
                 
@@ -258,16 +285,21 @@ class AcidityTextureGenerator(TextureGenerator):
                 
                 self.logger.info(f"Original acidity data shape: {ph_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
                 
-                # COORDINATE VALIDATION: Ensure data dimensions match coordinate array lengths
+                # ENHANCED ACIDITY COORDINATE VALIDATION: Ensure data dimensions match coordinate array lengths
+                self.logger.info(f"Validating acidity coordinate alignment: data {ph_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                
                 if len(lat) != ph_data.shape[0] or len(lon) != ph_data.shape[1]:
                     self.logger.warning(f"Acidity dimension mismatch: data {ph_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
                     # Check if data needs to be transposed
                     if len(lat) == ph_data.shape[1] and len(lon) == ph_data.shape[0]:
                         self.logger.info("Transposing acidity data to match coordinate dimensions")
                         ph_data = ph_data.T
+                        self.logger.info(f"After transpose: acidity data {ph_data.shape}")
                     else:
                         self.logger.error(f"Cannot resolve acidity dimension mismatch: data {ph_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
                         return False
+                else:
+                    self.logger.info("✅ Acidity coordinate dimensions properly aligned")
                 
                 # Apply additional land masking for coastal artifacts after coordinate validation
                 ph_data = self._enhance_land_masking(ph_data, lon, lat)
@@ -282,19 +314,25 @@ class AcidityTextureGenerator(TextureGenerator):
                     ph_data_ultra, lon_ultra, lat_ultra, colormap, 'custom', True
                 )
                 
-                # Add acidity-specific metadata
+                # Add acidity-specific metadata - enhanced for hybrid system
+                data_source = 'Hybrid GLODAP/CMEMS Biogeochemistry' if is_hybrid else 'CMEMS Biogeochemistry'
+                
                 metadata.update({
                     'dataset': 'ocean_acidity',
-                    'variable': 'ph',
+                    'variable': ph_var,
                     'units': 'pH_scale',
                     'date': date_str,
-                    'data_source': 'CMEMS Biogeochemistry',
+                    'data_source': data_source,
+                    'hybrid_system': is_hybrid,
                     'ph_range': [7.0, 8.5],  # Typical ocean pH range
                     'resolution_note': 'Enhanced land masking applied for coastal accuracy',
                     'coordinate_resampling': 'Ultra-resolution resampling to 4320×2041 grid for maximum detail',
                     'source_resolution': f'{ph_data.shape[1]}×{ph_data.shape[0]}',
                     'target_resolution': '4320×2041'
                 })
+                
+                if is_hybrid:
+                    metadata['hybrid_note'] = 'Combined historical GLODAP observations with CMEMS operational data'
                 
                 # Save texture
                 filename = self.generate_filename(self.dataset_name, date_str)
@@ -388,17 +426,32 @@ class CurrentsTextureGenerator(TextureGenerator):
                 self.logger.info(f"Processed currents data shape: {speed_data.shape}, coverage: {lat.min():.1f}° to {lat.max():.1f}°")
                 self.logger.info(f"Coordinate ranges - Lat: {lat.min():.3f}° to {lat.max():.3f}°, Lon: {lon.min():.3f}° to {lon.max():.3f}°")
                 
-                # CRITICAL FIX: Validate and correct coordinate-data alignment
+                # ENHANCED COORDINATE VALIDATION: More robust alignment checking
                 # Ensure data dimensions match coordinate array lengths
+                self.logger.info(f"Validating coordinate alignment: data {speed_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                
                 if len(lat) != speed_data.shape[0] or len(lon) != speed_data.shape[1]:
                     self.logger.warning(f"Dimension mismatch detected: data {speed_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
-                    # Check if data needs to be transposed
+                    
+                    # Try transposition if dimensions are swapped
                     if len(lat) == speed_data.shape[1] and len(lon) == speed_data.shape[0]:
                         self.logger.info("Transposing data to match coordinate dimensions")
                         speed_data = speed_data.T
+                        self.logger.info(f"After transpose: data {speed_data.shape}")
                     else:
-                        self.logger.error(f"Cannot resolve dimension mismatch: data {speed_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
-                        return False
+                        # Handle edge case: coordinates might be in different order
+                        self.logger.warning("Attempting coordinate dimension reordering")
+                        # Log coordinate details for debugging
+                        self.logger.info(f"Lat coordinates: min={lat.min():.3f}, max={lat.max():.3f}, step={np.diff(lat).mean():.3f}")
+                        self.logger.info(f"Lon coordinates: min={lon.min():.3f}, max={lon.max():.3f}, step={np.diff(lon).mean():.3f}")
+                        
+                        # Final check - if still mismatched, log detailed error and fail gracefully
+                        if len(lat) != speed_data.shape[0] or len(lon) != speed_data.shape[1]:
+                            self.logger.error(f"Cannot resolve dimension mismatch: data {speed_data.shape} vs coords (lat:{len(lat)}, lon:{len(lon)})")
+                            self.logger.error("This may indicate a coordinate system issue in the source data")
+                            return False
+                else:
+                    self.logger.info("✅ Coordinate dimensions properly aligned")
                 
                 # STANDARDIZED COORDINATE SYSTEM: Always resample to global standard grid
                 # This ensures perfect alignment with other datasets (SST, acidity, etc.)

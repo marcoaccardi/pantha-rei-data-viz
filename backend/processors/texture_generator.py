@@ -278,11 +278,23 @@ class TextureGenerator:
         
         if np.any(valid_mask):
             # Create interpolator using RegularGridInterpolator
-            # CRITICAL FIX: Use linear interpolation with proper coordinate ordering
+            # Enhanced: Use cubic interpolation for better quality when expanding coverage
+            # Calculate expansion ratio to choose optimal method
+            source_pixels = data.shape[0] * data.shape[1]
+            target_pixels = 180 * 360
+            expansion_ratio = target_pixels / source_pixels
+            
+            if expansion_ratio > 2:
+                method = 'cubic'
+                self.logger.info(f"Using cubic interpolation for global expansion (ratio: {expansion_ratio:.1f}x)")
+            else:
+                method = 'linear'
+                self.logger.info(f"Using linear interpolation for global expansion (ratio: {expansion_ratio:.1f}x)")
+            
             # The coordinate order must match the data array dimensions: (lat, lon)
             interpolator = RegularGridInterpolator(
                 (lat, lon), data, 
-                method='linear',  # Use linear for smoother interpolation
+                method=method,
                 bounds_error=False, 
                 fill_value=np.nan
             )
@@ -437,10 +449,22 @@ class TextureGenerator:
         self.logger.info(f"Source: lat {source_lat.min():.1f}°-{source_lat.max():.1f}°, lon {source_lon.min():.1f}°-{source_lon.max():.1f}°")
         self.logger.info(f"Target: lat -89.6°-89.6°, lon -179.6°-179.6° (0.25° resolution)")
         
-        # Create interpolator with source data
+        # Create interpolator with source data - use cubic for better quality
+        # Calculate upsampling ratio to choose optimal method
+        source_pixels = data.shape[0] * data.shape[1]
+        target_pixels = 720 * 1440
+        upsampling_ratio = target_pixels / source_pixels
+        
+        if upsampling_ratio > 4:
+            method = 'cubic'
+            self.logger.info(f"Using cubic interpolation for SST grid resampling (ratio: {upsampling_ratio:.1f}x)")
+        else:
+            method = 'linear'
+            self.logger.info(f"Using linear interpolation for SST grid resampling (ratio: {upsampling_ratio:.1f}x)")
+        
         interpolator = RegularGridInterpolator(
             (source_lat, source_lon), data,
-            method='linear',
+            method=method,
             bounds_error=False,
             fill_value=np.nan
         )
@@ -480,18 +504,25 @@ class TextureGenerator:
         """
         from scipy.interpolate import RegularGridInterpolator
         
-        # Define ultra-high resolution target grid
-        # 4320x2041 provides ~0.083° resolution (matching currents native resolution)
-        target_lat = np.linspace(-89.958, 89.958, 2041)  # Ultra-high res latitude
-        target_lon = np.linspace(-179.958, 179.958, 4320)  # Ultra-high res longitude
+        # Define target grid based on source data resolution
+        # For 0.25° data (720x1440), use native or modest upsampling
+        if data.shape == (720, 1440):  # 0.25° NOAA OISST
+            # Use 2x upsampling for smooth rendering while preserving data integrity
+            target_lat = np.linspace(-89.875, 89.875, 1440)  # 2x upsampling
+            target_lon = np.linspace(-179.875, 179.875, 2880)  # 2x upsampling
+        else:
+            # For other resolutions, use ultra-high resolution grid
+            target_lat = np.linspace(-89.958, 89.958, 2041)  # Ultra-high res latitude
+            target_lon = np.linspace(-179.958, 179.958, 4320)  # Ultra-high res longitude
         
-        self.logger.info(f"Ultra-resolution resampling: {data.shape} → (2041, 4320)")
+        target_shape = (len(target_lat), len(target_lon))
+        self.logger.info(f"Resampling: {data.shape} → {target_shape}")
         self.logger.info(f"Source: lat {source_lat.min():.1f}°-{source_lat.max():.1f}°, lon {source_lon.min():.1f}°-{source_lon.max():.1f}°")
-        self.logger.info(f"Target: lat -90.0°-90.0°, lon -180.0°-180.0° (~0.083° resolution)")
+        self.logger.info(f"Target: lat {target_lat.min():.3f}°-{target_lat.max():.3f}°, lon {target_lon.min():.3f}°-{target_lon.max():.3f}°")
         
         # Check if we're already at or near target resolution
         source_pixels = data.shape[0] * data.shape[1]
-        target_pixels = 2041 * 4320
+        target_pixels = len(target_lat) * len(target_lon)
         upsampling_ratio = target_pixels / source_pixels
         
         if upsampling_ratio > 100:
@@ -534,7 +565,7 @@ class TextureGenerator:
         # Interpolate data to ultra-high resolution grid
         self.logger.info("Performing interpolation... (this may take a moment)")
         resampled_flat = interpolator(target_points)
-        resampled_data = resampled_flat.reshape(2041, 4320)
+        resampled_data = resampled_flat.reshape(len(target_lat), len(target_lon))
         
         # Count valid pixels
         source_valid = np.sum(~np.isnan(data))
@@ -605,10 +636,10 @@ class TextureGenerator:
             else:
                 self.logger.warning(f"  ⚠️ Coordinate ranges differ from expected: lat_diff={lat_range_diff:.3f}, lon_diff={lon_range_diff:.3f}")
             
-            # Validate texture dimensions match expected ultra-resolution
-            expected_texture_shape = (2041, 4320, 4)  # (height, width, RGBA channels)
+            # Validate texture dimensions match data dimensions
+            expected_texture_shape = (data.shape[0], data.shape[1], 4)  # (height, width, RGBA channels)
             if texture.shape == expected_texture_shape:
-                self.logger.info("  ✅ Texture dimensions match expected ultra-resolution (2041×4320×4)")
+                self.logger.info(f"  ✅ Texture dimensions match expected resolution ({data.shape[0]}×{data.shape[1]}×4)")
             else:
                 self.logger.warning(f"  ⚠️ Texture dimensions {texture.shape} differ from expected {expected_texture_shape}")
             

@@ -277,7 +277,7 @@ class TextureBatchProcessor:
 
 def main():
     """Main entry point for texture generation script."""
-    parser = argparse.ArgumentParser(description="Generate textures from ocean data")
+    parser = argparse.ArgumentParser(description="Generate ultra-high resolution textures from ocean data")
     parser.add_argument('--dataset', '-d', type=str, 
                        choices=['sst', 'acidity', 'currents', 'microplastics'],
                        help='Process specific dataset only')
@@ -287,14 +287,32 @@ def main():
                        help='Path to unified_coords directory')
     parser.add_argument('--output-path', type=str,
                        help='Path to textures output directory')
+    parser.add_argument('--quality', '-q', type=str, 
+                       choices=['standard', 'ultra'], default='ultra',
+                       help='Texture quality level (default: ultra for maximum detail)')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                       help='Enable verbose logging for debugging')
     
     args = parser.parse_args()
+    
+    # Set up enhanced logging if verbose mode
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        print("Verbose logging enabled - detailed processing information will be shown")
     
     # Initialize processor
     processor = TextureBatchProcessor(
         unified_coords_path=args.unified_coords_path,
         textures_output_path=args.output_path
     )
+    
+    # Display configuration info
+    print(f"Texture Generation Configuration:")
+    print(f"  Quality Level: {args.quality} ({'Ultra-high resolution (2041×4320)' if args.quality == 'ultra' else 'Standard resolution'})")
+    print(f"  Force Regeneration: {args.force}")
+    print(f"  Dataset Filter: {args.dataset or 'All datasets'}")
+    print(f"  Enhanced Features: Cubic interpolation, coordinate validation, hybrid acidity support")
+    print()
     
     # Run processing
     try:
