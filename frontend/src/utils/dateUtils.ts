@@ -2,29 +2,25 @@
  * Date utilities for ocean data temporal coverage and random date generation
  */
 
-// Temporal coverage constants based on backend-api data availability
+// Temporal coverage constants based on actual processed data availability
 export const TEMPORAL_COVERAGE = {
-  // Guaranteed availability window (all 10 data types available)
-  GUARANTEED_START: '2022-06-01',
-  GUARANTEED_END: (() => {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    return today.toISOString().split('T')[0];
-  })(),
+  // Guaranteed availability window (comprehensive data coverage period)
+  GUARANTEED_START: '1993-01-01',
+  GUARANTEED_END: '1993-12-31',
   
-  // Extended availability (some data types from earlier dates)
-  EXTENDED_START: '2021-11-01',
+  // Extended availability (some data types from later periods)
+  EXTENDED_START: '1993-01-01',
   
   // Maximum historical coverage (biodiversity and microplastics)
   HISTORICAL_START: '1972-01-01',
   
-  // Data source specific coverage
-  SST_START: '2021-01-01',
-  SALINITY_START: '2022-06-01',
-  CURRENTS_START: '2022-06-01',
-  WAVES_START: '2022-06-01',
-  CHLOROPHYLL_START: '2021-11-01',
-  PH_START: '2021-11-01',
+  // Data source specific coverage based on actual processed data
+  SST_START: '1993-01-01',
+  SALINITY_START: '1993-01-01',
+  CURRENTS_START: '2024-01-01',
+  WAVES_START: '2024-01-01',
+  CHLOROPHYLL_START: '1993-01-01',
+  PH_START: '1993-01-01',
   BIODIVERSITY_START: '1972-01-01',
   MICROPLASTICS_START: '1972-01-01'
 };

@@ -1,9 +1,15 @@
 /**
- * Ocean Data API Service
+ * Ultra-Fast Ocean Data API Service
  * 
- * Service for fetching ocean data from the FastAPI backend.
+ * Service for fetching ocean data from the FastAPI backend with high-performance caching.
  * Handles all dataset queries including SST, currents, waves, acidity, and microplastics.
+ * Features:
+ * - Request deduplication to prevent duplicate API calls
+ * - Intelligent caching with browser storage persistence
+ * - Automatic cache management and cleanup
  */
+
+import { requestCache } from '../utils/requestCache';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -50,65 +56,87 @@ export interface DatasetInfo {
 }
 
 /**
- * Fetch data from multiple datasets at a specific point
+ * Fetch data from multiple datasets at a specific point with ultra-fast caching
  */
 export async function fetchMultiPointData(
   lat: number,
   lon: number,
   date?: string
 ): Promise<MultiDatasetResponse> {
-  const params = new URLSearchParams({
-    lat: lat.toString(),
-    lon: lon.toString(),
-    datasets: 'sst,acidity,currents,waves'  // Request all datasets with fallback handling
-  });
-  
-  if (date) {
-    params.append('date', date);
-  }
+  const datasets = ['sst', 'acidity', 'currents', 'waves'];
+  const cacheKey = requestCache.createOceanDataKey(lat, lon, date || 'latest', datasets);
 
-  // Add timeout to prevent hanging
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-  
-  try {
-    const response = await fetch(`${API_BASE_URL}/multi/point?${params}`, {
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-    }
-    
-    return response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      // Fallback to SST only on timeout
-      console.warn('Multi-dataset request timed out, falling back to SST only');
-      const fallbackParams = new URLSearchParams({
+  return requestCache.get(
+    cacheKey,
+    async () => {
+      // Original fetch logic with optimizations
+      const params = new URLSearchParams({
         lat: lat.toString(),
         lon: lon.toString(),
-        datasets: 'sst'
+        datasets: datasets.join(',')
       });
-      if (date) fallbackParams.append('date', date);
       
-      const fallbackResponse = await fetch(`${API_BASE_URL}/multi/point?${fallbackParams}`);
-      if (fallbackResponse.ok) {
-        return fallbackResponse.json();
+      if (date) {
+        params.append('date', date);
       }
-    }
-    throw error;
-  }
+
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      try {
+        console.log(`🌊 FETCHING OCEAN DATA: ${cacheKey}`);
+        const startTime = Date.now();
+        
+        const response = await fetch(`${API_BASE_URL}/multi/point?${params}`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const requestTime = Date.now() - startTime;
+        console.log(`✅ OCEAN DATA FETCHED: ${cacheKey} in ${requestTime}ms`);
+        
+        return data;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          // Fallback to SST only on timeout
+          console.warn('Multi-dataset request timed out, falling back to SST only');
+          try {
+            const fallbackParams = new URLSearchParams({
+              lat: lat.toString(),
+              lon: lon.toString(),
+              datasets: 'sst'
+            });
+            if (date) fallbackParams.append('date', date);
+            
+            const fallbackResponse = await fetch(`${API_BASE_URL}/multi/point?${fallbackParams}`);
+            if (fallbackResponse.ok) {
+              return fallbackResponse.json();
+            }
+          } catch (fallbackError) {
+            console.error('Fallback request also failed:', fallbackError);
+          }
+        }
+        console.error('Ocean data request failed:', error);
+        throw error;
+      }
+    },
+    { ttl: 2 * 60 * 1000 } // 2 minute cache for ocean data
+  );
 }
 
 /**
  * Fetch data from a single dataset at a specific point
  */
 export async function fetchSingleDataset(
-  dataset: 'sst' | 'waves' | 'currents' | 'acidity' | 'microplastics',
+  dataset: 'sst' | 'waves' | 'currents' | 'acidity_historical' | 'acidity_current' | 'acidity' | 'microplastics',
   lat: number,
   lon: number,
   date?: string
@@ -270,11 +298,87 @@ export function classifyMeasurement(parameter: string, value: number): {
       if (value < 0.5) return { classification: 'Fast', severity: 'high', color: '#ef4444' };
       return { classification: 'Very Fast', severity: 'critical', color: '#991b1b' };
       
+    case 'spco2': // Surface partial pressure of CO2
+      if (value < 200) return { classification: 'Low CO₂', severity: 'low', color: '#10b981' };
+      if (value < 350) return { classification: 'Normal CO₂', severity: 'low', color: '#06b6d4' };
+      if (value < 400) return { classification: 'Elevated CO₂', severity: 'medium', color: '#f59e0b' };
+      if (value < 500) return { classification: 'High CO₂', severity: 'high', color: '#ef4444' };
+      return { classification: 'Very High CO₂', severity: 'critical', color: '#991b1b' };
+      
     case 'o2': // Dissolved oxygen
       if (value < 150) return { classification: 'Hypoxic', severity: 'critical', color: '#ef4444' };
       if (value < 200) return { classification: 'Low O₂', severity: 'high', color: '#f59e0b' };
       if (value < 300) return { classification: 'Normal', severity: 'low', color: '#10b981' };
       return { classification: 'High O₂', severity: 'medium', color: '#3b82f6' };
+      
+    case 'ph_insitu': // In situ pH
+    case 'ph_insitu_total': // Total scale in situ pH  
+      if (value < 7.8) return { classification: 'Acidic', severity: 'critical', color: '#ef4444' };
+      if (value < 8.0) return { classification: 'Low pH', severity: 'high', color: '#f59e0b' };
+      if (value < 8.2) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      return { classification: 'Basic', severity: 'medium', color: '#3b82f6' };
+      
+    case 'talk': // Total alkalinity
+      if (value < 2.0) return { classification: 'Low Alkalinity', severity: 'high', color: '#f59e0b' };
+      if (value < 2.3) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 2.5) return { classification: 'High', severity: 'medium', color: '#06b6d4' };
+      return { classification: 'Very High', severity: 'medium', color: '#3b82f6' };
+      
+    case 'dic': // Dissolved inorganic carbon
+      if (value < 1.8) return { classification: 'Low DIC', severity: 'medium', color: '#06b6d4' };
+      if (value < 2.1) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 2.3) return { classification: 'Elevated', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'High DIC', severity: 'high', color: '#ef4444' };
+      
+    case 'pco2': // Partial pressure of CO2
+      if (value < 300) return { classification: 'Low pCO₂', severity: 'low', color: '#10b981' };
+      if (value < 400) return { classification: 'Normal', severity: 'low', color: '#06b6d4' };
+      if (value < 500) return { classification: 'Elevated', severity: 'medium', color: '#f59e0b' };
+      if (value < 600) return { classification: 'High pCO₂', severity: 'high', color: '#ef4444' };
+      return { classification: 'Very High', severity: 'critical', color: '#991b1b' };
+      
+    case 'revelle': // Revelle factor (buffer capacity)
+      if (value < 8) return { classification: 'High Buffer', severity: 'low', color: '#10b981' };
+      if (value < 12) return { classification: 'Normal', severity: 'low', color: '#06b6d4' };
+      if (value < 16) return { classification: 'Low Buffer', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'Very Low Buffer', severity: 'high', color: '#ef4444' };
+      
+    case 'no3': // Nitrate
+      if (value < 5) return { classification: 'Low Nitrate', severity: 'medium', color: '#06b6d4' };
+      if (value < 15) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 30) return { classification: 'High', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'Very High', severity: 'high', color: '#ef4444' };
+      
+    case 'po4': // Phosphate
+      if (value < 0.5) return { classification: 'Low Phosphate', severity: 'medium', color: '#06b6d4' };
+      if (value < 1.5) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 3.0) return { classification: 'High', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'Very High', severity: 'high', color: '#ef4444' };
+      
+    case 'si': // Silicate
+      if (value < 10) return { classification: 'Low Silicate', severity: 'medium', color: '#06b6d4' };
+      if (value < 50) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 100) return { classification: 'High', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'Very High', severity: 'high', color: '#ef4444' };
+      
+    case 'chl': // Chlorophyll-a
+      if (value < 0.1) return { classification: 'Very Low', severity: 'medium', color: '#3b82f6' };
+      if (value < 1.0) return { classification: 'Low', severity: 'low', color: '#06b6d4' };
+      if (value < 5.0) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 20.0) return { classification: 'High', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'Very High', severity: 'high', color: '#ef4444' };
+      
+    case 'nppv': // Net Primary Production
+      if (value < 50) return { classification: 'Low Productivity', severity: 'medium', color: '#06b6d4' };
+      if (value < 200) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 500) return { classification: 'High', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'Very High', severity: 'high', color: '#ef4444' };
+      
+    case 'dissic': // Dissolved inorganic carbon
+      if (value < 1.8) return { classification: 'Low DIC', severity: 'medium', color: '#06b6d4' };
+      if (value < 2.1) return { classification: 'Normal', severity: 'low', color: '#10b981' };
+      if (value < 2.3) return { classification: 'Elevated', severity: 'medium', color: '#f59e0b' };
+      return { classification: 'High DIC', severity: 'high', color: '#ef4444' };
       
     default:
       return { classification: 'Normal', severity: 'low', color: '#6b7280' };
@@ -288,4 +392,75 @@ export function formatDirection(degrees: number): string {
   const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
   const index = Math.round(degrees / 22.5) % 16;
   return directions[index];
+}
+
+/**
+ * Check if dataset contains discrete sample data
+ */
+export function isDiscreteSampleData(data: Record<string, DataValue>): boolean {
+  return data._data_type?.value === 'discrete_sample';
+}
+
+/**
+ * Get discrete sample metadata for display
+ */
+export function getDiscreteSampleInfo(data: Record<string, DataValue>): {
+  isDiscrete: boolean;
+  sampleDistance?: number;
+  sampleDistanceText?: string;
+  dataQuality?: string;
+} {
+  const isDiscrete = isDiscreteSampleData(data);
+  
+  if (!isDiscrete) {
+    return { isDiscrete: false };
+  }
+  
+  const distance = data._sample_distance?.value as number;
+  const distanceText = distance ? `${distance} km from nearest sample` : 'Unknown distance';
+  
+  // Determine data quality based on sample distance
+  let dataQuality = 'excellent';
+  if (distance > 100) dataQuality = 'poor';
+  else if (distance > 50) dataQuality = 'fair';
+  else if (distance > 20) dataQuality = 'good';
+  
+  return {
+    isDiscrete: true,
+    sampleDistance: distance,
+    sampleDistanceText: distanceText,
+    dataQuality
+  };
+}
+
+/**
+ * Format parameter name for display with discrete sample indicator
+ */
+export function formatParameterName(parameter: string, data: Record<string, DataValue>): string {
+  const sampleInfo = getDiscreteSampleInfo(data);
+  const baseNames: Record<string, string> = {
+    'ph': 'pH',
+    'ph_insitu': 'pH (in situ)',
+    'ph_insitu_total': 'pH (total scale)',
+    'talk': 'Total Alkalinity',
+    'dic': 'Dissolved Inorganic Carbon',
+    'pco2': 'Partial Pressure CO₂',
+    'revelle': 'Revelle Factor',
+    'spco2': 'Surface pCO₂',
+    'no3': 'Nitrate',
+    'po4': 'Phosphate', 
+    'si': 'Silicate',
+    'o2': 'Dissolved Oxygen',
+    'chl': 'Chlorophyll-a',
+    'nppv': 'Net Primary Production',
+    'dissic': 'Dissolved Inorganic Carbon'
+  };
+  
+  const baseName = baseNames[parameter] || parameter.replace('_', ' ').toUpperCase();
+  
+  if (sampleInfo.isDiscrete) {
+    return `${baseName} (discrete sample)`;
+  }
+  
+  return baseName;
 }

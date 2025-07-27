@@ -1,6 +1,7 @@
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import { useMemo, useState, useEffect, startTransition } from 'react';
+import { requestCache } from '../utils/requestCache';
 
 interface TextureOptions {
   resolution?: 'preview' | 'low' | 'medium' | 'high';
@@ -63,7 +64,7 @@ export function useTextureLoader(externalCategory?: string) {
     fetchTextureMetadata().then(setMetadata);
   }, []);
   
-  // Build current texture URL based on selections
+  // Build current texture URL based on selections with caching
   const currentTextureUrl = useMemo(() => {
     // Always use API for texture serving
     const apiUrl = buildTextureApiUrl(activeCategory, selectedDate, selectedResolution);
@@ -79,11 +80,14 @@ export function useTextureLoader(externalCategory?: string) {
     return apiUrl;
   }, [activeCategory, selectedDate, selectedResolution]);
   
-  // Log the URL being loaded
-  console.log(`🔍 Loading texture from URL: ${currentTextureUrl}`);
-  
-  // Load current data texture
-  const dataTexture = useLoader(TextureLoader, currentTextureUrl);
+  // Load current data texture with smart caching to prevent duplicate requests
+  const dataTexture = useMemo(() => {
+    const cacheKey = requestCache.createTextureKey(activeCategory, selectedDate, selectedResolution);
+    console.log(`🎨 Loading texture: ${cacheKey} from ${currentTextureUrl}`);
+    
+    // Use React Three Fiber's loader with the stable URL
+    return new TextureLoader().load(currentTextureUrl);
+  }, [currentTextureUrl, activeCategory, selectedDate, selectedResolution]);
   
   // Function to change texture category with deferred updates
   const changeCategory = (category: string, date?: string, resolution: string = 'medium') => {

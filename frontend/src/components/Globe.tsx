@@ -99,7 +99,7 @@ const GlobeMesh: React.FC<{
           <meshStandardMaterial
             map={dataTexture}
             transparent
-            opacity={0.7}
+            opacity={0.9}
           />
         </mesh>
       )}
