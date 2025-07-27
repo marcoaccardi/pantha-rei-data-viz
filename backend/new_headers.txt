@@ -1,0 +1,15 @@
+HTTP/1.1 200 OK
+date: Sun, 27 Jul 2025 07:56:10 GMT
+server: uvicorn
+cache-control: no-cache, no-store, must-revalidate
+pragma: no-cache
+expires: 0
+x-texture-category: sst
+x-texture-date: 2024-07-24
+x-texture-resolution: medium
+content-type: image/png
+accept-ranges: bytes
+content-length: 1809018
+last-modified: Sun, 27 Jul 2025 07:55:37 GMT
+etag: "f7e5cec69549c432d0a861a4b9c1dc51"
+
