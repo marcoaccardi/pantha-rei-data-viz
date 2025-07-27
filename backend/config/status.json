@@ -1,16 +1,16 @@
 {
-  "last_updated": "2025-07-26T19:13:47.927565",
+  "last_updated": "2025-07-27T08:49:25.803260",
   "datasets": {
     "sst": {
-      "last_date": "1993-01-06",
-      "total_files": 221,
-      "storage_gb": 0.306,
-      "last_success": "2025-07-26T19:13:47.927377",
+      "last_date": "1994-07-19",
+      "total_files": 780,
+      "storage_gb": 1.186,
+      "last_success": "2025-07-26T20:23:21.084209",
       "last_error": null,
-      "status": "active",
-      "last_optimization": "2025-07-26T19:13:47.905006",
-      "space_freed_mb": 0.189,
-      "final_file_size_kb": 190.1,
+      "status": "downloading",
+      "last_optimization": "2025-07-26T20:23:21.056018",
+      "space_freed_mb": 0.194,
+      "final_file_size_kb": 195.0,
       "api_ready": true
     },
     "waves": {
@@ -33,33 +33,57 @@
     },
     "acidity": {
       "last_date": "2024-04-24",
-      "total_files": 73,
+      "total_files": 75,
       "storage_gb": 1.456,
       "last_success": "2025-07-26T18:22:33.423391",
       "last_error": null,
-      "status": "up_to_date",
+      "status": "downloading",
       "last_optimization": "2025-07-26T18:22:33.418752",
       "space_freed_mb": 0,
       "final_file_size_kb": 23018.0,
-      "api_ready": true
+      "api_ready": true,
+      "datasets_used": [
+        "acidity_historical"
+      ],
+      "last_download_summary": {
+        "downloaded": 1,
+        "failed": 0,
+        "errors": [],
+        "datasets_used": [
+          "acidity_historical"
+        ],
+        "date_ranges": {
+          "acidity_historical": [
+            "1993-01-07",
+            "1993-01-07"
+          ]
+        }
+      }
+    },
+    "acidity_current": {
+      "status": "up_to_date",
+      "last_optimization": "2025-07-27T08:47:16.039080",
+      "space_freed_mb": 0,
+      "final_file_size_kb": 34512.3,
+      "api_ready": true,
+      "total_files": 1,
+      "storage_gb": 0.165,
+      "last_date": "2023-01-06",
+      "last_success": "2025-07-27T08:47:16.042788"
+    },
+    "acidity_historical": {
+      "status": "up_to_date",
+      "last_optimization": "2025-07-27T08:48:01.640323",
+      "space_freed_mb": 0,
+      "final_file_size_kb": 91981.7,
+      "api_ready": true,
+      "total_files": 1,
+      "storage_gb": 0.614,
+      "last_date": "1993-01-07",
+      "last_success": "2025-07-27T08:48:01.643957"
     },
     "microplastics": {
-      "last_date": "2024-01-01",
-      "total_files": 6,
-      "storage_mb": 0.0,
-      "last_success": "2025-07-25T16:58:39.786415",
-      "last_error": null,
-      "status": "downloading",
-      "last_optimization": "2025-07-25T17:56:48.211213",
-      "space_freed_mb": 0.006,
-      "final_file_size_kb": 6.5,
-      "api_ready": true,
-      "storage_gb": 0.0
+      "status": "downloading"
     }
-  },
-  "system": {
-    "total_storage_gb": 0.0,
-    "available_storage_gb": null,
-    "last_health_check": null
   }
 }

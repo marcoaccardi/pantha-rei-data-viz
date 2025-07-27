@@ -61,25 +61,197 @@ datasets:
       harmonize_coords: false
     credentials_required: true
     
-  acidity:
-    name: "CMEMS Global Ocean Biogeochemistry"
-    description: "Global Ocean Biogeochemistry Analysis and Forecast"
+  # STRATEGIC HYBRID APPROACH: GLODAP + CMEMS
+  # Combines discrete pH measurements from GLODAP with continuous daily nutrients from CMEMS
+  
+  glodap_ph:
+    name: "GLODAP Global Ocean pH Observations (1993-2021)"
+    description: "Historical discrete pH measurements from Global Ocean Data Analysis Project"
+    product_id: "INSITU_GLO_BGC_CARBON_DISCRETE_MY_013_050"
+    dataset_id: "cmems_obs-ins_glo_bgc-carbon_my_glodap_irr"
+    base_url: "https://data.marine.copernicus.eu"
+    data_portal_url: "https://www.ncei.noaa.gov/data/oceans/ncei/ocads/metadata/0162565.html"
+    temporal_coverage:
+      start: "1993-01-01"
+      end: "2021-12-31"
+      test_start: "1993-01-01"
+    spatial_resolution: "1.0° gridded climatologies + discrete bottle samples"
+    coordinate_system: "-180-180"
+    variables: ["ph", "ph_insitu", "ph_insitu_total", "talk", "dic", "pco2", "revelle"]
+    data_type: "discrete_samples"  # Key difference from CMEMS
+    update_frequency: "cruise_based"
+    file_size_mb: 15
+    processing:
+      harmonize_coords: false
+      interpolation: "nearest_neighbor"  # For discrete to gridded conversion
+    credentials_required: true
+    accuracy:
+      ph: "±0.01-0.02 pH units"
+      coverage: "1M+ samples from 1000+ cruises"
+    priority: 1
+    
+  cmems_nutrients:
+    name: "CMEMS Ocean Biogeochemistry Nutrients (1993-2022)"
+    description: "Historical daily biogeochemistry nutrients from CMEMS"
+    product_id: "GLOBAL_MULTIYEAR_BGC_001_029"
+    dataset_id: "cmems_mod_glo_bgc_my_0.25deg_P1D-m"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "1993-01-01"
+      end: "2022-12-31"
+      test_start: "1993-01-01"
+    spatial_resolution: 0.25  # degrees
+    coordinate_system: "-180-180"
+    variables: ["chl", "no3", "po4", "si", "o2", "nppv"]
+    data_type: "continuous_gridded"
+    layers: ["surface"]
+    update_frequency: "daily"
+    file_size_mb: 25
+    processing:
+      harmonize_coords: false
+    credentials_required: true
+    priority: 2
+    
+  cmems_current_ph:
+    name: "CMEMS Current Ocean Biogeochemistry with pH (2021-present)"
+    description: "Current operational BGC data including pH from CMEMS forecast"
     product_id: "GLOBAL_ANALYSISFORECAST_BGC_001_028"
     dataset_id: "cmems_mod_glo_bgc-car_anfc_0.25deg_P1D-m"
     base_url: "https://data.marine.copernicus.eu"
     temporal_coverage:
-      start: "1993-01-01"
+      start: "2021-10-01"
       end: "present"
-      test_start: "2024-01-01"
+      test_start: "2023-01-01"
     spatial_resolution: 0.25  # degrees
     coordinate_system: "-180-180"
-    variables: ["ph", "fco2", "DIC", "TA"]  # pH, fugacity CO2, dissolved inorganic carbon
-    layers: ["surface"]  # Phase 1: surface only
+    variables: ["ph", "dissic", "talk"]  # Carbon variables only
+    data_type: "continuous_gridded"
+    layers: ["surface"]
     update_frequency: "daily"
-    file_size_mb: 20  # approximate size per file
+    file_size_mb: 20
     processing:
       harmonize_coords: false
     credentials_required: true
+    priority: 3
+    
+  cmems_current_nutrients:
+    name: "CMEMS Current Ocean Nutrients (2021-present)"
+    description: "Current operational nutrient data from CMEMS forecast"
+    product_id: "GLOBAL_ANALYSISFORECAST_BGC_001_028"
+    dataset_id: "cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "2021-10-01"
+      end: "present"
+      test_start: "2023-01-01"
+    spatial_resolution: 0.25  # degrees
+    coordinate_system: "-180-180"
+    variables: ["fe", "no3", "po4", "si"]  # Nutrient variables only
+    data_type: "continuous_gridded"
+    layers: ["surface"]
+    update_frequency: "daily"
+    file_size_mb: 15
+    processing:
+      harmonize_coords: false
+    credentials_required: true
+    priority: 4
+    
+  cmems_current_bio:
+    name: "CMEMS Current Ocean Biology (2021-present)"
+    description: "Current operational biological data from CMEMS forecast"
+    product_id: "GLOBAL_ANALYSISFORECAST_BGC_001_028"
+    dataset_id: "cmems_mod_glo_bgc-bio_anfc_0.25deg_P1D-m"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "2021-10-01"
+      end: "present"
+      test_start: "2023-01-01"
+    spatial_resolution: 0.25  # degrees
+    coordinate_system: "-180-180"
+    variables: ["nppv", "o2"]  # Biology variables only
+    data_type: "continuous_gridded"
+    layers: ["surface"]
+    update_frequency: "daily"
+    file_size_mb: 10
+    processing:
+      harmonize_coords: false
+    credentials_required: true
+    priority: 5
+    
+  # Individual dataset configurations for direct access
+  acidity_historical:
+    name: "CMEMS Ocean Biogeochemistry Nutrients (1993-2022)"
+    description: "Historical daily biogeochemistry nutrients from CMEMS"
+    product_id: "GLOBAL_MULTIYEAR_BGC_001_029"
+    dataset_id: "cmems_mod_glo_bgc_my_0.25deg_P1D-m"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "1993-01-01"
+      end: "2022-12-31"
+      test_start: "1993-01-01"
+    spatial_resolution: 0.25  # degrees
+    coordinate_system: "-180-180"
+    variables: ["chl", "no3", "po4", "si", "o2", "nppv"]
+    data_type: "continuous_gridded"
+    layers: ["surface"]
+    update_frequency: "daily"
+    file_size_mb: 25
+    processing:
+      harmonize_coords: false
+    credentials_required: true
+    
+  acidity_current:
+    name: "CMEMS Current Ocean Biogeochemistry with pH (2021-present)"
+    description: "Current operational BGC data including pH from CMEMS forecast"
+    product_id: "GLOBAL_ANALYSISFORECAST_BGC_001_028"
+    dataset_id: "cmems_mod_glo_bgc-car_anfc_0.25deg_P1D-m"
+    base_url: "https://data.marine.copernicus.eu"
+    temporal_coverage:
+      start: "2021-10-01"
+      end: "present"
+      test_start: "2023-01-01"
+    spatial_resolution: 0.25  # degrees
+    coordinate_system: "-180-180"
+    variables: ["ph", "dissic", "talk"]  # Carbon variables from car dataset
+    data_type: "continuous_gridded"
+    layers: ["surface"]
+    update_frequency: "daily"
+    file_size_mb: 20
+    processing:
+      harmonize_coords: false
+    credentials_required: true
+    
+  acidity:
+    name: "Ocean Biogeochemistry (Multi-Source Hybrid: 1993-present)"
+    description: "Comprehensive ocean chemistry combining GLODAP pH observations with CMEMS nutrients"
+    hybrid_config: true
+    data_sources:
+      historical_ph: "glodap_ph"        # 1993-2021 discrete pH
+      historical_nutrients: "cmems_nutrients"  # 1993-2022 daily nutrients  
+      current_all: "cmems_current_ph"   # 2021-present daily pH + nutrients
+    temporal_coverage:
+      start: "1993-01-01"
+      end: "present"
+      test_start: "1993-01-01"
+    spatial_resolution: "Multi-resolution (1°/0.25°)"
+    coordinate_system: "-180-180"
+    variables: ["ph", "ph_insitu", "talk", "dissic", "pco2", "no3", "po4", "si", "o2", "nppv"]
+    data_types: ["discrete_samples", "continuous_gridded"]
+    layers: ["surface"]
+    update_frequency: "mixed"  # Discrete + daily
+    processing:
+      harmonize_coords: false
+      merge_strategy: "spatial_temporal_interpolation"
+    credentials_required: true
+    advantages:
+      - "True historical pH context from 1993"
+      - "High-accuracy discrete pH measurements (±0.01-0.02)"
+      - "Continuous daily nutrient context"
+      - "Current operational pH data"
+    limitations:
+      - "pH data is discrete, not continuous"
+      - "Spatial gaps in some ocean regions"
+      - "Temporal resolution varies by data source"
     
   microplastics:
     name: "NOAA NCEI Marine Microplastics"

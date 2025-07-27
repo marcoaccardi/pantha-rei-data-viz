@@ -70,6 +70,7 @@ panta-rhei-data-map/
   - Copernicus Marine Service: `CMEMS_USERNAME` and `CMEMS_PASSWORD`
   - NOAA API: `NOAA_API_KEY`
 
+
 ## Key Guidelines
 - Follow existing code conventions and patterns
 - Use the TodoWrite tool for planning multi-step tasks
@@ -78,7 +79,7 @@ panta-rhei-data-map/
 - **Always refer to `backend/docs/` for current project state and future tasks**
   - Check PRD file for project requirements and progress
   - Review existing documentation before starting work
-- **Systematically test any new feature and review code for each code request**
+- **Systematically test any new feature of the backend and review code for each code request in the `backend/tests/` folder**
 - **Always update documentation when implementation differs from docs**
   - If bugs are found or implementation proves incorrect, update docs immediately
   - Keep documentation consistent with actual working code
@@ -118,3 +119,15 @@ python scripts/test_raw_preservation.py
   - Validates all CMEMS dataset configurations in sources.yaml
   - Prevents deployment of incorrect dataset IDs (like the currents P1M→P1D fix)
   - Use `--test-download` flag to test actual data access
+- **Texture Validation**: Use `python scripts/validate_texture_alignment.py` to verify texture alignment after texture generation
+
+## Code Organization Rules
+- **NEVER create test files outside of `backend/tests/` folder**
+- **NEVER create ad-hoc Python scripts in the backend root directory**
+- **Always use existing bash scripts in `scripts/` for data operations**
+  - Use `scripts/update_all_data.sh` for downloading data
+  - Create new scripts in `scripts/` folder if needed, not in root
+- **Test files must follow naming convention**: `test_<module_name>.py`
+- **Keep the backend root directory clean** - only config files and folders belong there
+- **Always handle both string and date object inputs in downloaders**
+- **Test bash script integration for all new downloaders**
