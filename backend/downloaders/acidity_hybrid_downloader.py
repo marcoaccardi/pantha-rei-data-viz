@@ -12,7 +12,6 @@ from datetime import date, datetime, timedelta
 from .base_downloader import BaseDataDownloader
 from .acidity_historical_downloader import AcidityHistoricalDownloader
 from .acidity_current_downloader import AcidityCurrentDownloader
-from .glodap_downloader import GLODAPDownloader
 
 class AcidityHybridDownloader(BaseDataDownloader):
     """Hybrid downloader for acidity data combining historical and current sources."""
@@ -25,7 +24,6 @@ class AcidityHybridDownloader(BaseDataDownloader):
         try:
             self.historical_downloader = AcidityHistoricalDownloader(config_path)
             self.current_downloader = AcidityCurrentDownloader(config_path)
-            self.glodap_downloader = GLODAPDownloader(config_path)
         except Exception as e:
             self.logger.error(f"Failed to initialize sub-downloaders: {e}")
             raise
@@ -110,17 +108,9 @@ class AcidityHybridDownloader(BaseDataDownloader):
             success_count = 0
             total_downloads = 0
             
-            # Strategy 1: Download pH data from appropriate source
-            if self.glodap_start <= target_date <= self.glodap_end:
-                # Use GLODAP for historical pH data
-                self.logger.info(f"Downloading GLODAP pH data for {target_date}")
-                glodap_success = self.glodap_downloader.download_date(target_date)
-                total_downloads += 1
-                if glodap_success:
-                    success_count += 1
-                    self._update_hybrid_status(target_date, "glodap_ph", glodap_success)
-            
-            # Strategy 2: Download nutrient/BGC data from CMEMS
+            # Strategy: Download biogeochemistry data from appropriate CMEMS source
+            # Note: GLODAP discrete pH integration was planned but not implemented
+            # Using comprehensive CMEMS data instead
             downloader, dataset_name = self.route_date_to_downloader(target_date)
             self.logger.info(f"Downloading {dataset_name} data for {target_date}")
             

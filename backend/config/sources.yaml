@@ -13,14 +13,42 @@ datasets:
       end: "present"
       test_start: "2024-01-01"  # Start with 2024 for testing
     spatial_resolution: 0.25  # degrees
-    target_resolution: 1.0    # downsample to 1 degree
+    target_resolution: 0.25   # native resolution - no artificial upsampling
     coordinate_system: "0-360"  # needs conversion to -180-180
     variables: ["sst", "anom", "err", "ice"]
     update_frequency: "daily"
     file_size_mb: 1.6  # approximate size per file
     processing:
-      downsample: true
+      downsample: false          # disabled for ultra-high resolution textures
       harmonize_coords: true
+    
+  # Ultra-high resolution SST option for maximum texture quality
+  sst_ultra:
+    name: "NASA MUR SST v4.1"
+    description: "Multi-scale Ultra-high Resolution (MUR) Sea Surface Temperature - 0.01° resolution"
+    base_url: "https://podaac-opendap.jpl.nasa.gov/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/"
+    file_pattern: "{year}/{day_of_year}/20240101090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc"
+    url_pattern: "{base_url}{year}/{day_of_year}/20240101090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc"
+    temporal_coverage:
+      start: "2002-06-01"
+      end: "present"
+      test_start: "2024-01-01"
+    spatial_resolution: 0.01  # degrees (100x better than standard SST)
+    target_resolution: 0.01   # maintain ultra-high resolution
+    coordinate_system: "-180-180"
+    variables: ["analysed_sst", "analysis_error", "mask", "sea_ice_fraction"]
+    update_frequency: "daily"
+    file_size_mb: 150  # much larger due to high resolution
+    processing:
+      downsample: false
+      harmonize_coords: false  # already in -180-180
+    advantages:
+      - "100x higher resolution than standard OISST"
+      - "Superior coastal detail and feature resolution"
+      - "NASA/JPL quality assurance"
+      - "Global coverage with minimal gaps"
+    credentials_required: false  # Public access via OPeNDAP
+    priority: 1  # Preferred for ultra-high quality textures
     
   waves:
     name: "CMEMS Global Waves Analysis and Forecast"
@@ -61,35 +89,9 @@ datasets:
       harmonize_coords: false
     credentials_required: true
     
-  # STRATEGIC HYBRID APPROACH: GLODAP + CMEMS
-  # Combines discrete pH measurements from GLODAP with continuous daily nutrients from CMEMS
+  # STRATEGIC HYBRID APPROACH: Historical + Current CMEMS
+  # Combines historical biogeochemistry (1993-2022) with current operational data (2021-present)
   
-  glodap_ph:
-    name: "GLODAP Global Ocean pH Observations (1993-2021)"
-    description: "Historical discrete pH measurements from Global Ocean Data Analysis Project"
-    product_id: "INSITU_GLO_BGC_CARBON_DISCRETE_MY_013_050"
-    dataset_id: "cmems_obs-ins_glo_bgc-carbon_my_glodap_irr"
-    base_url: "https://data.marine.copernicus.eu"
-    data_portal_url: "https://www.ncei.noaa.gov/data/oceans/ncei/ocads/metadata/0162565.html"
-    temporal_coverage:
-      start: "1993-01-01"
-      end: "2021-12-31"
-      test_start: "1993-01-01"
-    spatial_resolution: "1.0° gridded climatologies + discrete bottle samples"
-    coordinate_system: "-180-180"
-    variables: ["ph", "ph_insitu", "ph_insitu_total", "talk", "dic", "pco2", "revelle"]
-    data_type: "discrete_samples"  # Key difference from CMEMS
-    update_frequency: "cruise_based"
-    file_size_mb: 15
-    processing:
-      harmonize_coords: false
-      interpolation: "nearest_neighbor"  # For discrete to gridded conversion
-    credentials_required: true
-    accuracy:
-      ph: "±0.01-0.02 pH units"
-      coverage: "1M+ samples from 1000+ cruises"
-    priority: 1
-    
   cmems_nutrients:
     name: "CMEMS Ocean Biogeochemistry Nutrients (1993-2022)"
     description: "Historical daily biogeochemistry nutrients from CMEMS"
@@ -226,9 +228,9 @@ datasets:
     description: "Comprehensive ocean chemistry combining GLODAP pH observations with CMEMS nutrients"
     hybrid_config: true
     data_sources:
-      historical_ph: "glodap_ph"        # 1993-2021 discrete pH
-      historical_nutrients: "cmems_nutrients"  # 1993-2022 daily nutrients  
-      current_all: "cmems_current_ph"   # 2021-present daily pH + nutrients
+      historical_ph: "acidity_historical"        # 1993-2022 historical biogeochemistry
+      historical_nutrients: "acidity_historical"  # 1993-2022 daily nutrients  
+      current_all: "acidity_current"   # 2021-present daily pH + nutrients
     temporal_coverage:
       start: "1993-01-01"
       end: "present"

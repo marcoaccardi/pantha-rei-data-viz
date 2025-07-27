@@ -74,16 +74,6 @@ class DataExtractor:
                 "temporal_coverage": "2021-present",
                 "data_source": "GLOBAL_ANALYSISFORECAST_BGC_001_028"
             },
-            "glodap_ph": {
-                "name": "GLODAP pH Observations",
-                "description": "Discrete pH measurements from Global Ocean Data Analysis Project (1993-2021)",
-                "variables": ["ph", "ph_insitu", "ph_insitu_total", "talk", "dic", "pco2", "revelle"],
-                "file_pattern": "glodap_ph_*.nc",
-                "spatial_resolution": "Discrete point samples",
-                "temporal_coverage": "1993-2021",
-                "data_type": "discrete_samples",
-                "interpolation_method": "nearest_neighbor"
-            },
             "acidity": {
                 "name": "Ocean Acidity (Multi-Source)",
                 "description": "Comprehensive ocean acidity data combining historical nutrients, current pH/carbon, and discrete observations",
@@ -92,7 +82,7 @@ class DataExtractor:
                 "spatial_resolution": "Multi-resolution (0.25° gridded + discrete samples)",
                 "temporal_coverage": "1993-present",
                 "data_source": "Hybrid (CMEMS + GLODAP)",
-                "fallback_datasets": ["acidity_current", "acidity_historical", "glodap_ph"]
+                "fallback_datasets": ["acidity_current", "acidity_historical"]
             },
             "microplastics": {
                 "name": "Marine Microplastics",
@@ -251,7 +241,7 @@ class DataExtractor:
         file_path = await self._find_dataset_file(dataset, date_str)
         if not file_path:
             # ACIDITY FALLBACK STRATEGY: Try alternative acidity datasets
-            if dataset in ["acidity_historical", "acidity_current", "glodap_ph", "acidity"] or dataset.startswith("acidity"):
+            if dataset in ["acidity_historical", "acidity_current", "acidity"] or dataset.startswith("acidity"):
                 logger.info(f"No direct data for {dataset}, attempting acidity fallback strategy")
                 return await self._handle_acidity_fallback(dataset, lat, lon, date_str, start_time)
             
@@ -289,8 +279,6 @@ class DataExtractor:
             if dataset == "microplastics":
                 return await self._extract_microplastics_optimized(file_path, lat, lon, cache_date)
             
-            if dataset == "glodap_ph":
-                return await self._extract_discrete_optimized(dataset, file_path, lat, lon, cache_date)
             
             # OPTIMIZATION: Use smart file manager with coordinate grids
             ds, coord_grid = await cache_manager.get_dataset_with_grid(file_path, dataset)
@@ -429,8 +417,6 @@ class DataExtractor:
                 return self._extract_microplastics_point_data(file_path, lat, lon, start_time)
             
             # Special handling for discrete GLODAP data
-            if dataset == "glodap_ph":
-                return self._extract_discrete_sample_data(dataset, file_path, lat, lon, start_time)
             
             # Standard gridded data extraction
             with xr.open_dataset(file_path) as ds:
@@ -1051,17 +1037,17 @@ class DataExtractor:
                 
                 # Smart fallback based on temporal coverage
                 if year <= 2021:
-                    # Historical period: prefer historical data, then GLODAP, then current
-                    fallback_order = ["acidity_historical", "glodap_ph", "acidity_current"]
+                    # Historical period: prefer historical data, then current
+                    fallback_order = ["acidity_historical", "acidity_current"]
                 else:
                     # Current period: prefer current data, then historical
-                    fallback_order = ["acidity_current", "acidity_historical", "glodap_ph"]
+                    fallback_order = ["acidity_current", "acidity_historical"]
             except:
                 # Invalid date format, try all options
-                fallback_order = ["acidity_current", "acidity_historical", "glodap_ph"]
+                fallback_order = ["acidity_current", "acidity_historical"]
         else:
             # No date specified, try current first then historical
-            fallback_order = ["acidity_current", "acidity_historical", "glodap_ph"]
+            fallback_order = ["acidity_current", "acidity_historical"]
         
         # Remove the originally requested dataset to avoid infinite recursion
         fallback_order = [ds for ds in fallback_order if ds != requested_dataset]
