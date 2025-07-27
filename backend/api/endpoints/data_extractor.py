@@ -15,11 +15,13 @@ import logging
 from datetime import datetime, date
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
 
 from api.models.responses import (
     DatasetInfo, PointDataResponse, MultiDatasetResponse, 
     Coordinates, DataValue
 )
+from api.cache_manager import cache_manager, CachedPoint
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +56,43 @@ class DataExtractor:
                 "file_pattern": "currents_harmonized_*.nc",
                 "spatial_resolution": "0.083° (1/12 degree)"
             },
+            "acidity_historical": {
+                "name": "Ocean Biogeochemistry - Historical Nutrients",
+                "description": "CMEMS historical biogeochemistry data (1993-2022) with nutrients and biological variables",
+                "variables": ["no3", "po4", "si", "o2", "chl", "nppv"],
+                "file_pattern": "acidity_historical_harmonized_*.nc",
+                "spatial_resolution": "0.25° degree",
+                "temporal_coverage": "1993-2022",
+                "data_source": "GLOBAL_MULTIYEAR_BGC_001_029"
+            },
+            "acidity_current": {
+                "name": "Ocean Biogeochemistry - Current pH/Carbon", 
+                "description": "CMEMS current biogeochemistry data (2021-present) with pH and carbon variables",
+                "variables": ["ph", "dissic", "talk"],
+                "file_pattern": "acidity_current_harmonized_*.nc",
+                "spatial_resolution": "0.25° degree", 
+                "temporal_coverage": "2021-present",
+                "data_source": "GLOBAL_ANALYSISFORECAST_BGC_001_028"
+            },
+            "glodap_ph": {
+                "name": "GLODAP pH Observations",
+                "description": "Discrete pH measurements from Global Ocean Data Analysis Project (1993-2021)",
+                "variables": ["ph", "ph_insitu", "ph_insitu_total", "talk", "dic", "pco2", "revelle"],
+                "file_pattern": "glodap_ph_*.nc",
+                "spatial_resolution": "Discrete point samples",
+                "temporal_coverage": "1993-2021",
+                "data_type": "discrete_samples",
+                "interpolation_method": "nearest_neighbor"
+            },
             "acidity": {
-                "name": "Ocean Biogeochemistry",
-                "description": "CMEMS Global Ocean Biogeochemistry Analysis and Forecast",
-                "variables": ["ph", "dissic", "talk", "o2", "no3", "po4", "si"],
-                "file_pattern": "acidity_harmonized_*.nc",
-                "spatial_resolution": "0.25° degree"
+                "name": "Ocean Acidity (Multi-Source)",
+                "description": "Comprehensive ocean acidity data combining historical nutrients, current pH/carbon, and discrete observations",
+                "variables": ["ph", "ph_insitu", "ph_insitu_total", "talk", "dissic", "pco2", "revelle", "no3", "po4", "si", "o2", "chl", "nppv"],
+                "file_pattern": "acidity_*.nc",
+                "spatial_resolution": "Multi-resolution (0.25° gridded + discrete samples)",
+                "temporal_coverage": "1993-present",
+                "data_source": "Hybrid (CMEMS + GLODAP)",
+                "fallback_datasets": ["acidity_current", "acidity_historical", "glodap_ph"]
             },
             "microplastics": {
                 "name": "Marine Microplastics",
@@ -188,14 +221,41 @@ class DataExtractor:
         return None
 
     async def extract_point_data(self, dataset: str, lat: float, lon: float, date_str: Optional[str] = None) -> PointDataResponse:
-        """Extract data at a specific point from the specified dataset."""
+        """Extract data at a specific point from the specified dataset with ultra-fast caching."""
+        start_time = time.time()
+        
         if dataset not in self.dataset_config:
             raise ValueError(f"Unknown dataset: {dataset}")
         
-        # Find the appropriate file
+        # CACHE LAYER 1: Check memory cache first
+        cache_date = date_str or "latest"
+        cached_point = await cache_manager.get_cached_point(dataset, lat, lon, cache_date)
+        
+        if cached_point:
+            # Cache hit - return cached data instantly
+            cache_time = (time.time() - start_time) * 1000
+            logger.info(f"🚀 CACHE HIT: {dataset} at ({lat}, {lon}) in {cache_time:.1f}ms")
+            
+            return PointDataResponse(
+                dataset=dataset,
+                location=Coordinates(lat=lat, lon=lon),
+                actual_location=Coordinates(lat=cached_point.actual_location[0], 
+                                          lon=cached_point.actual_location[1]),
+                date=cache_date,
+                data=cached_point.data,
+                extraction_time_ms=cache_time,
+                file_source="cache"
+            )
+        
+        # Cache miss - extract from file with optimization and fallback strategy
         file_path = await self._find_dataset_file(dataset, date_str)
         if not file_path:
-            # Return empty response instead of error for testing
+            # ACIDITY FALLBACK STRATEGY: Try alternative acidity datasets
+            if dataset in ["acidity_historical", "acidity_current", "glodap_ph", "acidity"] or dataset.startswith("acidity"):
+                logger.info(f"No direct data for {dataset}, attempting acidity fallback strategy")
+                return await self._handle_acidity_fallback(dataset, lat, lon, date_str, start_time)
+            
+            # Return empty response for other datasets
             logger.warning(f"No data file found for dataset {dataset}, returning empty response")
             return PointDataResponse(
                 dataset=dataset,
@@ -207,13 +267,157 @@ class DataExtractor:
                 file_source="no-file"
             )
         
-        # Extract data in thread pool to avoid blocking
+        # OPTIMIZATION: Use smart file manager and coordinate grids
+        try:
+            return await self._extract_point_data_optimized(dataset, file_path, lat, lon, cache_date)
+        except Exception as e:
+            logger.error(f"Optimized extraction failed, falling back to legacy method: {e}")
+            # Fallback to legacy method
+            loop = asyncio.get_event_loop()
+            return await loop.run_in_executor(
+                self.executor, 
+                self._extract_point_data_sync, 
+                dataset, file_path, lat, lon
+            )
+
+    async def _extract_point_data_optimized(self, dataset: str, file_path: Path, lat: float, lon: float, cache_date: str) -> PointDataResponse:
+        """Ultra-fast point data extraction using smart caching and coordinate grids."""
+        start_time = time.time()
+        
+        try:
+            # Special handling for microplastics and discrete data
+            if dataset == "microplastics":
+                return await self._extract_microplastics_optimized(file_path, lat, lon, cache_date)
+            
+            if dataset == "glodap_ph":
+                return await self._extract_discrete_optimized(dataset, file_path, lat, lon, cache_date)
+            
+            # OPTIMIZATION: Use smart file manager with coordinate grids
+            ds, coord_grid = await cache_manager.get_dataset_with_grid(file_path, dataset)
+            
+            # FAST SPATIAL LOOKUP: Use pre-loaded coordinate grid
+            lat_idx, lon_idx, actual_lat, actual_lon = coord_grid.find_nearest_indices(lat, lon)
+            
+            # Determine coordinate names
+            lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
+            lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
+            
+            # Extract data variables efficiently
+            data = {}
+            variables = self.dataset_config[dataset]["variables"]
+            
+            for var_name in variables:
+                if var_name in ds.data_vars:
+                    # Direct indexing - much faster than searching
+                    var_data = ds[var_name].isel({lat_coord: lat_idx, lon_coord: lon_idx})
+                    
+                    # Handle time dimension if present
+                    if 'time' in var_data.dims:
+                        var_data = var_data.isel(time=0)
+                    
+                    # Handle depth dimension if present (take surface)
+                    if 'depth' in var_data.dims:
+                        var_data = var_data.isel(depth=0)
+                    
+                    # Extract scalar value
+                    value = float(var_data.values.item() if var_data.values.ndim == 0 else var_data.values.flatten()[0])
+                    
+                    data[var_name] = DataValue(
+                        value=value if not np.isnan(value) else None,
+                        units=var_data.attrs.get("units", "unknown"),
+                        long_name=var_data.attrs.get("long_name", var_name),
+                        valid=not np.isnan(value)
+                    )
+            
+            # Get date from dataset or filename
+            data_date = self._get_data_date(ds, file_path)
+            
+            extraction_time = (time.time() - start_time) * 1000
+            
+            # CACHE THE RESULT for future requests
+            await cache_manager.cache_point(
+                dataset, lat, lon, cache_date, 
+                {k: {
+                    'value': v.value,
+                    'units': v.units,
+                    'long_name': v.long_name,
+                    'valid': v.valid
+                } for k, v in data.items()},  # Convert DataValue to dict for caching
+                extraction_time, 
+                (actual_lat, actual_lon)
+            )
+            
+            logger.info(f"⚡ OPTIMIZED EXTRACTION: {dataset} at ({lat}, {lon}) in {extraction_time:.1f}ms")
+            
+            return PointDataResponse(
+                dataset=dataset,
+                location=Coordinates(lat=lat, lon=lon),
+                actual_location=Coordinates(lat=actual_lat, lon=actual_lon),
+                date=data_date,
+                data=data,
+                extraction_time_ms=round(extraction_time, 2),
+                file_source=str(file_path)
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in optimized extraction: {e}")
+            raise
+
+    async def _extract_microplastics_optimized(self, file_path: Path, lat: float, lon: float, cache_date: str) -> PointDataResponse:
+        """Optimized microplastics extraction with caching."""
+        # Use legacy method for now but add caching
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            self.executor, 
-            self._extract_point_data_sync, 
-            dataset, file_path, lat, lon
+        start_time = time.time()
+        
+        result = await loop.run_in_executor(
+            self.executor,
+            self._extract_microplastics_point_data,
+            file_path, lat, lon, start_time
         )
+        
+        # Cache the result
+        if result.data:
+            await cache_manager.cache_point(
+                "microplastics", lat, lon, cache_date,
+                {k: {
+                    'value': v.value,
+                    'units': v.units,
+                    'long_name': v.long_name,
+                    'valid': v.valid
+                } for k, v in result.data.items()},
+                result.extraction_time_ms,
+                (result.actual_location.lat, result.actual_location.lon)
+            )
+        
+        return result
+
+    async def _extract_discrete_optimized(self, dataset: str, file_path: Path, lat: float, lon: float, cache_date: str) -> PointDataResponse:
+        """Optimized discrete sample extraction with caching."""
+        # Use legacy method for now but add caching
+        loop = asyncio.get_event_loop()
+        start_time = time.time()
+        
+        result = await loop.run_in_executor(
+            self.executor,
+            self._extract_discrete_sample_data,
+            dataset, file_path, lat, lon, start_time
+        )
+        
+        # Cache the result
+        if result.data:
+            await cache_manager.cache_point(
+                dataset, lat, lon, cache_date,
+                {k: {
+                    'value': v.value,
+                    'units': v.units,
+                    'long_name': v.long_name,
+                    'valid': v.valid
+                } for k, v in result.data.items()},
+                result.extraction_time_ms,
+                (result.actual_location.lat, result.actual_location.lon)
+            )
+        
+        return result
 
     def _extract_point_data_sync(self, dataset: str, file_path: Path, lat: float, lon: float) -> PointDataResponse:
         """Synchronous point data extraction."""
@@ -223,6 +427,10 @@ class DataExtractor:
             # Special handling for microplastics point data
             if dataset == "microplastics":
                 return self._extract_microplastics_point_data(file_path, lat, lon, start_time)
+            
+            # Special handling for discrete GLODAP data
+            if dataset == "glodap_ph":
+                return self._extract_discrete_sample_data(dataset, file_path, lat, lon, start_time)
             
             # Standard gridded data extraction
             with xr.open_dataset(file_path) as ds:
@@ -420,6 +628,104 @@ class DataExtractor:
                 
         except Exception as e:
             logger.error(f"Error extracting microplastics data from {file_path}: {e}")
+            raise
+
+    def _extract_discrete_sample_data(self, dataset: str, file_path: Path, lat: float, lon: float, start_time: float) -> PointDataResponse:
+        """Extract discrete sample data (e.g., GLODAP pH data) with nearest neighbor matching."""
+        try:
+            with xr.open_dataset(file_path) as ds:
+                # GLODAP data uses 'obs' dimension for individual observations
+                if 'obs' not in ds.dims:
+                    raise ValueError(f"Expected 'obs' dimension in discrete sample dataset {dataset}")
+                
+                # Get coordinate arrays
+                lats = ds['latitude'].values
+                lons = ds['longitude'].values
+                
+                # Calculate distances to all observation points
+                lat_diff = lats - lat
+                lon_diff = lons - lon
+                distances = np.sqrt(lat_diff**2 + lon_diff**2)
+                
+                # Find nearest sample point
+                nearest_idx = np.argmin(distances)
+                
+                # Check if nearest point is within reasonable distance (2 degrees for discrete samples)
+                min_distance = distances[nearest_idx]
+                if min_distance > 2.0:
+                    # No nearby sample found
+                    extraction_time = (time.time() - start_time) * 1000
+                    return PointDataResponse(
+                        dataset=dataset,
+                        location=Coordinates(lat=lat, lon=lon),
+                        actual_location=Coordinates(lat=lat, lon=lon),
+                        date="no-data",
+                        data={},
+                        extraction_time_ms=round(extraction_time, 2),
+                        file_source=str(file_path)
+                    )
+                
+                # Extract data at nearest sample point
+                actual_lat = float(lats[nearest_idx])
+                actual_lon = float(lons[nearest_idx])
+                
+                # Get data values for all variables
+                data = {}
+                variables = self.dataset_config[dataset]["variables"]
+                
+                for var_name in variables:
+                    if var_name in ds.data_vars:
+                        var_data = ds[var_name].isel(obs=nearest_idx)
+                        value = float(var_data.values.item())
+                        
+                        data[var_name] = DataValue(
+                            value=value if not np.isnan(value) else None,
+                            units=var_data.attrs.get("units", "unknown"),
+                            long_name=var_data.attrs.get("long_name", var_name),
+                            valid=not np.isnan(value)
+                        )
+                
+                # Get observation date from time coordinate
+                if 'time' in ds.coords:
+                    time_val = ds['time'].isel(obs=nearest_idx).values
+                    if hasattr(time_val, 'strftime'):
+                        data_date = time_val.strftime('%Y-%m-%d')
+                    else:
+                        # Handle numpy datetime64
+                        dt = np.datetime64(time_val, 'D')
+                        data_date = str(dt)
+                else:
+                    data_date = "unknown"
+                
+                # Add metadata about sample type and interpolation
+                data["_sample_distance"] = DataValue(
+                    value=round(min_distance * 111, 1),  # Convert degrees to km
+                    units="km",
+                    long_name="Distance to Nearest Sample",
+                    valid=True
+                )
+                
+                data["_data_type"] = DataValue(
+                    value="discrete_sample",
+                    units="category",
+                    long_name="Data Type",
+                    valid=True
+                )
+                
+                extraction_time = (time.time() - start_time) * 1000
+                
+                return PointDataResponse(
+                    dataset=dataset,
+                    location=Coordinates(lat=lat, lon=lon),
+                    actual_location=Coordinates(lat=actual_lat, lon=actual_lon),
+                    date=data_date,
+                    data=data,
+                    extraction_time_ms=round(extraction_time, 2),
+                    file_source=str(file_path)
+                )
+                
+        except Exception as e:
+            logger.error(f"Error extracting discrete sample data from {file_path}: {e}")
             raise
 
     async def get_all_microplastics_points(self, 
@@ -727,4 +1033,102 @@ class DataExtractor:
             date=response_date,
             datasets=dataset_data,
             total_extraction_time_ms=round(total_time, 2)
+        )
+
+    async def _handle_acidity_fallback(self, requested_dataset: str, lat: float, lon: float, date_str: Optional[str], start_time: float) -> PointDataResponse:
+        """Handle acidity data fallback by trying available acidity datasets."""
+        from datetime import datetime
+        
+        logger.info(f"🔄 Handling acidity fallback for {requested_dataset}, date: {date_str}")
+        
+        # Define fallback strategy based on date and dataset
+        fallback_order = []
+        
+        if date_str:
+            try:
+                target_date = datetime.strptime(date_str, "%Y-%m-%d")
+                year = target_date.year
+                
+                # Smart fallback based on temporal coverage
+                if year <= 2021:
+                    # Historical period: prefer historical data, then GLODAP, then current
+                    fallback_order = ["acidity_historical", "glodap_ph", "acidity_current"]
+                else:
+                    # Current period: prefer current data, then historical
+                    fallback_order = ["acidity_current", "acidity_historical", "glodap_ph"]
+            except:
+                # Invalid date format, try all options
+                fallback_order = ["acidity_current", "acidity_historical", "glodap_ph"]
+        else:
+            # No date specified, try current first then historical
+            fallback_order = ["acidity_current", "acidity_historical", "glodap_ph"]
+        
+        # Remove the originally requested dataset to avoid infinite recursion
+        fallback_order = [ds for ds in fallback_order if ds != requested_dataset]
+        
+        # Try each fallback dataset
+        for fallback_dataset in fallback_order:
+            try:
+                logger.info(f"🧪 Trying fallback dataset: {fallback_dataset}")
+                
+                # Check if the fallback dataset has data
+                file_path = await self._find_dataset_file(fallback_dataset, date_str)
+                if file_path:
+                    logger.info(f"✅ Found data in {fallback_dataset}, extracting...")
+                    
+                    # Extract data using the fallback dataset
+                    try:
+                        result = await self._extract_point_data_optimized(fallback_dataset, file_path, lat, lon, date_str or "latest")
+                        
+                        # Add metadata about fallback
+                        if result.data:
+                            result.data["_fallback_info"] = DataValue(
+                                value=f"Data from {fallback_dataset} (fallback from {requested_dataset})",
+                                units="metadata",
+                                long_name="Data Source Fallback Information",
+                                valid=True
+                            )
+                            result.data["_original_request"] = DataValue(
+                                value=requested_dataset,
+                                units="metadata", 
+                                long_name="Originally Requested Dataset",
+                                valid=True
+                            )
+                        
+                        logger.info(f"🎯 Successfully extracted acidity data using fallback: {fallback_dataset}")
+                        return result
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to extract from fallback {fallback_dataset}: {e}")
+                        continue
+                        
+            except Exception as e:
+                logger.warning(f"Error checking fallback dataset {fallback_dataset}: {e}")
+                continue
+        
+        # No fallback worked, return empty response with information
+        extraction_time = (time.time() - start_time) * 1000
+        logger.warning(f"❌ All acidity fallbacks failed for {requested_dataset}")
+        
+        return PointDataResponse(
+            dataset=requested_dataset,
+            location=Coordinates(lat=lat, lon=lon),
+            actual_location=Coordinates(lat=lat, lon=lon),
+            date=date_str or "no-data",
+            data={
+                "_availability_info": DataValue(
+                    value="No acidity data available for this date/location",
+                    units="metadata",
+                    long_name="Data Availability Information", 
+                    valid=True
+                ),
+                "_attempted_fallbacks": DataValue(
+                    value=", ".join(fallback_order),
+                    units="metadata",
+                    long_name="Attempted Fallback Datasets",
+                    valid=True
+                )
+            },
+            extraction_time_ms=round(extraction_time, 2),
+            file_source="no-data-fallback"
         )

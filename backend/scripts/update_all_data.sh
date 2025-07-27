@@ -29,6 +29,8 @@ END_DATE=""
 FORCE_UPDATE=false
 DRY_RUN=false
 VERBOSE=false
+ACIDITY_SOURCE="hybrid"
+SKIP_GLODAP=false
 
 # Functions
 usage() {
@@ -46,6 +48,12 @@ OPTIONS:
     -f, --force                Force update even if data seems current
     -n, --dry-run              Show what would be downloaded without downloading
     -v, --verbose              Verbose output
+    --acidity-source SOURCE    Acidity data source: hybrid|historical|current|glodap
+                               (default: hybrid - uses all sources intelligently)
+                               historical - CMEMS nutrients only (1993-2022)
+                               current - CMEMS with pH (2021-present)
+                               glodap - GLODAP discrete pH samples only
+    --skip-glodap              Skip GLODAP downloads in hybrid mode (useful for testing)
     -h, --help                 Show this help message
 
 EXAMPLES:
@@ -54,12 +62,22 @@ EXAMPLES:
     $0 -d sst,waves -m 10                  # Update SST and waves, max 10 files each
     $0 -s 2024-01-01 -e 2024-01-31        # Update specific date range
     $0 -n                                  # Dry run to see what would be downloaded
+    
+    # Acidity-specific examples:
+    $0 -d acidity --acidity-source historical -s 1993-01-01 -e 1993-01-31
+                                           # Download only CMEMS nutrients for Jan 1993
+    $0 -d acidity --acidity-source hybrid --skip-glodap -s 1993-01-01 -e 1993-01-31
+                                           # Hybrid mode without GLODAP for testing
 
 DATASETS:
     sst          Sea Surface Temperature (NOAA OISST v2.1)
     waves        Ocean Waves (CMEMS)
     currents     Ocean Currents (CMEMS)
-    acidity      Ocean Acidity/pH (CMEMS BGC)
+    acidity      Ocean Biogeochemistry (Hybrid approach)
+                 - 1993-2022: CMEMS nutrients (NO3, PO4, SI, O2)
+                 - 1993-2021: GLODAP discrete pH samples (when available)
+                 - 2021-present: CMEMS operational with pH
+                 Use --acidity-source to control data sources
     microplastics Marine Microplastics (NOAA NCEI)
 
 EOF
@@ -248,7 +266,33 @@ download_dataset() {
             dataset_class="CurrentsDownloader"
             ;;
         "acidity")
-            dataset_class="AcidityDownloader"
+            case "$ACIDITY_SOURCE" in
+                "hybrid")
+                    dataset_class="AcidityHybridDownloader"
+                    ;;
+                "historical")
+                    dataset_class="AcidityHistoricalDownloader"
+                    ;;
+                "current")
+                    dataset_class="AcidityCurrentDownloader"
+                    ;;
+                "glodap")
+                    dataset_class="GLODAPDownloader"
+                    ;;
+                *)
+                    log_error "Unknown acidity source: $ACIDITY_SOURCE"
+                    dataset_class="AcidityHybridDownloader"  # default
+                    ;;
+            esac
+            ;;
+        "acidity_historical")
+            dataset_class="AcidityHistoricalDownloader"
+            ;;
+        "acidity_current")
+            dataset_class="AcidityCurrentDownloader"
+            ;;
+        "glodap_ph")
+            dataset_class="GLODAPDownloader"
             ;;
         "microplastics")
             dataset_class="MicroplasticsDownloader"
@@ -262,7 +306,16 @@ download_dataset() {
     # Build Python script with proper conditional logic
     local python_script="import sys
 sys.path.append('$BACKEND_DIR')
-from downloaders.${dataset}_downloader import ${dataset_class}
+if '$dataset' == 'acidity':
+    from downloaders.acidity_hybrid_downloader import ${dataset_class}
+elif '$dataset' == 'acidity_historical':
+    from downloaders.acidity_historical_downloader import ${dataset_class}
+elif '$dataset' == 'acidity_current':
+    from downloaders.acidity_current_downloader import ${dataset_class}
+elif '$dataset' == 'glodap_ph':
+    from downloaders.glodap_downloader import ${dataset_class}
+else:
+    from downloaders.${dataset}_downloader import ${dataset_class}
 
 downloader = ${dataset_class}()"
     
@@ -275,12 +328,12 @@ result = downloader.download_date_range('$start_date', '$end_date')"
     fi
     
     python_script="$python_script
-print(f'Downloaded: {result.get(\"downloaded\", 0)}')
-print(f'Failed: {result.get(\"failed\", 0)}')
+print('Downloaded:', result.get('downloaded', 0))
+print('Failed:', result.get('failed', 0))
 if result.get('errors'):
     print('Errors:')
     for error in result['errors']:
-        print(f'  {error}')"
+        print('  ' + str(error))"
         
     local cmd="python3 -c \"$python_script\""
     
@@ -388,6 +441,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         -v|--verbose)
             VERBOSE=true
+            shift
+            ;;
+        --acidity-source)
+            ACIDITY_SOURCE="$2"
+            shift 2
+            ;;
+        --skip-glodap)
+            SKIP_GLODAP=true
             shift
             ;;
         -h|--help)

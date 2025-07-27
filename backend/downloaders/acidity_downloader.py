@@ -131,11 +131,11 @@ class AcidityDownloader(BaseDataDownloader):
                     self.logger.error(f"CMEMS authentication failed: {auth_error}")
                     raise
                 
-                # Use copernicusmarine Python API - request only available variables
+                # Use copernicusmarine Python API - request available BGC variables
                 self.logger.info(f"Requesting subset for dataset: {self.dataset_id}")
                 copernicusmarine.subset(
                     dataset_id=self.dataset_id,
-                    variables=["ph", "dissic"],  # Start with core variables, add more later when found
+                    variables=self.variables,  # Use variables from config: ph, spco2, no3, po4, si, o2
                     start_datetime=f"{date_str}T00:00:00",
                     end_datetime=f"{date_str}T23:59:59",
                     minimum_depth=0.5,  # Adjust depth to match dataset bounds
@@ -230,11 +230,11 @@ class AcidityDownloader(BaseDataDownloader):
         """
         try:
             with xr.open_dataset(file_path) as ds:
-                # Check for required variables (at least pH or DIC)
-                required_vars = ["ph", "dissic", "talk", "o2", "no3", "po4", "si"]
-                available_vars = [var for var in required_vars if var in ds.variables]
-                if len(available_vars) < 2:  # Need at least 2 variables
-                    self.logger.error(f"Missing most biogeochemistry variables. Available: {available_vars}")
+                # Check for required variables - use configured variables for this dataset
+                configured_vars = self.variables
+                available_vars = [var for var in configured_vars if var in ds.variables]
+                if len(available_vars) < 1:  # Need at least 1 configured variable
+                    self.logger.error(f"Missing configured biogeochemistry variables. Expected: {configured_vars}, Available: {list(ds.variables)}")
                     return False
                 
                 self.logger.info(f"Found {len(available_vars)} biogeochemistry variables: {available_vars}")
@@ -257,14 +257,14 @@ class AcidityDownloader(BaseDataDownloader):
                         if min_ph < 7.0 or max_ph > 9.0:
                             self.logger.warning(f"pH values at extreme ends: {min_ph:.2f} - {max_ph:.2f}")
                 
-                # Validate DIC ranges (typical ocean DIC: 1.8-2.4 mol/m³)
-                if "dissic" in ds.variables:
-                    dissic_data = ds["dissic"].values
-                    valid_dissic = dissic_data[~np.isnan(dissic_data)]
-                    if len(valid_dissic) > 0:
-                        min_dissic, max_dissic = float(np.min(valid_dissic)), float(np.max(valid_dissic))
-                        if min_dissic < 1.0 or max_dissic > 3.0:
-                            self.logger.warning(f"DIC values outside expected range: {min_dissic:.3f} - {max_dissic:.3f} mol/m³")
+                # Validate spCO2 ranges (typical ocean spCO2: 200-500 μatm)
+                if "spco2" in ds.variables:
+                    spco2_data = ds["spco2"].values
+                    valid_spco2 = spco2_data[~np.isnan(spco2_data)]
+                    if len(valid_spco2) > 0:
+                        min_spco2, max_spco2 = float(np.min(valid_spco2)), float(np.max(valid_spco2))
+                        if min_spco2 < 100 or max_spco2 > 800:
+                            self.logger.warning(f"spCO2 values outside expected range: {min_spco2:.1f} - {max_spco2:.1f} μatm")
                 
                 # Check spatial coverage
                 if "longitude" in ds.coords and "latitude" in ds.coords:
@@ -442,23 +442,23 @@ class AcidityDownloader(BaseDataDownloader):
                                 "typical_range": "7.5 - 8.5"
                             }
                         
-                        # DIC data
-                        if "dissic" in ds.variables:
-                            dissic_data = ds.dissic.isel(latitude=lat_idx, longitude=lon_idx)
+                        # spCO2 data
+                        if "spco2" in ds.variables:
+                            spco2_data = ds.spco2.isel(latitude=lat_idx, longitude=lon_idx)
                             # Handle time dimension
-                            if 'time' in dissic_data.dims:
-                                dissic_data = dissic_data.isel(time=0)
+                            if 'time' in spco2_data.dims:
+                                spco2_data = spco2_data.isel(time=0)
                             # Handle depth dimension (take surface)
-                            if 'depth' in dissic_data.dims:
-                                dissic_data = dissic_data.isel(depth=0)
+                            if 'depth' in spco2_data.dims:
+                                spco2_data = spco2_data.isel(depth=0)
                             # Extract scalar value
-                            dissic_val = float(dissic_data.values.item() if dissic_data.values.ndim == 0 else dissic_data.values.flatten()[0])
-                            sample_data["dissic"] = {
-                                "value": round(dissic_val, 3) if not np.isnan(dissic_val) else None,
-                                "units": "mol/m³",
-                                "long_name": "Dissolved inorganic carbon",
-                                "valid": not np.isnan(dissic_val),
-                                "typical_range": "1.8 - 2.4 mol/m³"
+                            spco2_val = float(spco2_data.values.item() if spco2_data.values.ndim == 0 else spco2_data.values.flatten()[0])
+                            sample_data["spco2"] = {
+                                "value": round(spco2_val, 1) if not np.isnan(spco2_val) else None,
+                                "units": "μatm",
+                                "long_name": "Surface partial pressure of CO2",
+                                "valid": not np.isnan(spco2_val),
+                                "typical_range": "200 - 500 μatm"
                             }
                         
                         extraction_time = (time.time() - start_time) * 1000
@@ -573,7 +573,7 @@ class AcidityDownloader(BaseDataDownloader):
             },
             "data_quality": {
                 "avg_ph": None,
-                "avg_dissic": None,
+                "avg_spco2": None,
                 "valid_data_percentage": None
             }
         }
@@ -596,11 +596,11 @@ class AcidityDownloader(BaseDataDownloader):
                         quality_metrics["avg_ph"] = float(valid_ph.mean())
                         quality_metrics["ph_range"] = [float(valid_ph.min()), float(valid_ph.max())]
                     
-                    if 'dissic' in ds.data_vars:
-                        dissic_data = ds['dissic']
-                        valid_dissic = dissic_data.where(~np.isnan(dissic_data))
-                        quality_metrics["avg_dissic"] = float(valid_dissic.mean())
-                        quality_metrics["dissic_range"] = [float(valid_dissic.min()), float(valid_dissic.max())]
+                    if 'spco2' in ds.data_vars:
+                        spco2_data = ds['spco2']
+                        valid_spco2 = spco2_data.where(~np.isnan(spco2_data))
+                        quality_metrics["avg_spco2"] = float(valid_spco2.mean())
+                        quality_metrics["spco2_range"] = [float(valid_spco2.min()), float(valid_spco2.max())]
                     
                     acidity_validation["data_quality"].update(quality_metrics)
                     

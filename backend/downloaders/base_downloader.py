@@ -202,9 +202,37 @@ class BaseDataDownloader(ABC):
         status["datasets"][self.dataset_name].update(kwargs)
         status["last_updated"] = datetime.now().isoformat()
         
-        # Write back to file
-        with open(self.status_file, 'w') as f:
-            json.dump(status, f, indent=2)
+        # Write back to file with date serialization support using atomic write
+        self._atomic_write_json(self.status_file, status)
+    
+    def _atomic_write_json(self, file_path: Path, data: dict):
+        """
+        Atomically write JSON data to file to prevent corruption.
+        
+        Args:
+            file_path: Target file path
+            data: Data to write as JSON
+        """
+        import tempfile
+        import os
+        
+        # Write to temporary file first
+        temp_file = file_path.with_suffix('.tmp')
+        try:
+            with open(temp_file, 'w') as f:
+                json.dump(data, f, indent=2, default=str)
+            
+            # Atomic rename (works on most filesystems)
+            if os.name == 'nt':  # Windows
+                if file_path.exists():
+                    file_path.unlink()
+            temp_file.rename(file_path)
+            
+        except Exception as e:
+            # Clean up temp file on error
+            if temp_file.exists():
+                temp_file.unlink()
+            raise e
     
     def get_date_range_to_download(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[date]:
         """
@@ -221,7 +249,10 @@ class BaseDataDownloader(ABC):
         
         # Determine start date
         if start_date:
-            start = datetime.strptime(start_date, "%Y-%m-%d").date()
+            if isinstance(start_date, str):
+                start = datetime.strptime(start_date, "%Y-%m-%d").date()
+            else:
+                start = start_date  # Already a date object
         elif current_status["last_date"]:
             # Start from day after last successful download
             last_date = datetime.strptime(current_status["last_date"], "%Y-%m-%d").date()
@@ -233,7 +264,10 @@ class BaseDataDownloader(ABC):
         
         # Determine end date
         if end_date:
-            end = datetime.strptime(end_date, "%Y-%m-%d").date()
+            if isinstance(end_date, str):
+                end = datetime.strptime(end_date, "%Y-%m-%d").date()
+            else:
+                end = end_date  # Already a date object
         else:
             # Download up to yesterday (today's data might not be available yet)
             end = date.today() - timedelta(days=1)

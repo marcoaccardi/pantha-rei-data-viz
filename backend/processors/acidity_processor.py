@@ -38,16 +38,19 @@ class AcidityProcessor:
             'data_ranges': {}
         }
         
-        # Expected variables for biogeochemistry data
+        # Expected variables for biogeochemistry data (updated for hybrid datasets)
         expected_vars = {
             'ph': {'min': 6.0, 'max': 9.0, 'description': 'pH'},
+            'spco2': {'min': 100.0, 'max': 800.0, 'description': 'Surface partial pressure of CO2 (μatm)'},
             'dissic': {'min': 0.0, 'max': 5.0, 'description': 'Dissolved Inorganic Carbon (mol/m³)'},
             'dic': {'min': 0.0, 'max': 5.0, 'description': 'Dissolved Inorganic Carbon (mol/m³)'},
             'talk': {'min': 0.0, 'max': 3.0, 'description': 'Total Alkalinity (mol/m³)'},
             'o2': {'min': 0.0, 'max': 500.0, 'description': 'Dissolved Oxygen (mmol/m³)'},
             'no3': {'min': 0.0, 'max': 50.0, 'description': 'Nitrate (mmol/m³)'},
             'po4': {'min': 0.0, 'max': 5.0, 'description': 'Phosphate (mmol/m³)'},
-            'si': {'min': 0.0, 'max': 200.0, 'description': 'Silicate (mmol/m³)'}
+            'si': {'min': 0.0, 'max': 200.0, 'description': 'Silicate (mmol/m³)'},
+            'chl': {'min': 0.0, 'max': 50.0, 'description': 'Chlorophyll-a (mg/m³)'},
+            'nppv': {'min': 0.0, 'max': 1000.0, 'description': 'Net Primary Production (mg/m³/day)'}
         }
         
         # Check for available variables
@@ -73,13 +76,16 @@ class AcidityProcessor:
                         f"outside expected range ({var_info['min']} - {var_info['max']})"
                     )
         
-        # Check if we have at least one key biogeochemistry variable
-        key_vars = ['ph', 'dissic', 'dic', 'talk']
-        found_key_vars = [var for var in key_vars if var in validation['variables_found']]
+        # Check if we have at least one key biogeochemistry variable (updated for hybrid datasets)
+        key_vars = ['ph', 'spco2', 'dissic', 'dic', 'talk']
+        nutrient_vars = ['no3', 'po4', 'si', 'o2', 'chl', 'nppv']  # Also accept nutrient variables for historical data
         
-        if not found_key_vars:
+        found_key_vars = [var for var in key_vars if var in validation['variables_found']]
+        found_nutrient_vars = [var for var in nutrient_vars if var in validation['variables_found']]
+        
+        if not found_key_vars and not found_nutrient_vars:
             validation['errors'].append(
-                f"No key biogeochemistry variables found. Expected one of: {key_vars}"
+                f"No biogeochemistry variables found. Expected one of: {key_vars + nutrient_vars}"
             )
             validation['valid'] = False
         
@@ -206,6 +212,23 @@ class AcidityProcessor:
             dissic_masked = dissic_data.where(dissic_data >= 0.0)
             ds_processed['dissic'] = dissic_masked
         
+        # Process spCO2 data (surface partial pressure of CO2)
+        if 'spco2' in ds_processed.data_vars:
+            spco2_data = ds_processed['spco2']
+            
+            # Add standard attributes
+            spco2_data.attrs.update({
+                'standard_name': 'surface_partial_pressure_of_carbon_dioxide_in_sea_water',
+                'long_name': 'Surface partial pressure of CO2',
+                'units': 'uatm',
+                'valid_range': [100.0, 800.0],
+                'description': 'Surface partial pressure of carbon dioxide in seawater'
+            })
+            
+            # Quality control: mask extreme values
+            spco2_masked = spco2_data.where((spco2_data >= 100.0) & (spco2_data <= 800.0))
+            ds_processed['spco2'] = spco2_masked
+        
         # Process Total Alkalinity
         if 'talk' in ds_processed.data_vars:
             talk_data = ds_processed['talk']
@@ -221,6 +244,102 @@ class AcidityProcessor:
             # Quality control: mask negative values
             talk_masked = talk_data.where(talk_data >= 0.0)
             ds_processed['talk'] = talk_masked
+        
+        # Process Nitrate
+        if 'no3' in ds_processed.data_vars:
+            no3_data = ds_processed['no3']
+            
+            no3_data.attrs.update({
+                'standard_name': 'mole_concentration_of_nitrate_in_sea_water',
+                'long_name': 'Nitrate concentration',
+                'units': 'mmol m-3',
+                'valid_range': [0.0, 50.0],
+                'description': 'Concentration of nitrate in seawater'
+            })
+            
+            # Quality control: mask negative values
+            no3_masked = no3_data.where(no3_data >= 0.0)
+            ds_processed['no3'] = no3_masked
+        
+        # Process Phosphate
+        if 'po4' in ds_processed.data_vars:
+            po4_data = ds_processed['po4']
+            
+            po4_data.attrs.update({
+                'standard_name': 'mole_concentration_of_phosphate_in_sea_water',
+                'long_name': 'Phosphate concentration',
+                'units': 'mmol m-3',
+                'valid_range': [0.0, 5.0],
+                'description': 'Concentration of phosphate in seawater'
+            })
+            
+            # Quality control: mask negative values
+            po4_masked = po4_data.where(po4_data >= 0.0)
+            ds_processed['po4'] = po4_masked
+        
+        # Process Silicate
+        if 'si' in ds_processed.data_vars:
+            si_data = ds_processed['si']
+            
+            si_data.attrs.update({
+                'standard_name': 'mole_concentration_of_silicate_in_sea_water',
+                'long_name': 'Silicate concentration',
+                'units': 'mmol m-3',
+                'valid_range': [0.0, 200.0],
+                'description': 'Concentration of silicate in seawater'
+            })
+            
+            # Quality control: mask negative values
+            si_masked = si_data.where(si_data >= 0.0)
+            ds_processed['si'] = si_masked
+        
+        # Process Dissolved Oxygen
+        if 'o2' in ds_processed.data_vars:
+            o2_data = ds_processed['o2']
+            
+            o2_data.attrs.update({
+                'standard_name': 'mole_concentration_of_dissolved_molecular_oxygen_in_sea_water',
+                'long_name': 'Dissolved oxygen concentration',
+                'units': 'mmol m-3',
+                'valid_range': [0.0, 500.0],
+                'description': 'Concentration of dissolved oxygen in seawater'
+            })
+            
+            # Quality control: mask negative values
+            o2_masked = o2_data.where(o2_data >= 0.0)
+            ds_processed['o2'] = o2_masked
+        
+        # Process Chlorophyll-a
+        if 'chl' in ds_processed.data_vars:
+            chl_data = ds_processed['chl']
+            
+            chl_data.attrs.update({
+                'standard_name': 'mass_concentration_of_chlorophyll_a_in_sea_water',
+                'long_name': 'Chlorophyll-a concentration',
+                'units': 'mg m-3',
+                'valid_range': [0.0, 50.0],
+                'description': 'Mass concentration of chlorophyll-a in seawater'
+            })
+            
+            # Quality control: mask negative values
+            chl_masked = chl_data.where(chl_data >= 0.0)
+            ds_processed['chl'] = chl_masked
+        
+        # Process Net Primary Production
+        if 'nppv' in ds_processed.data_vars:
+            nppv_data = ds_processed['nppv']
+            
+            nppv_data.attrs.update({
+                'standard_name': 'net_primary_productivity_of_biomass_expressed_as_carbon_per_unit_volume_in_sea_water',
+                'long_name': 'Net Primary Production',
+                'units': 'mg m-3 day-1',
+                'valid_range': [0.0, 1000.0],
+                'description': 'Net primary production of phytoplankton'
+            })
+            
+            # Quality control: mask negative values
+            nppv_masked = nppv_data.where(nppv_data >= 0.0)
+            ds_processed['nppv'] = nppv_masked
         
         # Add processing metadata
         ds_processed.attrs.update({

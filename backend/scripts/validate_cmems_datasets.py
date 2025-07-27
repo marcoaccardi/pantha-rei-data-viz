@@ -173,7 +173,8 @@ def main():
     
     # Load configuration
     print("\n📋 Loading dataset configurations...")
-    sources = load_sources_config()
+    config = load_sources_config()
+    sources = config.get('datasets', {})
     
     # Filter datasets if specified
     if args.dataset:
