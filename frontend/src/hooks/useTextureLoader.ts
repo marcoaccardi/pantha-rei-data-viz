@@ -1,5 +1,5 @@
 import { useLoader } from '@react-three/fiber';
-import { TextureLoader } from 'three';
+import { TextureLoader, LinearFilter, LinearMipmapLinearFilter } from 'three';
 import { useMemo, useState, useEffect, startTransition } from 'react';
 import { requestCache } from '../utils/requestCache';
 
@@ -56,8 +56,8 @@ export function useTextureLoader(externalCategory?: string) {
   // Use external category if provided, otherwise use internal state
   const activeCategory = externalCategory || selectedCategory;
   
-  // Load NASA Earth texture from API server
-  const earthTexture = useLoader(TextureLoader, `${API_BASE_URL}/textures/earth/nasa_world_topo_bathy.jpg`);
+  // Load NASA Earth texture - fallback to local file if API is unavailable
+  const earthTexture = useLoader(TextureLoader, `/textures/earth/nasa_world_topo_bathy.jpg`);
   
   // Fetch texture metadata on mount
   useEffect(() => {
@@ -85,8 +85,16 @@ export function useTextureLoader(externalCategory?: string) {
     const cacheKey = requestCache.createTextureKey(activeCategory, selectedDate, selectedResolution);
     console.log(`🎨 Loading texture: ${cacheKey} from ${currentTextureUrl}`);
     
-    // Use React Three Fiber's loader with the stable URL
-    return new TextureLoader().load(currentTextureUrl);
+    // Use React Three Fiber's loader with enhanced settings for ultra-resolution
+    const texture = new TextureLoader().load(currentTextureUrl);
+    
+    // Configure texture for ultra-high resolution display
+    texture.generateMipmaps = true;                    // Enable mipmaps for smooth scaling
+    texture.flipY = true;                             // Correct orientation for globe mapping
+    texture.magFilter = LinearFilter;                 // High-quality magnification
+    texture.minFilter = LinearMipmapLinearFilter;     // High-quality minification with mipmaps
+    
+    return texture;
   }, [currentTextureUrl, activeCategory, selectedDate, selectedResolution]);
   
   // Function to change texture category with deferred updates

@@ -86,16 +86,18 @@ const GlobeMesh: React.FC<{
       <mesh
         ref={meshRef}
       >
-        <sphereGeometry args={[1, 64, 64]} />
+        <sphereGeometry args={[1, 360, 180]} />
         <meshStandardMaterial 
           map={earthTexture} 
+          transparent
+          opacity={0.7}
         />
       </mesh>
       
       {/* Data Overlay Layer */}
       {showDataOverlay && (
         <mesh ref={sstMeshRef}>
-          <sphereGeometry args={[1.001, 64, 64]} />
+          <sphereGeometry args={[1.001, 360, 180]} />
           <meshStandardMaterial
             map={dataTexture}
             transparent
