@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-07-27T08:49:25.803260",
+  "last_updated": "2025-07-28T13:17:41.021786",
   "datasets": {
     "sst": {
       "last_date": "1994-07-19",
@@ -24,17 +24,17 @@
       "ready_for_testing": true
     },
     "currents": {
-      "last_date": "2024-01-11",
+      "last_date": "2025-07-24",
       "total_files": 0,
       "storage_gb": 0.0,
-      "last_success": "2025-07-26T18:31:54.371094",
+      "last_success": "2025-07-28T10:08:43.865951",
       "last_error": null,
-      "status": "active"
+      "status": "downloading"
     },
     "acidity": {
       "last_date": "2024-04-24",
-      "total_files": 75,
-      "storage_gb": 1.456,
+      "total_files": 76,
+      "storage_gb": 0.0,
       "last_success": "2025-07-26T18:22:33.423391",
       "last_error": null,
       "status": "downloading",
@@ -43,33 +43,33 @@
       "final_file_size_kb": 23018.0,
       "api_ready": true,
       "datasets_used": [
-        "acidity_historical"
+        "acidity_current"
       ],
       "last_download_summary": {
         "downloaded": 1,
         "failed": 0,
         "errors": [],
         "datasets_used": [
-          "acidity_historical"
+          "acidity_current"
         ],
         "date_ranges": {
-          "acidity_historical": [
-            "1993-01-07",
-            "1993-01-07"
+          "acidity_current": [
+            "2025-07-24",
+            "2025-07-24"
           ]
         }
       }
     },
     "acidity_current": {
       "status": "up_to_date",
-      "last_optimization": "2025-07-27T08:47:16.039080",
+      "last_optimization": "2025-07-28T10:11:14.897888",
       "space_freed_mb": 0,
       "final_file_size_kb": 34512.3,
       "api_ready": true,
-      "total_files": 1,
-      "storage_gb": 0.165,
-      "last_date": "2023-01-06",
-      "last_success": "2025-07-27T08:47:16.042788"
+      "total_files": 2,
+      "storage_gb": 0.197,
+      "last_date": "2025-07-24",
+      "last_success": "2025-07-28T10:11:14.900818"
     },
     "acidity_historical": {
       "status": "up_to_date",
@@ -84,6 +84,11 @@
     },
     "microplastics": {
       "status": "downloading"
+    },
+    "currents_cmems": {
+      "last_date": "2024-09-30",
+      "last_success": "2025-07-28T13:17:41.021096",
+      "status": "up_to_date"
     }
   }
 }

@@ -25,7 +25,11 @@ class CurrentsDownloader(BaseDataDownloader):
     
     def __init__(self, config_path: Optional[Path] = None):
         """Initialize Currents downloader."""
-        super().__init__("currents", config_path)
+        super().__init__("currents_cmems", config_path)
+        
+        # Override paths to use unified currents folder
+        self.raw_data_path = self.base_path / self.storage_config["raw_data_path"] / "currents"
+        self.raw_data_path.mkdir(parents=True, exist_ok=True)
         
         # Currents-specific configuration
         self.product_id = self.dataset_config["product_id"]

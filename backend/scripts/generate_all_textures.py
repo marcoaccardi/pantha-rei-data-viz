@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Batch texture generation script for all available ocean data.
-Processes all NetCDF files in unified_coords and generates PNG textures.
+Enhanced to use high-quality ERDDAP textures for SST and local processing for other datasets.
 """
 
 import sys
@@ -11,7 +11,7 @@ import logging
 import argparse
 from typing import Dict, List, Any
 import json
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 # Add backend to Python path
 backend_path = Path(__file__).parent.parent
@@ -23,6 +23,9 @@ from processors.dataset_texture_generators import (
     CurrentsTextureGenerator,
     MicroplasticsTextureGenerator
 )
+
+# Import new high-quality SST texture downloader
+from downloaders.sst_erddap_texture_downloader import SSTERDDAPTextureDownloader
 
 class TextureBatchProcessor:
     """Batch processor for generating textures from all ocean datasets."""
@@ -47,13 +50,18 @@ class TextureBatchProcessor:
         else:
             self.textures_output_path = Path(textures_output_path)
             
-        # Initialize generators
+        # Initialize generators (SST now uses ERDDAP downloader for high quality)
         self.generators = {
-            'sst': SSTTextureGenerator(self.textures_output_path),
+            'sst': SSTTextureGenerator(self.textures_output_path),  # Keep for fallback
             'acidity': AcidityTextureGenerator(self.textures_output_path),
             'currents': CurrentsTextureGenerator(self.textures_output_path),
             'microplastics': MicroplasticsTextureGenerator(self.textures_output_path)
         }
+        
+        # Initialize high-quality ERDDAP SST texture downloader
+        self.sst_erddap_downloader = SSTERDDAPTextureDownloader(
+            Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/textures/sst")
+        )
         
     def _setup_logging(self) -> logging.Logger:
         """Setup logging configuration."""
@@ -148,6 +156,7 @@ class TextureBatchProcessor:
     def process_dataset(self, dataset: str, files: List[Path], force_regenerate: bool = False) -> Dict[str, Any]:
         """
         Process all files for a specific dataset.
+        Enhanced to use high-quality ERDDAP textures for SST.
         
         Args:
             dataset: Dataset name
@@ -159,6 +168,11 @@ class TextureBatchProcessor:
         """
         self.logger.info(f"Processing {len(files)} files for dataset: {dataset}")
         
+        # Special handling for SST - use high-quality ERDDAP textures
+        if dataset == 'sst':
+            return self._process_sst_with_erddap(files, force_regenerate)
+        
+        # Standard processing for other datasets
         generator = self.generators[dataset]
         results = {
             'dataset': dataset,
@@ -197,6 +211,89 @@ class TextureBatchProcessor:
                 self.logger.error(f"Exception processing {nc_file}: {e}")
                 
         self.logger.info(f"Dataset {dataset} complete: {results['processed']} processed, "
+                        f"{results['skipped']} skipped, {results['failed']} failed")
+        
+        return results
+        
+    def _process_sst_with_erddap(self, files: List[Path], force_regenerate: bool = False) -> Dict[str, Any]:
+        """
+        Process SST dataset using high-quality ERDDAP textures.
+        Extracts dates from NetCDF files and downloads corresponding ERDDAP textures.
+        
+        Args:
+            files: List of SST NetCDF files
+            force_regenerate: Force download even if texture exists
+            
+        Returns:
+            Processing results summary
+        """
+        self.logger.info(f"Using high-quality ERDDAP textures for {len(files)} SST files")
+        
+        results = {
+            'dataset': 'sst',
+            'method': 'erddap_transparentpng',
+            'total_files': len(files),
+            'processed': 0,
+            'skipped': 0,
+            'failed': 0,
+            'files_processed': [],
+            'files_failed': []
+        }
+        
+        # Extract dates from NetCDF filenames and download textures
+        dates_to_download = set()
+        
+        for nc_file in files:
+            try:
+                # Extract date from filename (various formats)
+                import re
+                date_match = re.search(r'(\d{8})', nc_file.name)
+                if date_match:
+                    date_str = date_match.group(1)
+                    target_date = datetime.strptime(date_str, '%Y%m%d').date()
+                    dates_to_download.add(target_date)
+                else:
+                    self.logger.warning(f"Could not extract date from {nc_file.name}")
+                    results['failed'] += 1
+                    results['files_failed'].append(str(nc_file))
+            except Exception as e:
+                self.logger.error(f"Error processing filename {nc_file.name}: {e}")
+                results['failed'] += 1
+                results['files_failed'].append(str(nc_file))
+        
+        # Download high-quality textures for all extracted dates
+        self.logger.info(f"Downloading ERDDAP textures for {len(dates_to_download)} unique dates")
+        
+        for target_date in sorted(dates_to_download):
+            try:
+                # Check if texture already exists
+                texture_filename = f"SST_{target_date.strftime('%Y%m%d')}.png"
+                year_dir = self.sst_erddap_downloader.output_base_path / str(target_date.year)
+                texture_path = year_dir / texture_filename
+                
+                if texture_path.exists() and not force_regenerate:
+                    self.logger.info(f"ERDDAP texture already exists for {target_date}, skipping")
+                    results['skipped'] += 1
+                    continue
+                
+                # Download high-quality texture
+                success = self.sst_erddap_downloader.download_texture_for_date(target_date)
+                
+                if success:
+                    results['processed'] += 1
+                    results['files_processed'].append(f"ERDDAP_SST_{target_date}")
+                    self.logger.info(f"Successfully downloaded ERDDAP texture for {target_date}")
+                else:
+                    results['failed'] += 1
+                    results['files_failed'].append(f"ERDDAP_SST_{target_date}")
+                    self.logger.error(f"Failed to download ERDDAP texture for {target_date}")
+                    
+            except Exception as e:
+                results['failed'] += 1
+                results['files_failed'].append(f"ERDDAP_SST_{target_date}")
+                self.logger.error(f"Exception downloading ERDDAP texture for {target_date}: {e}")
+        
+        self.logger.info(f"SST ERDDAP processing complete: {results['processed']} downloaded, "
                         f"{results['skipped']} skipped, {results['failed']} failed")
         
         return results

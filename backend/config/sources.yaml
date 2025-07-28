@@ -22,7 +22,40 @@ datasets:
       downsample: false          # disabled for ultra-high resolution textures
       harmonize_coords: true
     
-  # Ultra-high resolution SST option for maximum texture quality
+  # HIGH-QUALITY ERDDAP TEXTURE SOURCE - PRIMARY for textures
+  sst_erddap_textures:
+    name: "PacIOOS ERDDAP SST Textures (5km)"
+    description: "High-quality SST textures from PacIOOS ERDDAP transparentPng service - 5km resolution"
+    service_type: "erddap_transparentpng"
+    base_url: "https://pae-paha.pacioos.hawaii.edu/erddap/griddap/dhw_5km.transparentPng"
+    dataset_id: "dhw_5km"
+    variable_name: "CRW_SST"
+    temporal_coverage:
+      start: "2003-01-01"
+      end: "present"
+      test_start: "2024-01-01"
+    spatial_resolution: 0.05  # degrees (~5km - 5x better than OISST)
+    coordinate_system: "-180-180"
+    spatial_bounds:
+      lat_min: -89.975
+      lat_max: 89.975
+      lon_min: -179.975
+      lon_max: 179.975
+    output_format: "transparentPng"
+    output_directory: "frontend/public/textures/sst"
+    update_frequency: "daily"
+    file_size_mb: 2.5  # approximate size per texture
+    advantages:
+      - "Professional oceanographic visualization quality"
+      - "5x higher resolution than standard OISST (5km vs 25km)"
+      - "Server-optimized ERDDAP transparentPng rendering"
+      - "Perfect land masking with transparent backgrounds"
+      - "Matches Corals project quality standards"
+      - "Direct PNG download - no local processing overhead"
+    credentials_required: false
+    priority: 1  # Primary source for SST textures
+    
+  # Ultra-high resolution SST option for maximum texture quality (BACKUP)
   sst_ultra:
     name: "NASA MUR SST v4.1"
     description: "Multi-scale Ultra-high Resolution (MUR) Sea Surface Temperature - 0.01° resolution"
@@ -33,7 +66,7 @@ datasets:
       start: "2002-06-01"
       end: "present"
       test_start: "2024-01-01"
-    spatial_resolution: 0.01  # degrees (100x better than standard SST)
+    spatial_resolution: 0.01  # degrees (100x better than standard OISST)
     target_resolution: 0.01   # maintain ultra-high resolution
     coordinate_system: "-180-180"
     variables: ["analysed_sst", "analysis_error", "mask", "sea_ice_fraction"]
@@ -48,7 +81,7 @@ datasets:
       - "NASA/JPL quality assurance"
       - "Global coverage with minimal gaps"
     credentials_required: false  # Public access via OPeNDAP
-    priority: 1  # Preferred for ultra-high quality textures
+    priority: 2  # Backup option for data processing
     
   waves:
     name: "CMEMS Global Waves Analysis and Forecast"
@@ -69,7 +102,36 @@ datasets:
       harmonize_coords: false  # already in -180-180
     credentials_required: true
     
-  currents:
+  # OSCAR CURRENTS - NASA Historical Data
+  currents_oscar:
+    name: "NASA OSCAR Currents"
+    description: "Ocean Surface Current Analyses Real-time - Historical data"
+    base_url: "https://opendap.earthdata.nasa.gov/collections/C2098858642-POCLOUD/granules/"
+    file_pattern: "oscar_currents_nrt_{date}.dap.nc4"
+    url_pattern: "{base_url}oscar_currents_nrt_{date}.dap.nc4"
+    temporal_coverage:
+      start: "2003-01-01"
+      end: "2023-06-04"  # Extended coverage discovered!
+      test_start: "2003-01-01"
+    spatial_resolution: 0.25  # degrees
+    coordinate_system: "0-360"  # needs conversion to -180-180
+    variables: ["u", "v"]  # zonal and meridional total surface current
+    layers: ["surface"]
+    update_frequency: "daily"
+    file_size_mb: 3  # approximate size per file
+    processing:
+      harmonize_coords: true  # convert 0-360 to -180-180
+    credentials_required: true  # NASA Earthdata login required
+    auth_type: "nasa_earthdata"
+    advantages:
+      - "Massive historical coverage: 2003-2023 (20 years)"
+      - "Fills critical historical gap in CMEMS data"  
+      - "High-quality NASA/JPL surface currents"
+      - "Consistent with oceanographic standards"
+      - "Proven data reliability from existing usage"
+    
+  # CMEMS CURRENTS - Current Operational Data  
+  currents_cmems:
     name: "CMEMS Global Ocean Currents"
     description: "Global Ocean Physics Analysis and Forecast - Currents"
     product_id: "GLOBAL_ANALYSISFORECAST_PHY_001_024"
@@ -88,6 +150,38 @@ datasets:
     processing:
       harmonize_coords: false
     credentials_required: true
+    
+  # HYBRID CURRENTS SYSTEM - Combined Historical + Current
+  currents:
+    name: "Ocean Currents (Hybrid: OSCAR + CMEMS)"
+    description: "Comprehensive ocean currents combining NASA OSCAR historical with CMEMS current data"
+    hybrid_config: true
+    data_sources:
+      historical: "currents_oscar"     # 2003-2023 NASA OSCAR data (20 years)
+      current: "currents_cmems"        # 2022-present CMEMS data
+    temporal_coverage:
+      start: "2003-01-01"
+      end: "present"
+      test_start: "2003-01-01"
+    spatial_resolution: "Multi-resolution (0.25°/0.083°)"
+    coordinate_system: "-180-180"
+    variables: ["uo", "vo"]  # standardized output names
+    layers: ["surface"]
+    update_frequency: "daily"
+    processing:
+      harmonize_coords: true
+      merge_strategy: "temporal_priority"  # OSCAR for 2003-2023, CMEMS for 2022+
+    credentials_required: true
+    advantages:
+      - "Massive extended historical coverage from 2003 (22+ years)"
+      - "Fills critical 20-year gap in CMEMS historical data"
+      - "Seamless transition between data sources"
+      - "Consistent API regardless of underlying source"
+    coverage_notes:
+      - "2003-01-01 to 2023-06-04: NASA OSCAR (0.25° resolution)"
+      - "2022-06-01 to present: CMEMS (0.083° resolution)"
+      - "Overlap period: OSCAR preferred for consistency"
+      - "Minimal gap: 2023-06-05 (1 day only!)"
     
   # STRATEGIC HYBRID APPROACH: Historical + Current CMEMS
   # Combines historical biogeochemistry (1993-2022) with current operational data (2021-present)
