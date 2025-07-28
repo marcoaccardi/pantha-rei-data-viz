@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-07-28T14:59:17.583611",
+  "last_updated": "2025-07-28T15:00:46.160100",
   "datasets": {
     "sst": {
       "last_date": "1994-07-19",
@@ -86,8 +86,8 @@
       "status": "downloading"
     },
     "currents_cmems": {
-      "last_date": "2023-06-17",
-      "last_success": "2025-07-28T14:59:17.583266",
+      "last_date": "2023-06-18",
+      "last_success": "2025-07-28T15:00:46.155375",
       "status": "active"
     }
   }
