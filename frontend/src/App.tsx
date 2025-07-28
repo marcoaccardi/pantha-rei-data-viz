@@ -13,6 +13,8 @@ import {
   getDataAvailabilityDescription,
   TEMPORAL_COVERAGE
 } from './utils/dateUtils';
+import { useConnectionStatus } from './services/connectionMonitor';
+import ConnectionStatusBar from './components/ConnectionStatusBar';
 
 function App() {
   const [coordinates, setCoordinates] = useState<Coordinates>({ lat: 0, lng: 0 });
@@ -39,6 +41,9 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [dateValidation, setDateValidation] = useState(validateDate(new Date().toISOString().split('T')[0]));
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // Connection status
+  const { status: connectionStatus, details: connectionDetails, isConnected } = useConnectionStatus();
 
   // Error message auto-clear with proper cleanup
   useEffect(() => {
@@ -325,7 +330,7 @@ function App() {
     }));
   };
 
-  const { sendMessage, isConnected } = useWebSocket({
+  const { sendMessage, isConnected: wsConnected } = useWebSocket({
     onMessage: (message) => {
       console.log('📨 WebSocket message received:', message.type);
       
@@ -483,9 +488,26 @@ function App() {
     } catch (error) {
       console.error('❌ Error fetching ocean data:', error);
       
-      // Don't show error for testing - just log it
+      // User-friendly error handling based on connection status
       startTransition(() => {
         setIsLoading(false);
+        
+        // Set appropriate error message
+        if (!isConnected) {
+          setApiError('Cannot fetch ocean data - backend server is disconnected. Please wait for reconnection.');
+        } else if (error instanceof Error) {
+          const message = error.message.toLowerCase();
+          if (message.includes('timeout')) {
+            setApiError('Request timed out. The server is taking too long to respond. Please try again.');
+          } else if (message.includes('network') || message.includes('fetch')) {
+            setApiError('Network error occurred. Please check your connection and try again.');
+          } else {
+            setApiError('Failed to fetch ocean data. Please try again later.');
+          }
+        } else {
+          setApiError('An unexpected error occurred. Please try again.');
+        }
+        
         // Still show the panel but with no data
         setOceanData({
           location: { lat: coords.lat, lon: coords.lng },
@@ -494,14 +516,13 @@ function App() {
           total_extraction_time_ms: 0
         });
         setClimateData([]);
-        // Only show brief error message
-        setApiError('Data temporarily unavailable - backend may be starting up');
       });
     }
   }, [selectedDate]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
+      <ConnectionStatusBar status={connectionStatus} details={connectionDetails} />
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
         <Globe 
           coordinates={coordinates}

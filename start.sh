@@ -36,6 +36,14 @@ NC='\033[0m' # No Color
 # Function to handle cleanup on exit
 cleanup() {
     echo -e "\n${YELLOW}Shutting down services...${NC}"
+    
+    # Kill monitor process first
+    if [ -n "$MONITOR_PID" ]; then
+        kill $MONITOR_PID 2>/dev/null
+        echo -e "${BLUE}🔍 Background monitor stopped${NC}"
+    fi
+    
+    # Kill main services
     kill $API_PID 2>/dev/null
     kill $FRONTEND_PID 2>/dev/null
     
@@ -164,20 +172,26 @@ fi
 API_PID=$!
 cd "$ROOT_DIR"
 
-# Check if API server started successfully
-sleep 5
-if ! ps -p $API_PID > /dev/null 2>&1; then
-    echo -e "${RED}❌ API server failed to start. Checking logs...${NC}"
-    if [ -f "logs/api.log" ]; then
-        echo -e "${YELLOW}📄 Last 15 lines of api.log:${NC}"
-        tail -15 logs/api.log
+# Check if API server started successfully with retries
+for attempt in {1..5}; do
+    sleep 5
+    if ps -p $API_PID > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ FastAPI ocean data server started successfully${NC}"
+        echo -e "${GREEN}✅ API available at: http://localhost:8000${NC}"
+        echo -e "${GREEN}✅ API docs at: http://localhost:8000/docs${NC}"
+        break
+    else
+        echo -e "${YELLOW}⚠️  API server not ready (attempt $attempt/5)...${NC}"
+        if [ $attempt -eq 5 ]; then
+            echo -e "${RED}❌ API server failed to start after 5 attempts. Checking logs...${NC}"
+            if [ -f "logs/api.log" ]; then
+                echo -e "${YELLOW}📄 Last 15 lines of api.log:${NC}"
+                tail -15 logs/api.log
+            fi
+            exit 1
+        fi
     fi
-    exit 1
-else
-    echo -e "${GREEN}✅ FastAPI ocean data server started successfully${NC}"
-    echo -e "${GREEN}✅ API available at: http://localhost:8000${NC}"
-    echo -e "${GREEN}✅ API docs at: http://localhost:8000/docs${NC}"
-fi
+done
 
 # Test API connection
 echo -e "${BLUE}🔗 Testing API connection...${NC}"
@@ -254,6 +268,60 @@ echo "  • API server: tail -f logs/api.log"
 echo "  • Frontend: tail -f logs/frontend.log"
 echo ""
 echo -e "${RED}Press Ctrl+C to stop all services${NC}"
+
+# Background process monitoring function
+monitor_services() {
+    while true; do
+        sleep 30  # Check every 30 seconds
+        
+        # Check API server
+        if ! ps -p $API_PID > /dev/null 2>&1; then
+            echo -e "\n${RED}⚠️  API server crashed! Attempting restart...${NC}"
+            
+            # Try to restart API server
+            cd backend
+            if [ -n "$PYTHON_BIN" ]; then
+                $PYTHON_BIN -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
+            else
+                python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
+            fi
+            API_PID=$!
+            cd "$ROOT_DIR"
+            
+            # Wait and check if restart succeeded
+            sleep 5
+            if ps -p $API_PID > /dev/null 2>&1; then
+                echo -e "${GREEN}✅ API server restarted successfully${NC}"
+            else
+                echo -e "${RED}❌ Failed to restart API server${NC}"
+            fi
+        fi
+        
+        # Check frontend server
+        if ! ps -p $FRONTEND_PID > /dev/null 2>&1; then
+            echo -e "\n${RED}⚠️  Frontend server crashed! Attempting restart...${NC}"
+            
+            cd frontend
+            npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1 &
+            FRONTEND_PID=$!
+            cd "$ROOT_DIR"
+            
+            # Wait and check if restart succeeded
+            sleep 5
+            if ps -p $FRONTEND_PID > /dev/null 2>&1; then
+                echo -e "${GREEN}✅ Frontend server restarted successfully${NC}"
+            else
+                echo -e "${RED}❌ Failed to restart frontend server${NC}"
+            fi
+        fi
+    done
+}
+
+# Start background monitoring
+monitor_services &
+MONITOR_PID=$!
+
+echo -e "${BLUE}🔍 Background service monitoring active (PID: $MONITOR_PID)${NC}"
 
 # Wait for user interruption
 while true; do

@@ -239,13 +239,13 @@ async def get_multi_point(
         # Add overall timeout for the entire request
         result = await asyncio.wait_for(
             data_extractor.extract_multi_point_data(dataset_list, lat, lon, date),
-            timeout=30.0  # 30 second total timeout
+            timeout=60.0  # 60 second total timeout
         )
         
         logger.info(f"✅ Multi-point request completed successfully")
         return result
     except asyncio.TimeoutError:
-        logger.error(f"⏰ Multi-point request timed out after 30 seconds")
+        logger.error(f"⏰ Multi-point request timed out after 60 seconds")
         raise HTTPException(status_code=504, detail="Request timed out")
     except Exception as e:
         logger.error(f"❌ Error extracting multi-dataset data: {e}")

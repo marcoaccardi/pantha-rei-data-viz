@@ -19,6 +19,13 @@ interface PendingRequest<T> {
   timestamp: number;
 }
 
+interface RetryOptions {
+  maxRetries?: number;
+  initialDelay?: number;
+  maxDelay?: number;
+  backoffMultiplier?: number;
+}
+
 class HighPerformanceRequestCache {
   private memoryCache = new Map<string, CacheEntry<any>>();
   private pendingRequests = new Map<string, PendingRequest<any>>();
@@ -40,9 +47,9 @@ class HighPerformanceRequestCache {
   async get<T>(
     key: string, 
     fetcher: () => Promise<T>, 
-    options: { ttl?: number; useStorage?: boolean } = {}
+    options: { ttl?: number; useStorage?: boolean; retry?: RetryOptions } = {}
   ): Promise<T> {
-    const { ttl = this.defaultTTL, useStorage = true } = options;
+    const { ttl = this.defaultTTL, useStorage = true, retry = { maxRetries: 3 } } = options;
     this.stats.requests++;
 
     // Step 1: Check if request is already in flight
@@ -78,8 +85,8 @@ class HighPerformanceRequestCache {
     this.stats.misses++;
     console.log(`🌐 CACHE MISS - FETCHING: ${key}`);
 
-    // Create and store pending request
-    const requestPromise = this.executeRequest(key, fetcher, ttl, useStorage);
+    // Create and store pending request with retry logic
+    const requestPromise = this.executeRequestWithRetry(key, fetcher, ttl, useStorage, retry);
     this.pendingRequests.set(key, {
       promise: requestPromise,
       timestamp: Date.now()
@@ -92,6 +99,57 @@ class HighPerformanceRequestCache {
       // Clean up pending request
       this.pendingRequests.delete(key);
     }
+  }
+
+  private async executeRequestWithRetry<T>(
+    key: string,
+    fetcher: () => Promise<T>,
+    ttl: number,
+    useStorage: boolean,
+    retryOptions: RetryOptions
+  ): Promise<T> {
+    const {
+      maxRetries = 3,
+      initialDelay = 1000,
+      maxDelay = 30000,
+      backoffMultiplier = 2
+    } = retryOptions;
+
+    let lastError: Error | null = null;
+    let delay = initialDelay;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.executeRequest(key, fetcher, ttl, useStorage);
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Don't retry on certain errors
+        if (error instanceof Error) {
+          const message = error.message.toLowerCase();
+          if (message.includes('404') || message.includes('not found') || 
+              message.includes('unauthorized') || message.includes('forbidden')) {
+            throw error;
+          }
+        }
+
+        // If this is not the last attempt, wait before retrying
+        if (attempt < maxRetries) {
+          console.warn(
+            `⚠️ Request failed for ${key} (attempt ${attempt + 1}/${maxRetries + 1}), ` +
+            `retrying in ${delay}ms...`, error
+          );
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          // Exponential backoff
+          delay = Math.min(delay * backoffMultiplier, maxDelay);
+        }
+      }
+    }
+
+    console.error(`❌ All retry attempts failed for ${key}`, lastError);
+    throw lastError || new Error('Request failed after all retries');
   }
 
   private async executeRequest<T>(

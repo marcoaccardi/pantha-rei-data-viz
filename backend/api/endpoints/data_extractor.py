@@ -22,6 +22,7 @@ from api.models.responses import (
     Coordinates, DataValue
 )
 from api.cache_manager import cache_manager, CachedPoint
+from api.middleware.resilience import with_retry, managed_resource, default_retry_policy
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class DataExtractor:
     def __init__(self):
         """Initialize the data extractor."""
         self.data_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords")
-        self.executor = ThreadPoolExecutor(max_workers=4)
+        self.executor = ThreadPoolExecutor(max_workers=8)
         
         # Dataset configuration with ALL available variables
         self.dataset_config = {
@@ -408,18 +409,23 @@ class DataExtractor:
         return result
 
     def _extract_point_data_sync(self, dataset: str, file_path: Path, lat: float, lon: float) -> PointDataResponse:
-        """Synchronous point data extraction."""
+        """Synchronous point data extraction with proper resource cleanup."""
         start_time = time.time()
+        ds = None
         
         try:
             # Special handling for microplastics point data
             if dataset == "microplastics":
                 return self._extract_microplastics_point_data(file_path, lat, lon, start_time)
             
-            # Special handling for discrete GLODAP data
-            
-            # Standard gridded data extraction
-            with xr.open_dataset(file_path) as ds:
+            # Standard gridded data extraction with explicit resource management
+            try:
+                ds = xr.open_dataset(file_path)
+            except Exception as e:
+                logger.error(f"Failed to open NetCDF file {file_path}: {e}")
+                raise
+                
+            try:
                 # Determine coordinate names (different datasets use different names)
                 lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
                 lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
@@ -471,9 +477,19 @@ class DataExtractor:
                     extraction_time_ms=round(extraction_time, 2),
                     file_source=str(file_path)
                 )
+            finally:
+                # Always close the dataset
+                if ds is not None:
+                    ds.close()
                 
         except Exception as e:
             logger.error(f"Error extracting data from {file_path}: {e}")
+            # Ensure cleanup even on error
+            if ds is not None:
+                try:
+                    ds.close()
+                except:
+                    pass
             raise
 
     def _extract_microplastics_point_data(self, file_path: Path, lat: float, lon: float, start_time: float) -> PointDataResponse:
