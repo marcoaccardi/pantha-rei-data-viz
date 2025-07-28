@@ -21,7 +21,6 @@ backend_path = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_path))
 
 from processors.dataset_texture_generators import (
-    SSTTextureGenerator, 
     AcidityTextureGenerator, 
     CurrentsTextureGenerator
 )
@@ -165,9 +164,8 @@ class TextureAlignmentValidator:
             'summary': {}
         }
         
-        # Define test cases
+        # Define test cases (SST now uses ERDDAP textures directly, no validation needed)
         test_cases = [
-            (SSTTextureGenerator(), Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/sst/2024/01/sst_harmonized_20240115.nc")),
             (AcidityTextureGenerator(), Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/acidity/2024/01/acidity_harmonized_20240106.nc")),
             (CurrentsTextureGenerator(), Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/currents/2024/07/currents_harmonized_20240725.nc"))
         ]

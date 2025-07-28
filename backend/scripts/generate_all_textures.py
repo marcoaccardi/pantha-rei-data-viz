@@ -18,7 +18,6 @@ backend_path = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_path))
 
 from processors.dataset_texture_generators import (
-    SSTTextureGenerator,
     AcidityTextureGenerator, 
     CurrentsTextureGenerator,
     MicroplasticsTextureGenerator
@@ -50,9 +49,8 @@ class TextureBatchProcessor:
         else:
             self.textures_output_path = Path(textures_output_path)
             
-        # Initialize generators (SST now uses ERDDAP downloader for high quality)
+        # Initialize generators (SST now uses ERDDAP downloader exclusively)
         self.generators = {
-            'sst': SSTTextureGenerator(self.textures_output_path),  # Keep for fallback
             'acidity': AcidityTextureGenerator(self.textures_output_path),
             'currents': CurrentsTextureGenerator(self.textures_output_path),
             'microplastics': MicroplasticsTextureGenerator(self.textures_output_path)
@@ -376,8 +374,8 @@ def main():
     """Main entry point for texture generation script."""
     parser = argparse.ArgumentParser(description="Generate ultra-high resolution textures from ocean data")
     parser.add_argument('--dataset', '-d', type=str, 
-                       choices=['sst', 'acidity', 'currents', 'microplastics'],
-                       help='Process specific dataset only')
+                       choices=['acidity', 'currents', 'microplastics'],
+                       help='Process specific dataset only (SST uses ERDDAP textures directly)')
     parser.add_argument('--force', '-f', action='store_true',
                        help='Force regeneration even if texture exists')
     parser.add_argument('--unified-coords-path', type=str,
