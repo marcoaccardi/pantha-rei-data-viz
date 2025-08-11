@@ -55,50 +55,67 @@ panta-rhei-data-map/
 
 ### Prerequisites
 
-- Python 3.7+
-- Node.js 16+
-- npm or yarn
+- **Python 3.8+** ([Download](https://www.python.org/downloads/))
+- **Node.js 16+** ([Download](https://nodejs.org/))
+- **uv** (Python package manager) - installed automatically
 
-### Installation
+### Cross-Platform Installation
 
+#### Option 1: Automated Setup (Recommended)
+
+**Linux/macOS:**
 ```bash
-# Clone the repository
-git clone git@github.com:marcoaccardi/pantha-rei-data-viz.git
-cd pantha-rei-data-viz
+# Make executable and run
+chmod +x start.sh
+./start.sh
+```
 
-# Install Python dependencies
-pip install -r requirements.txt
+**Windows:**
+```cmd
+# Run setup (provides installation instructions if needed)
+setup.bat
+# Then start the application
+start.bat
+```
 
-# Install React dependencies
-cd web-globe
-npm install
+#### Option 2: Manual Setup
+
+**Linux/macOS:**
+```bash
+# Backend setup
+cd backend
+source activate.sh  # Creates venv and installs dependencies
 cd ..
+
+# Frontend setup
+cd frontend && npm install && cd ..
+
+# Start application
+./start.sh
 ```
 
-### Running the Application
+**Windows:**
+```cmd
+# Backend setup
+cd backend
+activate.bat
+cd ..
 
-#### Option 1: Use the Demo Script (Recommended)
+# Frontend setup
+cd frontend && npm install && cd ..
 
-```bash
-./demo.sh
+# Start application
+start.bat
 ```
 
-This will:
-1. Download required textures
-2. Start the WebSocket server
-3. Launch the React development server
-4. Open your browser to http://localhost:5173
+### Access Points
 
-#### Option 2: Manual Start
+After setup:
+- **🌍 Globe Interface**: http://localhost:5173
+- **🔗 API Server**: http://localhost:8000  
+- **📖 API Documentation**: http://localhost:8000/docs
 
-```bash
-# Terminal 1: Start the WebSocket server
-python websocket_server.py
-
-# Terminal 2: Start the React app
-cd web-globe
-npm run dev
-```
+> 💡 **New to the project?** Check [SETUP.md](SETUP.md) for detailed cross-platform instructions.
 
 ## 🎮 How to Use
 
