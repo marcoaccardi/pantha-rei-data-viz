@@ -65,11 +65,11 @@ Gap period:               2023-04-08 to 2023-05-31 (unavailable)
 
 ### Directory Structure Created
 ```
-ocean-data/raw/currents_oscar/
-├── 2021/01/oscar_currents_20210101.nc4
-├── 2021/02/oscar_currents_20210201.nc4
+ocean-data/raw/currents/
+├── 2021/01/  # OSCAR files from the integrated system
+├── 2021/02/
 ├── ...
-└── 2023/04/oscar_currents_20230407.nc4
+└── 2023/04/  # All currents data unified in single folder
 ```
 
 ### Processing Pipeline

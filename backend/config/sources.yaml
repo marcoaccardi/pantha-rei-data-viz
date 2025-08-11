@@ -90,7 +90,7 @@ datasets:
     dataset_id: "cmems_mod_glo_wav_anfc_0.083deg_PT3H-i"
     base_url: "https://data.marine.copernicus.eu"
     temporal_coverage:
-      start: "1993-01-01"
+      start: "2022-11-01"  # CORRECTED: CMEMS waves only available from 2022-11-01
       end: "present"
       test_start: "2024-01-01"
     spatial_resolution: 0.083  # 1/12 degrees

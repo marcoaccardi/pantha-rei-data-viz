@@ -111,15 +111,14 @@ class CurrentsHybridDownloader:
 2. **CMEMS Files** → Direct processing (already harmonized)
 3. **API Layer** → Unified response regardless of source
 
-### Directory Structure
+### Directory Structure (Updated)
 ```
 ocean-data/raw/
-├── currents_oscar/          # OSCAR files (2021-2023)
-│   ├── 2021/01/oscar_currents_20210101.nc4
-│   └── 2023/04/oscar_currents_20230407.nc4
-└── currents/                # CMEMS files (2022+)
-    ├── 2022/06/currents_global_20220601.nc
-    └── 2025/07/currents_global_20250724.nc
+└── currents/                # Unified currents folder
+    ├── 2009/01/oscar_currents_final_20090101.nc4  # Historical OSCAR
+    ├── 2021/01/oscar_currents_20210101.nc4        # Recent OSCAR  
+    ├── 2023/06/oscar_currents_20230601.nc4        # Latest OSCAR
+    └── 2024/01/currents_global_20240101.nc        # CMEMS current
 ```
 
 ---

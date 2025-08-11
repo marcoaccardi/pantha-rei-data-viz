@@ -25,7 +25,10 @@ class CurrentsDownloader(BaseDataDownloader):
     
     def __init__(self, config_path: Optional[Path] = None):
         """Initialize Currents downloader."""
-        super().__init__("currents_cmems", config_path)
+        super().__init__("currents", config_path)
+        
+        # Load CMEMS-specific config from sources.yaml
+        self.cmems_config = self.config["datasets"]["currents_cmems"]
         
         # Override paths to use unified currents folder
         self.raw_data_path = self.base_path / self.storage_config["raw_data_path"] / "currents"
