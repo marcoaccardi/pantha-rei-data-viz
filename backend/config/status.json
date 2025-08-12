@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-08-12T14:13:09.927344",
+  "last_updated": "2025-08-12T14:18:11.321011",
   "datasets": {
     "sst": {
       "last_date": "2024-05-31",
@@ -76,25 +76,25 @@
     },
     "acidity_current": {
       "status": "active",
-      "last_optimization": "2025-08-12T14:13:09.885603",
+      "last_optimization": "2025-08-12T14:18:11.250197",
       "space_freed_mb": 0,
       "final_file_size_kb": 34512.3,
       "api_ready": true,
-      "total_files": 552,
-      "storage_gb": 16.877,
-      "last_date": "2023-02-14",
-      "last_success": "2025-08-12T14:13:09.927220"
+      "total_files": 585,
+      "storage_gb": 17.963,
+      "last_date": "2023-03-20",
+      "last_success": "2025-08-12T14:18:11.320862"
     },
     "acidity_historical": {
       "status": "active",
-      "last_optimization": "2025-08-12T14:09:43.156488",
+      "last_optimization": "2025-08-12T14:17:35.538658",
       "space_freed_mb": 0,
       "final_file_size_kb": 91981.7,
       "api_ready": true,
-      "total_files": 7196,
-      "storage_gb": 497.99,
-      "last_date": "2018-07-18",
-      "last_success": "2025-08-12T14:09:45.257477"
+      "total_files": 7209,
+      "storage_gb": 499.13,
+      "last_date": "2018-07-31",
+      "last_success": "2025-08-12T14:17:36.050559"
     },
     "microplastics": {
       "status": "downloading"
