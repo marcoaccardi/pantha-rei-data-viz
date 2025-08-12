@@ -23,6 +23,7 @@ from api.models.responses import (
 )
 from api.cache_manager import cache_manager, CachedPoint
 from api.middleware.resilience import with_retry, managed_resource, default_retry_policy
+from utils.parameter_interpreter import parameter_interpreter
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,32 @@ class DataExtractor:
         }
         
         logger.info("🔧 Data extractor initialized")
+    
+    def _create_enhanced_data_value(
+        self, 
+        value: Any, 
+        units: str, 
+        long_name: str, 
+        valid: bool,
+        parameter_name: str,
+        location: Optional[Tuple[float, float]] = None,
+        date: Optional[str] = None
+    ) -> DataValue:
+        """Create a DataValue with enhanced educational context and dynamic descriptions."""
+        # Get classification and educational context
+        classification = parameter_interpreter.get_parameter_classification(
+            parameter_name, value, location, date
+        )
+        educational_context = parameter_interpreter.get_educational_context(parameter_name)
+        
+        return DataValue(
+            value=value if not (isinstance(value, float) and np.isnan(value)) else None,
+            units=units,
+            long_name=long_name,
+            valid=valid,
+            classification=classification,
+            educational_context=educational_context
+        )
 
     async def get_available_datasets(self) -> Dict[str, DatasetInfo]:
         """Get information about all available datasets."""
@@ -311,11 +338,15 @@ class DataExtractor:
                     # Extract scalar value
                     value = float(var_data.values.item() if var_data.values.ndim == 0 else var_data.values.flatten()[0])
                     
-                    data[var_name] = DataValue(
-                        value=value if not np.isnan(value) else None,
+                    # Create enhanced DataValue with educational context
+                    data[var_name] = self._create_enhanced_data_value(
+                        value=value,
                         units=var_data.attrs.get("units", "unknown"),
                         long_name=var_data.attrs.get("long_name", var_name),
-                        valid=not np.isnan(value)
+                        valid=not np.isnan(value),
+                        parameter_name=var_name,
+                        location=(lat, lon),
+                        date=cache_date
                     )
             
             # Get date from dataset or filename
@@ -456,11 +487,15 @@ class DataExtractor:
                         # Extract scalar value
                         value = float(var_data.values.item() if var_data.values.ndim == 0 else var_data.values.flatten()[0])
                         
-                        data[var_name] = DataValue(
-                            value=value if not np.isnan(value) else None,
+                        # Create enhanced DataValue with educational context
+                        data[var_name] = self._create_enhanced_data_value(
+                            value=value,
                             units=var_data.attrs.get("units", "unknown"),
                             long_name=var_data.attrs.get("long_name", var_name),
-                            valid=not np.isnan(value)
+                            valid=not np.isnan(value),
+                            parameter_name=var_name,
+                            location=(lat, lon),
+                            date=self._get_data_date(ds, file_path)
                         )
                 
                 # Get date from dataset or filename
@@ -541,25 +576,34 @@ class DataExtractor:
                     dt = np.datetime64(time_val, 'D')
                     data_date = str(dt)
                 
-                # Build response data with environmental metadata
+                # Build response data with environmental metadata and enhanced context
                 data = {
-                    "microplastics_concentration": DataValue(
-                        value=concentration if not np.isnan(concentration) else None,
+                    "microplastics_concentration": self._create_enhanced_data_value(
+                        value=concentration,
                         units="pieces/m³",
                         long_name="Microplastics Concentration",
-                        valid=not np.isnan(concentration)
+                        valid=not np.isnan(concentration),
+                        parameter_name="microplastics_concentration",
+                        location=(lat, lon),
+                        date=data_date
                     ),
-                    "confidence": DataValue(
-                        value=confidence if not np.isnan(confidence) else None,
+                    "confidence": self._create_enhanced_data_value(
+                        value=confidence,
                         units="ratio",
                         long_name="Data Confidence Level",
-                        valid=not np.isnan(confidence)
+                        valid=not np.isnan(confidence),
+                        parameter_name="confidence",
+                        location=(lat, lon),
+                        date=data_date
                     ),
-                    "data_source": DataValue(
+                    "data_source": self._create_enhanced_data_value(
                         value=data_source,
                         units="category",
                         long_name="Data Source Type (real/synthetic)",
-                        valid=True
+                        valid=True,
+                        parameter_name="data_source",
+                        location=(lat, lon),
+                        date=data_date
                     )
                 }
                 
