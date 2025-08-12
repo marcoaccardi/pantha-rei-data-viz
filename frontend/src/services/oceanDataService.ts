@@ -106,17 +106,17 @@ export async function fetchMultiPointData(
       } catch (error) {
         clearTimeout(timeoutId);
         if (error instanceof Error && error.name === 'AbortError') {
-          // Fallback to SST only on timeout
-          console.warn('Multi-dataset request timed out, falling back to SST only');
+          // Fallback to individual dataset requests for better reliability
+          console.warn('Multi-dataset request timed out, falling back to individual requests');
           try {
-            const fallbackParams = new URLSearchParams({
+            // Use individual endpoints which are much more reliable
+            const sstParams = new URLSearchParams({
               lat: lat.toString(),
-              lon: lon.toString(),
-              datasets: 'sst'
+              lon: lon.toString()
             });
-            if (date) fallbackParams.append('date', date);
+            if (date) sstParams.append('date', date);
             
-            const fallbackResponse = await fetch(`${API_BASE_URL}/multi/point?${fallbackParams}`);
+            const fallbackResponse = await fetch(`${API_BASE_URL}/sst/point?${sstParams}`);
             if (fallbackResponse.ok) {
               return fallbackResponse.json();
             }
