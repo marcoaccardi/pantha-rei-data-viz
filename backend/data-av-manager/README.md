@@ -8,15 +8,15 @@ Transform 22 years of ocean health crisis data into immersive audiovisual experi
 ### **Files:**
 - `ocean_data_sonifier.js` - Node for Max script with 8 data streams
 - `ocean_sonification.maxpat` - Main Max/MSP interface with controls and faders  
-- `ocean_health_data.csv` - 575 real ocean locations with 39 parameters (2003-2025)
+- `ocean_health_data.csv` - 500 real ocean locations with 36 parameters (2003-2025)
 - `examples/basic_sonification.maxpat` - Simple sonification example
 - `README.md` - This documentation
 
 ### **Real Data Coverage:**
-- **575 Global Locations**: Arctic to Antarctic, all major ocean basins
-- **39 Parameters**: Temperature, pH, oxygen, currents, biochemistry, ecosystem data
+- **500 Global Locations**: Arctic to Antarctic, all major ocean basins
+- **36 Parameters**: Temperature, pH, oxygen, currents, biochemistry, ecosystem data
 - **22-Year Timeline**: Dramatic changes from 2003 to 2025
-- **100% Authentic**: Extracted from real NetCDF scientific datasets
+- **91.0% Data Reliability**: Extracted from real NetCDF scientific datasets using verified ocean coordinates
 
 ---
 
@@ -138,8 +138,8 @@ Every **10.4 seconds**, new ocean location data flows through 8 outlets to contr
 ## 🌊 **The Ocean Story**
 
 ### **Playback Strategy:**
-- **115 locations** sampled from 575 (every 5th row)
-- **10.4 seconds per location** (configurable)
+- **100 locations** sampled from 500 (every 5th row)
+- **12.0 seconds per location** (configurable)
 - **20-minute total journey** through ocean health crisis
 
 ### **Geographic Journey:**
@@ -254,7 +254,7 @@ Crisis zones: Alarm-like, distressed audio signatures
 ### **Source Verification:**
 - **Real NetCDF extraction**: No synthetic data
 - **Scientific datasets**: CMEMS, NOAA, oceanographic institutions
-- **80.2% data completeness**: Missing values handled gracefully
+- **91.0% data completeness**: Significant improvement from coordinate reliability fix
 - **Coordinate-accurate**: Precise latitude/longitude positioning
 
 ### **Normalization Ranges:**
