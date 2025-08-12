@@ -95,8 +95,15 @@ class CurrentsProcessor:
                 "Missing paired velocity components. Both u and v components recommended for complete current analysis."
             )
         
-        # Validate coordinate system
-        coord_validation = self.harmonizer.validate_geographic_bounds(ds)
+        # Special handling for OSCAR files with corrupted coordinate metadata
+        is_oscar_file = self._detect_oscar_file(ds)
+        if is_oscar_file:
+            # For OSCAR files, attempt coordinate repair instead of strict validation
+            coord_validation = self._validate_oscar_coordinates(ds)
+        else:
+            # Standard coordinate validation for other files
+            coord_validation = self.harmonizer.validate_geographic_bounds(ds)
+        
         if not coord_validation['valid']:
             validation['errors'].extend(coord_validation['errors'])
             validation['valid'] = False
@@ -104,6 +111,147 @@ class CurrentsProcessor:
         validation['warnings'].extend(coord_validation['warnings'])
         
         return validation
+    
+    def _detect_oscar_file(self, ds: xr.Dataset) -> bool:
+        """
+        Detect if this is an OSCAR currents file based on metadata and attributes.
+        
+        Args:
+            ds: Input xarray Dataset
+            
+        Returns:
+            True if this appears to be an OSCAR file
+        """
+        # Check for OSCAR-specific attributes
+        global_attrs = ds.attrs
+        
+        oscar_indicators = [
+            'OSCAR' in str(global_attrs.get('title', '')).upper(),
+            'OSCAR' in str(global_attrs.get('source', '')).upper(),
+            'OSCAR' in str(global_attrs.get('institution', '')).upper(),
+            'JPL' in str(global_attrs.get('institution', '')),
+            any('OSCAR' in str(var_attrs.get('long_name', '')).upper() 
+                for var in ds.data_vars 
+                for var_attrs in [ds[var].attrs])
+        ]
+        
+        return any(oscar_indicators)
+    
+    def _validate_oscar_coordinates(self, ds: xr.Dataset) -> Dict[str, Any]:
+        """
+        Validate and potentially repair OSCAR coordinate issues.
+        
+        Args:
+            ds: Input xarray Dataset
+            
+        Returns:
+            Dictionary with validation results
+        """
+        validation = {
+            'valid': True,
+            'warnings': [],
+            'errors': []
+        }
+        
+        # Check if coordinates need repair
+        coord_info = self.harmonizer.get_coordinate_info(ds)
+        
+        if coord_info['latitude_info']:
+            lat_info = coord_info['latitude_info']
+            lat_min, lat_max = lat_info['min'], lat_info['max']
+            
+            # Check for corrupted latitude coordinates (typical OSCAR issue)
+            if lat_min < -90 or lat_max > 90:
+                if lat_min == 0.0 and lat_max > 300:  # Common corruption pattern
+                    validation['warnings'].append(
+                        f"Detected corrupted OSCAR latitude coordinates ({lat_min}-{lat_max}). "
+                        "This is a known issue with some OSCAR files and will be handled during processing."
+                    )
+                    # Mark as valid since we can handle this
+                    validation['valid'] = True
+                else:
+                    validation['errors'].append(f"Latitude values {lat_min}-{lat_max} outside -90-90° range")
+                    validation['valid'] = False
+        
+        # Longitude validation (more lenient for OSCAR)
+        if coord_info['longitude_info']:
+            lon_info = coord_info['longitude_info']
+            lon_min, lon_max = lon_info['min'], lon_info['max']
+            
+            # OSCAR typically uses 0-360 convention, so validate accordingly
+            if lon_info['convention'] == '0-360':
+                if lon_min < -10 or lon_max > 370:  # Allow some tolerance
+                    validation['warnings'].append(f"OSCAR longitude values {lon_min}-{lon_max} slightly outside expected 0-360° range")
+            elif lon_info['convention'] == '-180-180':
+                if lon_min < -190 or lon_max > 190:  # Allow some tolerance
+                    validation['warnings'].append(f"OSCAR longitude values {lon_min}-{lon_max} slightly outside expected -180-180° range")
+        
+        return validation
+    
+    def repair_oscar_coordinates(self, ds: xr.Dataset) -> xr.Dataset:
+        """
+        Repair corrupted OSCAR coordinate metadata.
+        
+        Args:
+            ds: Input xarray Dataset with potentially corrupted coordinates
+            
+        Returns:
+            Dataset with repaired coordinates
+        """
+        ds_repaired = ds.copy()
+        
+        # Check for latitude coordinate corruption
+        lat_coord_name = 'lat' if 'lat' in ds_repaired.dims else 'latitude'
+        lon_coord_name = 'lon' if 'lon' in ds_repaired.dims else 'longitude'
+        
+        if lat_coord_name in ds_repaired.dims:
+            lat_values = ds_repaired[lat_coord_name].values
+            lat_min, lat_max = float(lat_values.min()), float(lat_values.max())
+            
+            # Check for common OSCAR corruption pattern (0-718 instead of -90 to +90)
+            if lat_min == 0.0 and lat_max > 300:
+                self.logger.warning(f"Repairing corrupted OSCAR latitude coordinates: {lat_min}-{lat_max}")
+                
+                # Create proper latitude grid based on data size
+                n_lat = len(lat_values)
+                
+                # Assume global coverage with uniform spacing
+                repaired_lat = np.linspace(-90, 90, n_lat)
+                
+                # Update coordinate
+                ds_repaired = ds_repaired.assign_coords({lat_coord_name: repaired_lat})
+                
+                # Update attributes
+                ds_repaired[lat_coord_name].attrs.update({
+                    'standard_name': 'latitude',
+                    'long_name': 'latitude',
+                    'units': 'degrees_north',
+                    'valid_min': -90.0,
+                    'valid_max': 90.0,
+                    'coordinate_repair': 'OSCAR latitude coordinates repaired from corrupted values'
+                })
+                
+                self.logger.info(f"Repaired latitude coordinates: now {repaired_lat.min():.2f} to {repaired_lat.max():.2f}")
+        
+        # Also check longitude for any issues
+        if lon_coord_name in ds_repaired.dims:
+            lon_values = ds_repaired[lon_coord_name].values
+            lon_min, lon_max = float(lon_values.min()), float(lon_values.max())
+            
+            # Ensure longitude attributes are correct
+            ds_repaired[lon_coord_name].attrs.update({
+                'standard_name': 'longitude',
+                'long_name': 'longitude', 
+                'units': 'degrees_east'
+            })
+        
+        # Add global attribute about the repair
+        ds_repaired.attrs.update({
+            'coordinate_repair_applied': 'OSCAR coordinate corruption fixed',
+            'repair_timestamp': str(np.datetime64('now'))
+        })
+        
+        return ds_repaired
     
     def select_surface_layer(self, ds: xr.Dataset, depth_threshold: float = 5.0) -> xr.Dataset:
         """
@@ -345,6 +493,12 @@ class CurrentsProcessor:
         Returns:
             Fully processed dataset
         """
+        # Check if this is an OSCAR file and repair coordinates if needed
+        is_oscar_file = self._detect_oscar_file(ds)
+        if is_oscar_file:
+            # Apply coordinate repair before validation
+            ds = self.repair_oscar_coordinates(ds)
+        
         # Validate input data
         validation = self.validate_currents_data(ds)
         
