@@ -47,40 +47,39 @@ describe('Date Integration Tests', () => {
   });
 
   test('validateDate should properly validate dates', () => {
-    // Valid guaranteed date
-    const validDate = '2023-06-15';
+    // Valid guaranteed date (2003-2025)
+    const validDate = '2024-06-15';
     const validResult = validateDate(validDate);
     
     expect(validResult.isValid).toBe(true);
     expect(validResult.coverageInfo.guaranteedCoverage).toBe(true);
     expect(validResult.errors).toHaveLength(0);
     
-    // Invalid future date
-    const futureDate = '2030-01-01';
+    // Invalid future date (beyond August 2025)
+    const futureDate = '2026-01-01';
     const futureResult = validateDate(futureDate);
     
     expect(futureResult.isValid).toBe(false);
-    expect(futureResult.errors).toContain('Date cannot be in the future.');
+    expect(futureResult.errors).toContain('Date cannot be beyond August 2025.');
     
-    // Valid extended date
-    const extendedDate = '2022-01-01';
-    const extendedResult = validateDate(extendedDate);
+    // Valid date with wave data warning
+    const dateWithoutWaves = '2020-01-01';
+    const waveWarningResult = validateDate(dateWithoutWaves);
     
-    expect(extendedResult.isValid).toBe(true);
-    expect(extendedResult.coverageInfo.extendedCoverage).toBe(true);
-    expect(extendedResult.warnings.length).toBeGreaterThan(0);
+    expect(waveWarningResult.isValid).toBe(true);
+    expect(waveWarningResult.warnings).toContain('Wave data not available before November 2022.');
   });
 
   test('getDataAvailabilityDescription should return correct descriptions', () => {
-    // Guaranteed coverage date
-    const guaranteedDesc = getDataAvailabilityDescription('2023-06-15');
-    expect(guaranteedDesc).toContain('All 10 ocean data types available');
-    expect(guaranteedDesc).toContain('100% coverage');
+    // Guaranteed coverage date with full data
+    const guaranteedDesc = getDataAvailabilityDescription('2024-06-15');
+    expect(guaranteedDesc).toContain('9 ocean data types available');
+    expect(guaranteedDesc).toContain('comprehensive coverage');
     
-    // Extended coverage date  
-    const extendedDesc = getDataAvailabilityDescription('2022-01-01');
-    expect(extendedDesc).toMatch(/\d+ of \d+ ocean data types available/);
-    expect(extendedDesc).toContain('% coverage');
+    // Date with wave data limitation
+    const limitedDesc = getDataAvailabilityDescription('2020-01-01');
+    expect(limitedDesc).toMatch(/\d+ ocean data types available/);
+    expect(limitedDesc).toContain('% coverage');
   });
 
   test('WebSocket message format should include date parameters', () => {
@@ -95,8 +94,8 @@ describe('Date Integration Tests', () => {
           lon: -40.0
         },
         dateRange: {
-          start: '2023-06-15',
-          end: '2023-06-15'
+          start: '2024-06-15',
+          end: '2024-06-15'
         },
         timestamp: new Date().toISOString()
       }
@@ -111,8 +110,8 @@ describe('Date Integration Tests', () => {
     expect(sentMessage.type).toBe('temperature_request');
     expect(sentMessage.payload.coordinates).toBeDefined();
     expect(sentMessage.payload.dateRange).toBeDefined();
-    expect(sentMessage.payload.dateRange.start).toBe('2023-06-15');
-    expect(sentMessage.payload.dateRange.end).toBe('2023-06-15');
+    expect(sentMessage.payload.dateRange.start).toBe('2024-06-15');
+    expect(sentMessage.payload.dateRange.end).toBe('2024-06-15');
   });
 
   test('Date utilities should handle edge cases', () => {
@@ -142,14 +141,14 @@ describe('Date Integration Tests', () => {
     
     // Test with custom range
     const customDate = generateRandomDate({ 
-      minDate: '2023-01-01', 
-      maxDate: '2023-12-31' 
+      minDate: '2024-01-01', 
+      maxDate: '2024-12-31' 
     });
     const customValidation = validateDate(customDate);
     expect(customValidation.isValid).toBe(true);
     
     const date = new Date(customDate);
-    expect(date.getFullYear()).toBe(2023);
+    expect(date.getFullYear()).toBe(2024);
   });
 
 });

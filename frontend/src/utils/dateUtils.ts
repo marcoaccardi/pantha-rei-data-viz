@@ -5,24 +5,25 @@
 // Temporal coverage constants based on actual processed data availability
 export const TEMPORAL_COVERAGE = {
   // Guaranteed availability window (comprehensive data coverage period)
-  GUARANTEED_START: '1993-01-01',
-  GUARANTEED_END: '1993-12-31',
+  GUARANTEED_START: '2003-01-01', // Updated to reflect hybrid currents system start
+  GUARANTEED_END: '2025-08-12',   // Current date in August 2025
   
   // Extended availability (some data types from later periods)
-  EXTENDED_START: '1993-01-01',
+  EXTENDED_START: '2003-01-01',   // All datasets start from 2003 minimum
+  EXTENDED_END: '2025-08-12',
   
   // Maximum historical coverage (biodiversity and microplastics)
-  HISTORICAL_START: '1972-01-01',
+  HISTORICAL_START: '1972-01-01', // Microplastics historical data
   
   // Data source specific coverage based on actual processed data
-  SST_START: '1993-01-01',
-  SALINITY_START: '1993-01-01',
-  CURRENTS_START: '2024-01-01',
-  WAVES_START: '2024-01-01',
-  CHLOROPHYLL_START: '1993-01-01',
-  PH_START: '1993-01-01',
-  BIODIVERSITY_START: '1972-01-01',
-  MICROPLASTICS_START: '1972-01-01'
+  SST_START: '1981-09-01',        // NOAA OISST historical coverage
+  SALINITY_START: '2003-01-01',   // From ocean currents system
+  CURRENTS_START: '2003-01-01',   // NASA OSCAR historical + CMEMS current
+  WAVES_START: '2022-11-01',      // CMEMS waves availability
+  CHLOROPHYLL_START: '1993-01-01', // CMEMS biogeochemistry
+  PH_START: '1993-01-01',         // CMEMS biogeochemistry historical
+  BIODIVERSITY_START: '1972-01-01', // Research data
+  MICROPLASTICS_START: '1972-01-01' // NOAA + synthetic data to 2025
 };
 
 export interface DateRange {
@@ -73,7 +74,7 @@ export function generateRandomDate(options: {
     endDateStr = TEMPORAL_COVERAGE.GUARANTEED_END;
   } else {
     startDateStr = TEMPORAL_COVERAGE.EXTENDED_START;
-    endDateStr = TEMPORAL_COVERAGE.GUARANTEED_END;
+    endDateStr = TEMPORAL_COVERAGE.EXTENDED_END;
   }
 
   const startDate = new Date(startDateStr);
@@ -84,7 +85,7 @@ export function generateRandomDate(options: {
     if (guaranteedOnly) {
       // Prevent infinite recursion - use hardcoded fallback
       console.error('Invalid guaranteed date range, using fallback');
-      return '2023-06-01';
+      return '2024-08-12';
     }
     console.warn('Invalid date range for random generation, using guaranteed window');
     return generateRandomDate({ guaranteedOnly: true });
@@ -161,7 +162,7 @@ export function validateDate(date: string): DateValidationResult {
   }
 
   const inputDate = new Date(date);
-  const today = new Date();
+  const currentDate = new Date('2025-08-12'); // Current date in August 2025
   
   // Check if date is valid
   if (isNaN(inputDate.getTime())) {
@@ -170,11 +171,11 @@ export function validateDate(date: string): DateValidationResult {
     return result;
   }
 
-  // Check if date is in the future
-  if (inputDate > today) {
+  // Check if date is in the future (beyond August 2025)
+  if (inputDate > currentDate) {
     result.isValid = false;
-    result.errors.push('Date cannot be in the future.');
-    result.suggestedDate = today.toISOString().split('T')[0];
+    result.errors.push('Date cannot be beyond August 2025.');
+    result.suggestedDate = '2025-08-12';
     return result;
   }
 
@@ -184,39 +185,41 @@ export function validateDate(date: string): DateValidationResult {
   const historicalStart = new Date(TEMPORAL_COVERAGE.HISTORICAL_START);
 
   if (inputDate >= guaranteedStart) {
-    // Guaranteed coverage - all data types available
+    // Guaranteed coverage - all data types available (2003-2025)
     result.coverageInfo!.guaranteedCoverage = true;
     result.coverageInfo!.extendedCoverage = true;
     result.coverageInfo!.availableDataTypes = [
       'Sea Surface Temperature',
-      'Ocean Currents', 
-      'Salinity',
-      'Wave Height & Period',
-      'Chlorophyll/Plankton',
+      'Ocean Currents (NASA OSCAR + CMEMS)', 
+      'Ocean Chemistry (pH, Nutrients)',
+      'Wave Height & Period (2022+)',
+      'Chlorophyll/Productivity',
       'pH/Ocean Acidification',
-      'Water Quality Indicators',
+      'Dissolved Oxygen',
       'Marine Biodiversity',
-      'Sea Ice Extent',
-      'Microplastics'
+      'Microplastics (Real + Synthetic to 2025)'
     ];
+    
+    // Add warnings for limited wave data before 2022
+    if (inputDate < new Date('2022-11-01')) {
+      result.coverageInfo!.unavailableDataTypes = ['Wave Height & Period'];
+      result.warnings.push('Wave data not available before November 2022.');
+    }
   } else if (inputDate >= extendedStart) {
-    // Extended coverage - most data types available  
+    // This case shouldn't occur now since guaranteed and extended start are the same
     result.coverageInfo!.extendedCoverage = true;
     result.coverageInfo!.availableDataTypes = [
       'Sea Surface Temperature',
-      'Chlorophyll/Plankton', 
+      'Ocean Currents',
+      'Ocean Chemistry', 
+      'Chlorophyll/Productivity',
       'pH/Ocean Acidification',
-      'Water Quality Indicators',
-      'Marine Biodiversity',
-      'Sea Ice Extent',
       'Microplastics'
     ];
     result.coverageInfo!.unavailableDataTypes = [
-      'Ocean Currents',
-      'Salinity', 
       'Wave Height & Period'
     ];
-    result.warnings.push('Limited data coverage - some ocean parameters not available for this date.');
+    result.warnings.push('Limited wave data coverage for this period.');
   } else if (inputDate >= historicalStart) {
     // Historical coverage - only research data available
     result.coverageInfo!.availableDataTypes = [
@@ -263,7 +266,7 @@ export function getGuaranteedDateRange(): DateRange {
 export function getExtendedDateRange(): DateRange {
   return {
     start: TEMPORAL_COVERAGE.EXTENDED_START,
-    end: TEMPORAL_COVERAGE.GUARANTEED_END
+    end: TEMPORAL_COVERAGE.EXTENDED_END
   };
 }
 
@@ -305,7 +308,11 @@ export function getDataAvailabilityDescription(date: string): string {
   const total = available + unavailable;
 
   if (validation.coverageInfo?.guaranteedCoverage) {
-    return `All 10 ocean data types available (100% coverage)`;
+    if (available === 9) {
+      return `9 ocean data types available (comprehensive coverage)`;
+    } else {
+      return `${available} ocean data types available (${Math.round(available/9*100)}% coverage)`;
+    }
   } else if (validation.coverageInfo?.extendedCoverage) {
     return `${available} of ${total} ocean data types available (${Math.round(available/total*100)}% coverage)`;
   } else {

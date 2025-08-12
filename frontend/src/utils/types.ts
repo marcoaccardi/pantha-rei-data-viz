@@ -88,12 +88,31 @@ export interface OceanMeasurement {
   zone: string;
 }
 
-// Comprehensive ocean data types for the new data panel
+// Enhanced ocean data types with educational context
+export interface ParameterClassification {
+  classification: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  color: string;
+  description: string;
+  environmental_impact: string;
+  context: string;
+}
+
+export interface EducationalContext {
+  short_description: string;
+  scientific_context: string;
+  unit_explanation: string;
+  health_implications: { [key: string]: string };
+  measurement_context: { [key: string]: string };
+}
+
 export interface OceanDataValue {
   value: number | string | null;
   units: string;
   long_name: string;
   valid: boolean;
+  classification?: ParameterClassification;
+  educational_context?: EducationalContext;
 }
 
 export interface OceanPointData {
