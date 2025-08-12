@@ -83,3 +83,4 @@ MANIFEST
 # Ocean Data
 ocean-data
 **/credentials.env
+backend/config/status.json
