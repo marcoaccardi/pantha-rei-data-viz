@@ -308,11 +308,15 @@ async function loadData() {
         
         Max.post(`Successfully loaded ${totalLocations} ocean locations (${validRows} valid, ${skippedRows} skipped)`);
         Max.post(`Sampling: every ${CONFIG.sampleEvery} rows from ${lines.length - 1} total data rows`);
-        Max.outlet('status', 'loaded', totalLocations, validRows, skippedRows);
+        Max.outlet('status', 'loaded');
+        Max.outlet('total_locations', totalLocations);
+        Max.outlet('valid_rows', validRows);
+        Max.outlet('skipped_rows', skippedRows);
         
     } catch (error) {
         Max.post('Error loading data:', error.message);
-        Max.outlet('error', 'load_failed', error.message);
+        Max.outlet('error', 'load_failed');
+        Max.outlet('error_message', error.message);
         
         // Reset state on error
         oceanData = [];
@@ -340,18 +344,23 @@ function playNext() {
         
         // Send essential location data for Max patch display
         const locationName = location.Location_Name || `Location_${currentIndex + 1}`;
-        const displayData = {
-            id: location.Location_ID || currentIndex + 1,
-            name: locationName,
-            latitude: location.Latitude || 0,
-            longitude: location.Longitude || 0,
-            region: location.Region || 'Unknown',
-            ocean_basin: location.Ocean_Basin || 'Unknown',
-            ecosystem_type: location.Ecosystem_Type || 'Unknown',
-            climate_zone: location.Climate_Zone || 'Unknown'
-        };
+        const locationId = location.Location_ID || currentIndex + 1;
+        const latitude = location.Latitude || 0;
+        const longitude = location.Longitude || 0;
+        const region = location.Region || 'Unknown';
+        const oceanBasin = location.Ocean_Basin || 'Unknown';
+        const ecosystemType = location.Ecosystem_Type || 'Unknown';
+        const climateZone = location.Climate_Zone || 'Unknown';
         
-        Max.outlet('location_data', displayData);
+        // Output location data as individual outlets
+        Max.outlet('location_name', locationName);
+        Max.outlet('location_id', locationId);
+        Max.outlet('latitude', latitude);
+        Max.outlet('longitude', longitude);
+        Max.outlet('region', region);
+        Max.outlet('ocean_basin', oceanBasin);
+        Max.outlet('ecosystem_type', ecosystemType);
+        Max.outlet('climate_zone', climateZone);
         
         // Calculate normalized values for sliders (0-1 range)
         const sliderValues = [
@@ -378,29 +387,59 @@ function playNext() {
             location.Sea_Ice_2025_percent || 0              // Sea ice (%)
         ];
         
-        // Output individual slider values with safety checks (normalized 0-1)
-        sliderValues.forEach((value, index) => {
-            const safeValue = isNaN(value) || value === null || value === undefined ? 0.5 : Math.max(0, Math.min(1, value));
-            Max.outlet(`slider_${index + 1}`, safeValue);
-        });
+        // Output normalized slider values with meaningful names (0-1 range)
+        const temperatureNorm = isNaN(sliderValues[0]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[0]));
+        const healthScoreNorm = isNaN(sliderValues[1]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[1]));
+        const acidificationNorm = isNaN(sliderValues[2]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[2]));
+        const oxygenNorm = isNaN(sliderValues[3]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[3]));
+        const marineLifeNorm = isNaN(sliderValues[4]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[4]));
+        const currentsNorm = isNaN(sliderValues[5]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[5]));
+        const threatLevelNorm = isNaN(sliderValues[6]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[6]));
+        const seaIceNorm = isNaN(sliderValues[7]) ? 0.5 : Math.max(0, Math.min(1, sliderValues[7]));
         
-        // Output raw values for data display
-        rawValues.forEach((value, index) => {
-            const safeValue = isNaN(value) || value === null || value === undefined ? 0 : value;
-            Max.outlet(`raw_${index + 1}`, safeValue);
-        });
+        Max.outlet('temperature_norm', temperatureNorm);
+        Max.outlet('health_score_norm', healthScoreNorm);
+        Max.outlet('acidification_norm', acidificationNorm);
+        Max.outlet('oxygen_norm', oxygenNorm);
+        Max.outlet('marine_life_norm', marineLifeNorm);
+        Max.outlet('currents_norm', currentsNorm);
+        Max.outlet('threat_level_norm', threatLevelNorm);
+        Max.outlet('sea_ice_norm', seaIceNorm);
+        
+        // Output raw values with meaningful names
+        const temperatureRaw = isNaN(rawValues[0]) ? 0 : rawValues[0];
+        const healthScoreRaw = isNaN(rawValues[1]) ? 0 : rawValues[1];
+        const phRaw = isNaN(rawValues[2]) ? 8.1 : rawValues[2];
+        const oxygenRaw = isNaN(rawValues[3]) ? 300 : rawValues[3];
+        const chlorophyllRaw = isNaN(rawValues[4]) ? 0.5 : rawValues[4];
+        const currentSpeedRaw = isNaN(rawValues[5]) ? 0 : rawValues[5];
+        const threatLevelRaw = isNaN(rawValues[6]) ? 0 : rawValues[6];
+        const seaIceRaw = isNaN(rawValues[7]) ? 0 : rawValues[7];
+        
+        Max.outlet('temperature_raw', temperatureRaw);
+        Max.outlet('health_score_raw', healthScoreRaw);
+        Max.outlet('ph_raw', phRaw);
+        Max.outlet('oxygen_raw', oxygenRaw);
+        Max.outlet('chlorophyll_raw', chlorophyllRaw);
+        Max.outlet('current_speed_raw', currentSpeedRaw);
+        Max.outlet('threat_level_raw', threatLevelRaw);
+        Max.outlet('sea_ice_raw', seaIceRaw);
         
         // Send progress info
         const progress = (currentIndex + 1) / totalLocations;
-        Max.outlet('progress', progress, currentIndex + 1, totalLocations);
+        Max.outlet('progress', progress);
+        Max.outlet('current_index', currentIndex + 1);
+        Max.outlet('total_locations', totalLocations);
         
-        Max.post(`Playing location ${currentIndex + 1}/${totalLocations}: ${displayData.name}`);
+        Max.post(`Playing location ${currentIndex + 1}/${totalLocations}: ${locationName}`);
         
         currentIndex++;
         
     } catch (error) {
         Max.post(`Error playing location ${currentIndex + 1}: ${error.message}`);
-        Max.outlet('error', 'playback_error', currentIndex + 1, error.message);
+        Max.outlet('error', 'playback_error');
+        Max.outlet('error_location', currentIndex + 1);
+        Max.outlet('error_message', error.message);
         
         // Skip to next location on error
         currentIndex++;
@@ -515,7 +554,9 @@ function getStats() {
         config: CONFIG
     };
     
-    Max.outlet('stats', stats);
+    Max.outlet('stats_total_locations', stats.totalLocations);
+    Max.outlet('stats_current_index', stats.currentIndex);
+    Max.outlet('stats_is_playing', stats.isPlaying ? 1 : 0);
     Max.post('Current statistics:', JSON.stringify(stats, null, 2));
     return stats;
 }
@@ -531,10 +572,11 @@ Max.addHandler('jump', jumpToLocation);
 Max.addHandler('stats', getStats);
 
 // Initialize
-Max.post('Ocean Data Sonifier v2.1 - Streamlined Edition:');
-Max.post('- Simplified: Only essential outlets (location_data, slider_X, raw_X)');
-Max.post('- Dual output: normalized sliders + raw values for display');
-Max.post('- Enhanced algorithms: weighted health/threat calculations');
+Max.post('Ocean Data Sonifier v2.2 - Named Outlets Edition:');
+Max.post('- Meaningful outlet names: temperature_norm, health_score_norm, etc.');
+Max.post('- Individual outlets: no JSON data, separate values for each parameter');
+Max.post('- Location data: location_name, latitude, longitude, region, etc.');
+Max.post('- Raw values: temperature_raw, ph_raw, oxygen_raw, etc.');
 Max.post('Available commands: loadData, start, stop, pause, reset, speed <0.1-5.0>, jump <index>, stats');
 
 // Auto-load data on startup
