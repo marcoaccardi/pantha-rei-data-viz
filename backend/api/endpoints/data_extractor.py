@@ -31,7 +31,7 @@ class DataExtractor:
     
     def __init__(self):
         """Initialize the data extractor."""
-        self.data_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords")
+        self.data_path = Path("../ocean-data/processed/unified_coords")
         self.executor = ThreadPoolExecutor(max_workers=8)
         
         # Dataset configuration with ALL available variables

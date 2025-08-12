@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class TextureService:
     """Service for managing and serving ocean data textures."""
     
-    def __init__(self, texture_base_path: str = "/Volumes/Backup/panta-rhei-data-map/ocean-data/textures"):
+    def __init__(self, texture_base_path: str = "../ocean-data/textures"):
         """Initialize texture service with base path to textures directory."""
         self.texture_base_path = Path(texture_base_path)
         self.supported_categories = ["sst", "acidity", "currents"]
