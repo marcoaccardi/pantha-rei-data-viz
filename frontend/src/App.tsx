@@ -719,9 +719,35 @@ function App() {
                 })}
               </div>
               
+              {/* SST Texture Show/Hide Toggle */}
+              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <button
+                  onClick={() => setShowDataOverlay(!showDataOverlay)}
+                  style={{
+                    backgroundColor: showDataOverlay ? '#4a90e2' : '#4b5563',
+                    color: 'white',
+                    border: showDataOverlay ? '2px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.1)',
+                    padding: '6px 8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.75em',
+                    transition: 'all 0.2s ease',
+                    width: '100%',
+                    fontWeight: '500'
+                  }}
+                >
+                  {showDataOverlay ? '🌡️ Hide SST Texture' : '🌡️ Show SST Texture'}
+                </button>
+                {showDataOverlay && (
+                  <div style={{ fontSize: '0.7em', color: '#94a3b8', marginTop: '4px', textAlign: 'center' }}>
+                    Showing {selectedCategory.toUpperCase()} data overlay
+                  </div>
+                )}
+              </div>
+              
               {/* Texture info */}
-              {metadata && (
-                <div style={{ fontSize: '0.75em', color: '#94a3b8' }}>
+              {metadata && showDataOverlay && (
+                <div style={{ fontSize: '0.75em', color: '#94a3b8', marginTop: '8px' }}>
                   {selectedCategory && metadata.summary.categories[selectedCategory] ? (
                     <div>
                       Selected: {selectedCategory.toUpperCase()} | 
