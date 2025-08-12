@@ -63,7 +63,7 @@ export async function fetchMultiPointData(
   lon: number,
   date?: string
 ): Promise<MultiDatasetResponse> {
-  const datasets = ['sst', 'acidity', 'currents', 'waves'];
+  const datasets = ['sst', 'acidity', 'currents', 'waves', 'microplastics'];
   const cacheKey = requestCache.createOceanDataKey(lat, lon, date || 'latest', datasets);
 
   return requestCache.get(
@@ -82,7 +82,7 @@ export async function fetchMultiPointData(
 
       // Add timeout to prevent hanging
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       try {
         console.log(`🌊 FETCHING OCEAN DATA: ${cacheKey}`);

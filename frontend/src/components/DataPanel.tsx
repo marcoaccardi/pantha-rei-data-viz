@@ -18,15 +18,21 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       'anom': 'Temperature anomaly',
       'err': 'Analysis error',
       
-      // Acidity parameters
-      'ph': 'Acidity pH',
+      // Acidity parameters  
+      'ph': 'pH',
+      'ph_insitu': 'pH (in situ)',
+      'ph_insitu_total': 'pH (total scale)',
       'dissic': 'Dissolved inorganic carbon concentration',
-      'dic': 'Dissolved inorganic carbon',
+      'dic': 'Dissolved inorganic carbon',  
       'talk': 'Total alkalinity',
+      'pco2': 'Partial pressure CO₂',
+      'revelle': 'Revelle factor',
       'o2': 'Dissolved oxygen',
       'no3': 'Nitrate concentration',
-      'po4': 'Phosphate concentration',
+      'po4': 'Phosphate concentration', 
       'si': 'Silicate concentration',
+      'chl': 'Chlorophyll-a',
+      'nppv': 'Net primary production',
       
       // Currents parameters
       'uo': 'Eastward velocity',
@@ -119,8 +125,15 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
             {section.icon} {section.title}
           </h4>
           <div style={{ color: '#9ca3af', fontSize: '0.9em', fontStyle: 'italic' }}>
-            Data not available
+            {dataset.error.includes('timeout') ? 'Request timed out - server may be processing data' : 
+             dataset.error.includes('not found') ? 'Data not available for this location/date' :
+             'Data not available'}
           </div>
+          {dataset.error.includes('timeout') && (
+            <div style={{ color: '#fbbf24', fontSize: '0.8em', marginTop: '4px' }}>
+              Try a different location or date, or wait and retry
+            </div>
+          )}
         </div>
       );
     }
@@ -147,7 +160,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       acidity: {
         title: 'Ocean Chemistry',
         icon: '🧪',
-        variables: ['ph', 'dissic', 'dic', 'talk', 'o2', 'no3', 'po4', 'si']
+        variables: ['ph', 'ph_insitu', 'ph_insitu_total', 'dissic', 'dic', 'talk', 'pco2', 'revelle', 'o2', 'no3', 'po4', 'si', 'chl', 'nppv']
       },
       microplastics: {
         title: 'Microplastics',
