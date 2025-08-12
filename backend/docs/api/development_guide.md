@@ -401,7 +401,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /Volumes/Backup/panta-rhei-data-map/ocean-data:/app/ocean-data:ro
+      - ../ocean-data:/app/ocean-data:ro
     environment:
       - DATA_ROOT=/app/ocean-data
       - LOG_LEVEL=INFO

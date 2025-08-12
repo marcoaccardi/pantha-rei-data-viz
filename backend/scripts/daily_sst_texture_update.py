@@ -38,11 +38,11 @@ class DailyTextureUpdater:
         self.max_retry_days = max_retry_days
         
         # Status file for tracking
-        self.status_file = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/logs/daily_sst_status.json")
+        self.status_file = Path("../ocean-data/logs/daily_sst_status.json")
         
     def _setup_logging(self) -> logging.Logger:
         """Set up logging for daily updates."""
-        log_file = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/logs/daily_sst_update.log")
+        log_file = Path("../ocean-data/logs/daily_sst_update.log")
         log_file.parent.mkdir(parents=True, exist_ok=True)
         
         logging.basicConfig(

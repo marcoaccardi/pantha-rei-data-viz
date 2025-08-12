@@ -104,6 +104,6 @@ echo ""
 
 log_info "Historical data download for ${YEAR} completed!"
 log_info "Available datasets: SST raw, Waves, Acidity (nutrients), Microplastics"
-log_info "Data saved to: /Volumes/Backup/panta-rhei-data-map/ocean-data/raw/"
+log_info "Data saved to: ../ocean-data/raw/"
 
 echo -e "${CYAN}=============================================${NC}"

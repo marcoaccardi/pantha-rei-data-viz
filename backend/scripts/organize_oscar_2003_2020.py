@@ -14,7 +14,7 @@ def organize_oscar_files():
     """Organize OSCAR files from currents_2003_2020 into year/month structure."""
     
     # Paths
-    base_dir = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/currents")
+    base_dir = Path("../ocean-data/raw/currents")
     source_dir = base_dir / "currents_2003_2020"
     
     if not source_dir.exists():

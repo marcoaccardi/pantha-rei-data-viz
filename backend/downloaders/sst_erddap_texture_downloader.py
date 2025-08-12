@@ -28,7 +28,7 @@ class SSTERDDAPTextureDownloader:
         
         if output_base_path is None:
             # Output to ocean-data textures directory for proper organization
-            self.output_base_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/textures/sst")
+            self.output_base_path = Path("../ocean-data/textures/sst")
         else:
             self.output_base_path = Path(output_base_path)
             

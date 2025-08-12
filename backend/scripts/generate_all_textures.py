@@ -40,12 +40,12 @@ class TextureBatchProcessor:
         self.logger = self._setup_logging()
         
         if unified_coords_path is None:
-            self.unified_coords_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords")
+            self.unified_coords_path = Path("../ocean-data/processed/unified_coords")
         else:
             self.unified_coords_path = Path(unified_coords_path)
             
         if textures_output_path is None:
-            self.textures_output_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/textures")
+            self.textures_output_path = Path("../ocean-data/textures")
         else:
             self.textures_output_path = Path(textures_output_path)
             
@@ -58,7 +58,7 @@ class TextureBatchProcessor:
         
         # Initialize high-quality ERDDAP SST texture downloader
         self.sst_erddap_downloader = SSTERDDAPTextureDownloader(
-            Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/textures/sst")
+            Path("../ocean-data/textures/sst")
         )
         
     def _setup_logging(self) -> logging.Logger:
@@ -68,7 +68,7 @@ class TextureBatchProcessor:
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.StreamHandler(),
-                logging.FileHandler('/Volumes/Backup/panta-rhei-data-map/ocean-data/logs/texture_generation.log')
+                logging.FileHandler('../ocean-data/logs/texture_generation.log')
             ]
         )
         return logging.getLogger(__name__)

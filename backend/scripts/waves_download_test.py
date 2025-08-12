@@ -168,7 +168,7 @@ def test_systematic_download():
         # Fall back to mock data creation
         print("  🎭 Creating mock data as fallback...")
         year_month = test_date.strftime("%Y/%m")
-        raw_dir = Path(f"/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/waves/{year_month}")
+        raw_dir = Path(f"../ocean-data/raw/waves/{year_month}")
         filename = f"waves_global_{test_date.strftime('%Y%m%d')}.nc"
         raw_file = raw_dir / filename
         
@@ -177,7 +177,7 @@ def test_systematic_download():
             results['mock_created'] += 1
             
             # Test processing
-            processed_dir = Path(f"/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/waves/{year_month}")
+            processed_dir = Path(f"../ocean-data/processed/unified_coords/waves/{year_month}")
             processed_filename = f"waves_processed_{test_date.strftime('%Y%m%d')}.nc"
             processed_file = processed_dir / processed_filename
             

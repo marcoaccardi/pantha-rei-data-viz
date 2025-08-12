@@ -6,7 +6,8 @@ Bulk download script for filling data gaps.
 
 import sys
 import os
-sys.path.append('/Volumes/Backup/panta-rhei-data-map/backend')
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
 
 from downloaders.sst_downloader import SSTDownloader
 from datetime import datetime, timedelta, date
@@ -28,7 +29,7 @@ def main():
     end_date = date.today() - timedelta(days=3)  # Skip last 3 days as they might not be available
 
     # Check existing files to determine resume point
-    raw_path = "/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/sst"
+    raw_path = "../ocean-data/raw/sst"
     existing_files = []
     
     for root, dirs, files in os.walk(raw_path):

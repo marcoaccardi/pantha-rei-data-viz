@@ -25,8 +25,8 @@ def process_acidity_files():
     processor = AcidityProcessor()
     
     # Find raw acidity files
-    raw_acidity_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/acidity")
-    output_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/acidity")
+    raw_acidity_path = Path("../ocean-data/raw/acidity")
+    output_path = Path("../ocean-data/processed/unified_coords/acidity")
     
     if not raw_acidity_path.exists():
         logger.warning(f"No raw acidity directory found: {raw_acidity_path}")
@@ -72,8 +72,8 @@ def process_currents_files():
     processor = CurrentsProcessor()
     
     # Find raw currents files
-    raw_currents_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/currents")
-    output_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/currents")
+    raw_currents_path = Path("../ocean-data/raw/currents")
+    output_path = Path("../ocean-data/processed/unified_coords/currents")
     
     if not raw_currents_path.exists():
         logger.warning(f"No raw currents directory found: {raw_currents_path}")
@@ -119,8 +119,8 @@ def process_waves_files():
     processor = WavesProcessor()
     
     # Find raw waves files
-    raw_waves_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/waves")
-    output_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/waves")
+    raw_waves_path = Path("../ocean-data/raw/waves")
+    output_path = Path("../ocean-data/processed/unified_coords/waves")
     
     if not raw_waves_path.exists():
         logger.warning(f"No raw waves directory found: {raw_waves_path}")

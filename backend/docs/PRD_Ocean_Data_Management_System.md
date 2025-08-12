@@ -391,7 +391,7 @@ python scripts/test_single_date.py --dataset sst --date 2024-01-15
 ### 7.1 Directory Organization
 
 ```
-ocean-data/                           # Base: /Volumes/Backup/panta-rhei-data-map/ocean-data
+ocean-data/                           # Base: ../ocean-data
 ├── raw/                             # Original downloaded files
 │   ├── sst/
 │   │   └── {year}/{month}/          # 2024/01/oisst-avhrr-v02r01.20240115.nc

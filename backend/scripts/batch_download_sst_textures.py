@@ -226,7 +226,7 @@ Examples:
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler('/Volumes/Backup/panta-rhei-data-map/ocean-data/logs/sst_batch_download.log', 'a')
+            logging.FileHandler('../ocean-data/logs/sst_batch_download.log', 'a')
         ]
     )
     

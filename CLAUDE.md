@@ -30,7 +30,7 @@ panta-rhei-data-map/
 │       ├── hooks/          # Custom React hooks
 │       ├── tests/          # Frontend tests
 │       └── utils/          # Frontend utilities
-├── ocean-data/               # Data storage (/Volumes/Backup/panta-rhei-data-map/ocean-data)
+├── ocean-data/               # Data storage (local directory)
 │   ├── cache/              # Cached data files
 │   ├── logs/               # Processing logs
 │   │   ├── api_samples/    # API response samples
@@ -65,7 +65,7 @@ panta-rhei-data-map/
   - **Before running any Python script or installing libraries, activate environment with `source .venv/bin/activate`**
 - **Never use conda** - only use uv for Python environment management
 - **All test code must be in `backend/tests/` folder**
-- Data downloads should be saved to `/Volumes/Backup/panta-rhei-data-map/ocean-data`
+- Data downloads should be saved to `ocean-data`
 - **Credentials are stored in `backend/config/.env`**
   - Copernicus Marine Service: `CMEMS_USERNAME` and `CMEMS_PASSWORD`
   - NOAA API: `NOAA_API_KEY`
@@ -90,10 +90,10 @@ panta-rhei-data-map/
 The system now has a complete data processing pipeline:
 
 ### Processing Pipeline
-1. **Download**: Raw data saved to `/ocean-data/raw/{dataset}/`
+1. **Download**: Raw data saved to `ocean-data/raw/{dataset}/`
 2. **Preserve**: Raw files preserved (no longer auto-deleted)
 3. **Process**: Dataset-specific processors convert to unified coordinates
-4. **Output**: Harmonized data in `/ocean-data/processed/unified_coords/{dataset}/`
+4. **Output**: Harmonized data in `ocean-data/processed/unified_coords/{dataset}/`
 
 ### Available Processors
 - **SST**: `sst_downsampler.py` - 0.25° → 1° spatial downsampling

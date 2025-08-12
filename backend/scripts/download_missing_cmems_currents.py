@@ -17,7 +17,7 @@ from downloaders.currents_downloader import CurrentsDownloader
 def analyze_missing_dates():
     """Analyze what CMEMS currents data is missing."""
     
-    currents_dir = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/currents")
+    currents_dir = Path("../ocean-data/raw/currents")
     
     # Define the period we need to check
     start_date = date(2023, 6, 5)  # The 1-day gap

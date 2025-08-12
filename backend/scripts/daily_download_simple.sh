@@ -5,8 +5,8 @@
 # Usage: ./scripts/daily_download_simple.sh
 
 # Project paths
-PROJECT_PATH="/Volumes/Backup/panta-rhei-data-map"
-BACKEND_PATH="$PROJECT_PATH/backend"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_PATH="$(dirname "$SCRIPT_DIR")"
 
 # Ensure we're in the right directory
 cd "$BACKEND_PATH"

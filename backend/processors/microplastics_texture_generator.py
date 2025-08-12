@@ -44,8 +44,8 @@ class MicroplasticsTextureGenerator:
             output_dir: Output directory for textures
             resolution: Texture resolution (width, height)
         """
-        self.data_path = data_path or "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/microplastics/unified/microplastics_complete_1993_2025.csv"
-        self.output_dir = output_dir or "/Volumes/Backup/panta-rhei-data-map/ocean-data/textures/microplastics"
+        self.data_path = data_path or "../ocean-data/processed/unified_coords/microplastics/unified/microplastics_complete_1993_2025.csv"
+        self.output_dir = output_dir or "../ocean-data/textures/microplastics"
         self.resolution = resolution
         
         # Data storage

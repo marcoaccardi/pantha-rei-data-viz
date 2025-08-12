@@ -24,7 +24,7 @@ def setup_logging(verbose: bool = False):
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.StreamHandler(sys.stdout),
-            logging.FileHandler('/Volumes/Backup/panta-rhei-data-map/ocean-data/logs/sst_texture_download.log', 'a')
+            logging.FileHandler('../ocean-data/logs/sst_texture_download.log', 'a')
         ]
     )
 

@@ -29,7 +29,7 @@ class TextureGenerator:
         self.logger = logging.getLogger(__name__)
         
         if output_base_path is None:
-            self.output_base_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/textures")
+            self.output_base_path = Path("../ocean-data/textures")
         else:
             self.output_base_path = Path(output_base_path)
             

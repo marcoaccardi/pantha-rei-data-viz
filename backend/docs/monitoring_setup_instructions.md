@@ -8,7 +8,7 @@ This guide covers setting up automated monitoring for CMEMS dataset validity, en
 ### 1. Install Monitoring System
 ```bash
 # Navigate to backend directory
-cd /Volumes/Backup/panta-rhei-data-map/backend
+cd backend  # Navigate to your project's backend directory
 
 # Ensure virtual environment is active
 source .venv/bin/activate
@@ -123,7 +123,7 @@ chmod +x scripts/*.py
 ### Testing Cron Jobs Manually
 ```bash
 # Test the exact command that cron would run
-cd /Volumes/Backup/panta-rhei-data-map/backend
+cd backend  # Navigate to your project's backend directory
 .venv/bin/python scripts/monitor_dataset_validity.py >> ../ocean-data/logs/dataset_monitoring.log 2>&1
 ```
 

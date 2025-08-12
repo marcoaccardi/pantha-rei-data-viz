@@ -166,8 +166,8 @@ class TextureAlignmentValidator:
         
         # Define test cases (SST now uses ERDDAP textures directly, no validation needed)
         test_cases = [
-            (AcidityTextureGenerator(), Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/acidity/2024/01/acidity_harmonized_20240106.nc")),
-            (CurrentsTextureGenerator(), Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/currents/2024/07/currents_harmonized_20240725.nc"))
+            (AcidityTextureGenerator(), Path("../ocean-data/processed/unified_coords/acidity/2024/01/acidity_harmonized_20240106.nc")),
+            (CurrentsTextureGenerator(), Path("../ocean-data/processed/unified_coords/currents/2024/07/currents_harmonized_20240725.nc"))
         ]
         
         successful_datasets = []

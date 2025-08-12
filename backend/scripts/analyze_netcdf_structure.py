@@ -88,10 +88,10 @@ def analyze_netcdf_file(file_path):
 def main():
     """Analyze all NetCDF files for texture generation."""
     files_to_analyze = [
-        "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/sst/2024/01/sst_harmonized_20240115.nc",
-        "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/acidity/2024/01/acidity_harmonized_20240106.nc",
-        "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/currents/2024/07/currents_harmonized_20240725.nc",
-        "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/waves/2024/07/waves_processed_20240723.nc"
+        "../ocean-data/processed/unified_coords/sst/2024/01/sst_harmonized_20240115.nc",
+        "../ocean-data/processed/unified_coords/acidity/2024/01/acidity_harmonized_20240106.nc",
+        "../ocean-data/processed/unified_coords/currents/2024/07/currents_harmonized_20240725.nc",
+        "../ocean-data/processed/unified_coords/waves/2024/07/waves_processed_20240723.nc"
     ]
     
     print("NetCDF File Structure Analysis for Texture Generation")

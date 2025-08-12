@@ -55,7 +55,7 @@ class MicroplasticsUnifiedProcessor:
             synthetic_data_years: Tuple of (start_year, end_year) for synthetic data
         """
         self.data_path = data_path or "/Users/marco/Downloads/Marine_Microplastics_WGS84_8553846406879449657.csv"
-        self.output_dir = output_dir or "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/microplastics"
+        self.output_dir = output_dir or "../ocean-data/processed/unified_coords/microplastics"
         
         # Data period definitions
         self.real_years = real_data_years

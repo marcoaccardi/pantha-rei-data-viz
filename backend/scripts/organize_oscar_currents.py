@@ -25,7 +25,7 @@ def organize_oscar_files():
     source_dir = Path("/Volumes/Backup/WORK_2023/Corals/_ConsolidateTemp/ocean_datasets/currents_2021_2023")
     
     # Target directory in panta-rhei structure
-    target_base = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/currents")
+    target_base = Path("../ocean-data/raw/currents")
     
     print("🔄 OSCAR Currents File Organization")
     print("=" * 50)

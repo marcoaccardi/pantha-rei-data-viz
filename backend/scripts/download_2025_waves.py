@@ -52,7 +52,7 @@ def download_month(downloader, year, month):
             # Check if file already exists and is valid
             year_month = current_date.strftime("%Y/%m")
             filename = f"waves_global_{current_date.strftime('%Y%m%d')}.nc"
-            raw_file = Path(f"/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/waves/{year_month}/{filename}")
+            raw_file = Path(f"../ocean-data/raw/waves/{year_month}/{filename}")
             
             if raw_file.exists() and raw_file.stat().st_size > 1000000:  # > 1MB
                 print("✅ exists")
@@ -127,7 +127,7 @@ def main():
     import subprocess
     try:
         result = subprocess.run(
-            ["find", "/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/waves/2025", "-name", "*.nc", "-type", "f"],
+            ["find", "../ocean-data/raw/waves/2025", "-name", "*.nc", "-type", "f"],
             capture_output=True, text=True
         )
         file_count = len(result.stdout.strip().split('\n')) if result.stdout.strip() else 0

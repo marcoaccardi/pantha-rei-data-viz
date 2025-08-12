@@ -110,7 +110,7 @@ class WavesProcessor:
         """
         try:
             # Use SST data as land mask template for geographic accuracy
-            sst_reference_path = Path("/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/sst/2024/07/sst_harmonized_20240724.nc")
+            sst_reference_path = Path("../ocean-data/processed/unified_coords/sst/2024/07/sst_harmonized_20240724.nc")
             
             if sst_reference_path.exists():
                 return self._create_sst_based_ocean_mask(lon, lat, sst_reference_path)

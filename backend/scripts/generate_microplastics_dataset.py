@@ -38,7 +38,7 @@ def setup_logging(log_level: str = 'INFO'):
         handlers=[
             logging.StreamHandler(),
             logging.FileHandler(
-                f'/Volumes/Backup/panta-rhei-data-map/ocean-data/logs/microplastics_pipeline_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+                f'../ocean-data/logs/microplastics_pipeline_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
             )
         ]
     )
@@ -214,7 +214,7 @@ def main():
             print("🎨 Running texture-only generation...")
             
             # Check if unified dataset exists
-            default_data_path = "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/microplastics/unified/microplastics_complete_1993_2025.csv"
+            default_data_path = "../ocean-data/processed/unified_coords/microplastics/unified/microplastics_complete_1993_2025.csv"
             
             if not os.path.exists(default_data_path):
                 print(f"❌ Error: Unified dataset not found at {default_data_path}")

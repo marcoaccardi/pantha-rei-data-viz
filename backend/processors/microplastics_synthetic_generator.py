@@ -39,7 +39,7 @@ class MicroplasticsDataProcessor:
             output_dir: Output directory for processed data
         """
         self.data_path = data_path or "/Users/marco/Downloads/Marine_Microplastics_WGS84_8553846406879449657.csv"
-        self.output_dir = output_dir or "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/microplastics"
+        self.output_dir = output_dir or "../ocean-data/processed/unified_coords/microplastics"
         self.raw_data = None
         self.processed_data = None
         self.scalers = {}
@@ -399,7 +399,7 @@ class SimplifiedGANSynthesizer:
         Args:
             output_dir: Output directory for synthetic data
         """
-        self.output_dir = output_dir or "/Volumes/Backup/panta-rhei-data-map/ocean-data/processed/unified_coords/microplastics"
+        self.output_dir = output_dir or "../ocean-data/processed/unified_coords/microplastics"
         self.generator = None
         self.discriminator = None
         self.scaler = MinMaxScaler()

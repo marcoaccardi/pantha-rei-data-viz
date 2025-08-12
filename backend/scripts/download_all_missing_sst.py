@@ -6,7 +6,8 @@ This script identifies missing texture files and downloads the corresponding raw
 
 import sys
 import os
-sys.path.append('/Volumes/Backup/panta-rhei-data-map/backend')
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
 
 from downloaders.sst_downloader import SSTDownloader
 from datetime import datetime, timedelta, date
@@ -14,7 +15,7 @@ import logging
 
 def find_missing_dates():
     """Find all missing texture dates from 2003-2025"""
-    texture_base = "/Volumes/Backup/panta-rhei-data-map/ocean-data/textures/sst"
+    texture_base = "../ocean-data/textures/sst"
     missing_dates = []
     
     for year in range(2003, 2026):
@@ -42,7 +43,7 @@ def find_missing_dates():
 
 def check_existing_raw_data(missing_dates):
     """Check which missing dates already have raw data"""
-    raw_path = "/Volumes/Backup/panta-rhei-data-map/ocean-data/raw/sst"
+    raw_path = "../ocean-data/raw/sst"
     
     need_download = []
     have_raw = []
