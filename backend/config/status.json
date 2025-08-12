@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-08-12T10:01:34.857030",
+  "last_updated": "2025-08-12T10:54:10.247849",
   "datasets": {
     "sst": {
       "last_date": "2024-05-31",
@@ -86,14 +86,14 @@
     },
     "acidity_historical": {
       "status": "active",
-      "last_optimization": "2025-08-12T10:01:34.483649",
+      "last_optimization": "2025-08-12T10:54:09.352761",
       "space_freed_mb": 0,
       "final_file_size_kb": 91981.7,
       "api_ready": true,
-      "total_files": 6183,
-      "storage_gb": 409.924,
-      "last_date": "2015-10-27",
-      "last_success": "2025-08-12T10:01:34.856849"
+      "total_files": 6413,
+      "storage_gb": 430.1,
+      "last_date": "2016-06-13",
+      "last_success": "2025-08-12T10:54:10.247694"
     },
     "microplastics": {
       "status": "downloading"

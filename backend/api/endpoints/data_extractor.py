@@ -127,6 +127,30 @@ class DataExtractor:
             classification=classification,
             educational_context=educational_context
         )
+    
+    def _add_ecosystem_insights(self, datasets: Dict[str, Any], location: Tuple[float, float]) -> Dict[str, Any]:
+        """Add ecosystem-level insights based on multi-parameter analysis."""
+        # Extract numeric measurements from all datasets
+        measurements = {}
+        
+        for dataset_name, dataset_data in datasets.items():
+            if isinstance(dataset_data, dict) and 'error' not in dataset_data:
+                if hasattr(dataset_data, 'data'):
+                    for param_name, param_data in dataset_data.data.items():
+                        if param_data.valid and isinstance(param_data.value, (int, float)):
+                            measurements[param_name] = param_data.value
+        
+        # Get ecosystem insights
+        if measurements:
+            insights = parameter_interpreter.interpret_multi_parameter_context(measurements)
+            if insights:
+                datasets['_ecosystem_insights'] = {
+                    'insights': insights,
+                    'measurement_count': len(measurements),
+                    'location': f"{location[0]:.2f}°N, {location[1]:.2f}°E"
+                }
+        
+        return datasets
 
     async def get_available_datasets(self) -> Dict[str, DatasetInfo]:
         """Get information about all available datasets."""
@@ -653,11 +677,14 @@ class DataExtractor:
                     else:
                         class_text = "Very High"
                     
-                    data["concentration_class"] = DataValue(
+                    data["concentration_class"] = self._create_enhanced_data_value(
                         value=class_text,
                         units="category",
                         long_name="Concentration Classification",
-                        valid=True
+                        valid=True,
+                        parameter_name="concentration_class",
+                        location=(lat, lon),
+                        date=data_date
                     )
                 
                 extraction_time = (time.time() - start_time) * 1000
@@ -724,11 +751,14 @@ class DataExtractor:
                         var_data = ds[var_name].isel(obs=nearest_idx)
                         value = float(var_data.values.item())
                         
-                        data[var_name] = DataValue(
-                            value=value if not np.isnan(value) else None,
+                        data[var_name] = self._create_enhanced_data_value(
+                            value=value,
                             units=var_data.attrs.get("units", "unknown"),
                             long_name=var_data.attrs.get("long_name", var_name),
-                            valid=not np.isnan(value)
+                            valid=not np.isnan(value),
+                            parameter_name=var_name,
+                            location=(lat, lon),
+                            date=data_date
                         )
                 
                 # Get observation date from time coordinate
@@ -1074,10 +1104,13 @@ class DataExtractor:
                     response_date = data.date
                     break
         
+        # Add ecosystem-level insights based on multi-parameter analysis
+        enhanced_datasets = self._add_ecosystem_insights(dataset_data, (lat, lon))
+        
         return MultiDatasetResponse(
             location=Coordinates(lat=lat, lon=lon),
             date=response_date,
-            datasets=dataset_data,
+            datasets=enhanced_datasets,
             total_extraction_time_ms=round(total_time, 2)
         )
 

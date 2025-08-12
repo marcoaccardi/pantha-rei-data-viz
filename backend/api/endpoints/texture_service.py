@@ -22,7 +22,7 @@ class TextureService:
     def __init__(self, texture_base_path: str = "../ocean-data/textures"):
         """Initialize texture service with base path to textures directory."""
         self.texture_base_path = Path(texture_base_path)
-        self.supported_categories = ["sst", "acidity", "currents"]
+        self.supported_categories = ["sst"]
         self.supported_resolutions = ["preview", "low", "medium", "high", "ultra"]
         
         # Verify texture directory exists

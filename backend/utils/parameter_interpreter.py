@@ -32,7 +32,7 @@ class ParameterInterpreter:
     
     def __init__(self):
         """Initialize the parameter interpreter with configuration data."""
-        self.config_path = Path("backend/config/parameter_descriptions.yaml")
+        self.config_path = Path("config/parameter_descriptions.yaml")
         self.config = self._load_config()
         
         # Enhanced classification mapping with more parameters
@@ -237,6 +237,11 @@ class ParameterInterpreter:
                     return "Recent warming consistent with climate change trends."
                 elif parameter == 'ph' and value < 7.9:
                     return "Continued ocean acidification from rising atmospheric CO₂."
+            elif year >= 2024:
+                if parameter == 'sst' and value > 27:
+                    return "2024-2025 measurements show continued ocean warming."
+                elif parameter == 'microplastics_concentration' and value > 2.0:
+                    return "Current high pollution levels reflect growing plastic crisis."
         
         except (ValueError, TypeError):
             pass
