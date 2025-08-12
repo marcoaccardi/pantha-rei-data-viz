@@ -14,12 +14,31 @@ class Coordinates(BaseModel):
     lat: float = Field(..., description="Latitude in degrees", ge=-90, le=90)
     lon: float = Field(..., description="Longitude in degrees", ge=-180, le=180)
 
+class ParameterClassification(BaseModel):
+    """Classification and interpretation of a parameter value."""
+    classification: str = Field(..., description="Value classification (e.g., 'Normal', 'High', 'Critical')")
+    severity: str = Field(..., description="Severity level: low, medium, high, critical")
+    color: str = Field(..., description="CSS color code for UI display")
+    description: str = Field(..., description="Dynamic description based on measured value")
+    environmental_impact: str = Field(..., description="Environmental significance of this measurement")
+    context: str = Field(..., description="Contextual interpretation for this location/time")
+
+class EducationalContext(BaseModel):
+    """Educational information about a parameter."""
+    short_description: str = Field(..., description="Brief explanation of what this parameter measures")
+    scientific_context: str = Field(..., description="Scientific significance and relevance")
+    unit_explanation: str = Field(..., description="Explanation of the measurement units")
+    health_implications: Dict[str, str] = Field(default_factory=dict, description="Human and ecosystem health impacts")
+    measurement_context: Dict[str, str] = Field(default_factory=dict, description="Information about data quality and methods")
+
 class DataValue(BaseModel):
-    """Individual data value with metadata."""
+    """Individual data value with metadata and educational context."""
     value: Optional[Union[float, str]] = Field(None, description="Data value (numeric or categorical)")
     units: str = Field(..., description="Units of measurement")
     long_name: str = Field(..., description="Descriptive name of the variable")
     valid: bool = Field(..., description="Whether the value is valid (not NaN)")
+    classification: Optional[ParameterClassification] = Field(None, description="Dynamic classification and interpretation")
+    educational_context: Optional[EducationalContext] = Field(None, description="Educational information about this parameter")
 
 class PointDataResponse(BaseModel):
     """Response for single point data extraction."""

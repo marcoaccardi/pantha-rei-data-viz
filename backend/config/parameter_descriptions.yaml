@@ -1,0 +1,380 @@
+# Dynamic Parameter Descriptions Configuration
+# Educational content that adapts based on measured values and environmental context
+# Used by the data extractor to provide meaningful explanations to users
+
+parameters:
+  # Sea Surface Temperature
+  sst:
+    name: "Sea Surface Temperature"
+    short_description: "The temperature of ocean water at the surface"
+    scientific_context: "Critical indicator of ocean health, climate patterns, and marine ecosystem stability"
+    unit_explanation: "Measured in degrees Celsius (°C)"
+    
+    value_ranges:
+      - min: -2.0
+        max: 10.0
+        classification: "Cold"
+        severity: "low"
+        description: "Cold ocean water, typical of polar regions"
+        environmental_impact: "Supports cold-adapted marine life, influences global ocean circulation"
+        context: "Normal for Arctic and Antarctic waters, but concerning if found in typically warmer regions"
+        
+      - min: 10.0
+        max: 20.0
+        classification: "Cool"
+        severity: "low"
+        description: "Cool temperate ocean conditions"
+        environmental_impact: "Ideal for many fish species, supports diverse marine ecosystems"
+        context: "Common in temperate latitudes, seasonal variations are normal"
+        
+      - min: 20.0
+        max: 25.0
+        classification: "Moderate"
+        severity: "medium"
+        description: "Moderate ocean temperatures, favorable for marine life"
+        environmental_impact: "Supports high biodiversity, optimal for many coral species"
+        context: "Typical of subtropical waters, indicates healthy marine conditions"
+        
+      - min: 25.0
+        max: 30.0
+        classification: "Warm"
+        severity: "medium"
+        description: "Warm tropical ocean conditions"
+        environmental_impact: "May stress some marine organisms if sustained, affects coral health"
+        context: "Normal for tropical regions, but prolonged exposure can cause coral bleaching"
+        
+      - min: 30.0
+        max: 50.0
+        classification: "Hot"
+        severity: "high"
+        description: "Unusually hot ocean temperatures"
+        environmental_impact: "Severe stress on marine ecosystems, coral bleaching likely"
+        context: "Indicates marine heatwave conditions, potential climate change impact"
+    
+    health_implications:
+      human: "Affects coastal weather patterns, storm intensity, and fisheries productivity"
+      ecosystem: "Controls species distribution, coral health, and marine food web structure"
+      
+    measurement_context:
+      accuracy: "Satellite measurements accurate to ±0.3°C"
+      temporal_scale: "Daily averages from multiple satellite passes"
+      
+  # Ocean Acidity (pH)
+  ph:
+    name: "Ocean pH"
+    short_description: "Measure of ocean acidity/alkalinity"
+    scientific_context: "Critical indicator of ocean acidification caused by CO₂ absorption"
+    unit_explanation: "pH scale: lower values = more acidic, higher values = more basic"
+    
+    value_ranges:
+      - min: 6.0
+        max: 7.8
+        classification: "Acidic"
+        severity: "critical"
+        description: "Dangerously acidic ocean conditions"
+        environmental_impact: "Severe threat to shell-forming organisms, coral dissolution"
+        context: "Indicates severe ocean acidification, major ecosystem disruption likely"
+        
+      - min: 7.8
+        max: 8.0
+        classification: "Low pH"
+        severity: "high"
+        description: "Ocean acidification stress conditions"
+        environmental_impact: "Stress on calcifying organisms, reduced shell/skeleton formation"
+        context: "Below normal marine pH, indicates ongoing ocean acidification"
+        
+      - min: 8.0
+        max: 8.2
+        classification: "Normal"
+        severity: "low"
+        description: "Healthy ocean pH levels"
+        environmental_impact: "Optimal conditions for marine calcification and ecosystem health"
+        context: "Normal marine conditions, supports healthy coral and shellfish growth"
+        
+      - min: 8.2
+        max: 9.0
+        classification: "Basic"
+        severity: "medium"
+        description: "Elevated ocean pH (more basic)"
+        environmental_impact: "May indicate unusual biological or chemical processes"
+        context: "Less common, may relate to upwelling or biological productivity"
+    
+    health_implications:
+      human: "Affects seafood availability, coastal economies, and marine-based livelihoods"
+      ecosystem: "Determines survival of calcifying organisms, coral reef health, marine food webs"
+      
+    measurement_context:
+      accuracy: "High-precision measurements accurate to ±0.01 pH units"
+      temporal_scale: "Point measurements from oceanographic cruises"
+      
+  # Wave Height  
+  VHM0:
+    name: "Significant Wave Height"
+    short_description: "Average height of the highest one-third of waves"
+    scientific_context: "Key parameter for marine safety, coastal erosion, and energy generation"
+    unit_explanation: "Measured in meters (m) above mean sea level"
+    
+    value_ranges:
+      - min: 0.0
+        max: 0.5
+        classification: "Calm"
+        severity: "low"
+        description: "Very calm sea conditions"
+        environmental_impact: "Minimal coastal impact, excellent conditions for marine life"
+        context: "Safe for all marine activities, protected or enclosed waters"
+        
+      - min: 0.5
+        max: 1.5
+        classification: "Slight"
+        severity: "low"
+        description: "Slight sea conditions, small wavelets"
+        environmental_impact: "Normal wave action, minimal coastal erosion"
+        context: "Good conditions for most marine activities"
+        
+      - min: 1.5
+        max: 2.5
+        classification: "Moderate"
+        severity: "medium"
+        description: "Moderate sea conditions"
+        environmental_impact: "Moderate wave energy, normal coastal processes"
+        context: "Typical open ocean conditions, may affect small craft"
+        
+      - min: 2.5
+        max: 4.0
+        classification: "Rough"
+        severity: "high"
+        description: "Rough sea conditions"
+        environmental_impact: "Significant wave energy, increased coastal erosion potential"
+        context: "Challenging conditions for marine navigation, storm influence likely"
+        
+      - min: 4.0
+        max: 20.0
+        classification: "Very Rough"
+        severity: "critical"
+        description: "Very rough to extreme sea conditions"
+        environmental_impact: "High wave energy, severe coastal impact, dangerous for marine life"
+        context: "Storm or extreme weather conditions, major safety hazard"
+    
+    health_implications:
+      human: "Affects maritime safety, coastal infrastructure, and recreational activities"
+      ecosystem: "Influences sediment transport, coastal habitats, and marine animal behavior"
+      
+  # Ocean Current Speed
+  speed:
+    name: "Ocean Current Speed"  
+    short_description: "Velocity of horizontal water movement"
+    scientific_context: "Drives global heat transport, nutrient distribution, and marine ecosystem dynamics"
+    unit_explanation: "Measured in meters per second (m/s)"
+    
+    value_ranges:
+      - min: 0.0
+        max: 0.1
+        classification: "Slow"
+        severity: "low"
+        description: "Weak current flow"
+        environmental_impact: "Limited mixing, local water mass characteristics dominate"
+        context: "Common in deep ocean basins or protected coastal areas"
+        
+      - min: 0.1
+        max: 0.3
+        classification: "Moderate"
+        severity: "medium"
+        description: "Moderate current flow"
+        environmental_impact: "Good water mixing, nutrient transport, supports marine productivity"
+        context: "Typical of continental shelf areas and moderate oceanic currents"
+        
+      - min: 0.3
+        max: 0.5
+        classification: "Fast"
+        severity: "high"
+        description: "Strong current flow"
+        environmental_impact: "Rapid transport of heat, nutrients, and organisms"
+        context: "Major current systems like Gulf Stream or Kuroshio"
+        
+      - min: 0.5
+        max: 2.0
+        classification: "Very Fast"
+        severity: "critical"
+        description: "Extremely strong current flow"
+        environmental_impact: "Powerful transport mechanisms, extreme mixing conditions"
+        context: "Peak flow in major current systems or tidal channels"
+    
+    health_implications:
+      human: "Affects navigation, fishing, offshore operations, and climate regulation"
+      ecosystem: "Controls larval transport, nutrient distribution, and habitat connectivity"
+      
+  # Dissolved Oxygen
+  o2:
+    name: "Dissolved Oxygen"
+    short_description: "Amount of oxygen gas dissolved in seawater"
+    scientific_context: "Essential for marine life respiration and ecosystem health"
+    unit_explanation: "Measured in micromoles per liter (µmol/L)"
+    
+    value_ranges:
+      - min: 0.0
+        max: 150.0
+        classification: "Hypoxic"
+        severity: "critical"
+        description: "Dangerously low oxygen levels"
+        environmental_impact: "Marine dead zones, massive fish kills, ecosystem collapse"
+        context: "Indicates severe pollution or climate-induced oxygen depletion"
+        
+      - min: 150.0
+        max: 200.0
+        classification: "Low O₂"
+        severity: "high"
+        description: "Low oxygen stress conditions"
+        environmental_impact: "Stress on marine organisms, reduced biodiversity"
+        context: "Early warning sign of developing hypoxia, ecosystem stress"
+        
+      - min: 200.0
+        max: 300.0
+        classification: "Normal"
+        severity: "low"
+        description: "Healthy oxygen levels for marine life"
+        environmental_impact: "Supports diverse marine ecosystems and food webs"
+        context: "Optimal conditions for marine life respiration and growth"
+        
+      - min: 300.0
+        max: 500.0
+        classification: "High O₂"
+        severity: "medium"
+        description: "Elevated oxygen levels"
+        environmental_impact: "May indicate high biological productivity or cold water upwelling"
+        context: "Often associated with phytoplankton blooms or polar waters"
+    
+    health_implications:
+      human: "Critical for fisheries, affects seafood availability and marine ecosystems we depend on"
+      ecosystem: "Determines habitat suitability, species distribution, and marine biodiversity"
+      
+  # Chlorophyll-a Concentration  
+  chl:
+    name: "Chlorophyll-a Concentration"
+    short_description: "Measure of phytoplankton biomass and ocean productivity"
+    scientific_context: "Primary indicator of marine primary production and ecosystem productivity"
+    unit_explanation: "Measured in milligrams per cubic meter (mg/m³)"
+    
+    value_ranges:
+      - min: 0.0
+        max: 0.1
+        classification: "Very Low"
+        severity: "medium"
+        description: "Desert-like ocean conditions"
+        environmental_impact: "Low productivity, limited food web support"
+        context: "Typical of open ocean gyres, nutrient-poor waters"
+        
+      - min: 0.1
+        max: 1.0
+        classification: "Low"
+        severity: "low"
+        description: "Low biological productivity"
+        environmental_impact: "Limited but stable productivity, oligotrophic conditions"
+        context: "Normal for clear tropical and subtropical oceans"
+        
+      - min: 1.0
+        max: 5.0
+        classification: "Normal"
+        severity: "low"
+        description: "Moderate biological productivity"
+        environmental_impact: "Healthy productivity supporting marine food webs"
+        context: "Optimal conditions for marine ecosystems"
+        
+      - min: 5.0
+        max: 20.0
+        classification: "High"
+        severity: "medium"
+        description: "High biological productivity"
+        environmental_impact: "Very productive waters, may indicate upwelling or nutrient input"
+        context: "Coastal upwelling zones or seasonal blooms"
+        
+      - min: 20.0
+        max: 100.0
+        classification: "Very High"
+        severity: "high"
+        description: "Extreme biological productivity"
+        environmental_impact: "Possible algal bloom, may cause oxygen depletion"
+        context: "Potential harmful algal bloom or eutrophication event"
+    
+    health_implications:
+      human: "Affects fisheries productivity, water quality, and potential harmful algal blooms"
+      ecosystem: "Foundation of marine food webs, controls carbon cycling and ecosystem structure"
+      
+  # Microplastics Concentration
+  microplastics_concentration:
+    name: "Microplastics Concentration"  
+    short_description: "Count of plastic particles smaller than 5mm per cubic meter"
+    scientific_context: "Indicator of marine plastic pollution and ecosystem contamination"
+    unit_explanation: "Measured in particles per cubic meter (pieces/m³)"
+    
+    value_ranges:
+      - min: 0.0
+        max: 0.0005
+        classification: "Very Low"
+        severity: "low"
+        description: "Minimal plastic pollution detected"
+        environmental_impact: "Low contamination, minimal ecosystem impact"
+        context: "Remote ocean areas with limited human influence"
+        
+      - min: 0.0005
+        max: 0.005
+        classification: "Low"
+        severity: "low"
+        description: "Low level plastic contamination"
+        environmental_impact: "Detectable pollution but below concerning thresholds"
+        context: "Background levels in most ocean areas"
+        
+      - min: 0.005
+        max: 1.0
+        classification: "Medium"
+        severity: "medium"
+        description: "Moderate plastic pollution levels"
+        environmental_impact: "Ecosystem stress, potential ingestion by marine life"
+        context: "Areas with moderate human activity and plastic waste input"
+        
+      - min: 1.0
+        max: 100.0
+        classification: "High"
+        severity: "high"
+        description: "High plastic pollution concentration"
+        environmental_impact: "Significant ecosystem impact, widespread ingestion by marine organisms"
+        context: "Near urban centers, major shipping routes, or garbage patches"
+        
+      - min: 100.0
+        max: 10000.0
+        classification: "Very High"
+        severity: "critical"
+        description: "Extreme plastic pollution hotspot"
+        environmental_impact: "Severe ecosystem contamination, major threat to marine food webs"
+        context: "Plastic accumulation zones like the Great Pacific Garbage Patch"
+    
+    health_implications:
+      human: "Potential food chain contamination, affects seafood safety and ocean ecosystem services"
+      ecosystem: "Physical harm to marine life, toxic chemical transport, food web disruption"
+      
+    measurement_context:
+      data_sources: "Combination of real oceanographic data (1993-2019) and AI-generated projections (2019-2025)"
+      confidence_levels: "Real data: 100% confidence, Synthetic data: 70% confidence"
+
+# Global environmental context
+global_context:
+  climate_change_indicators:
+    - "Rising sea surface temperatures indicate global warming effects"
+    - "Ocean acidification reflects increasing atmospheric CO₂ levels"  
+    - "Changing current patterns may alter global climate regulation"
+    
+  ecosystem_health_indicators:
+    - "pH below 8.0 indicates ocean acidification stress"
+    - "Oxygen below 150 µmol/L creates marine dead zones"
+    - "Microplastics above 1 piece/m³ indicates significant pollution"
+    
+  human_impact_indicators:
+    - "Temperature anomalies >2°C suggest climate change influence"
+    - "High nutrient levels may indicate agricultural runoff"
+    - "Plastic pollution reflects waste management challenges"
+
+# Measurement reliability context
+data_quality:
+  satellite_data: "High accuracy for surface measurements, validated against ship observations"
+  model_data: "Physics-based models calibrated with observations, uncertainty estimates available"
+  discrete_samples: "Direct measurements with known precision, limited spatial/temporal coverage"
+  synthetic_data: "AI-generated based on patterns in real data, marked with confidence levels"
