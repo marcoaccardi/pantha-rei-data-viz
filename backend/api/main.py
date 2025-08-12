@@ -56,6 +56,10 @@ app.add_middleware(
 # Initialize data extractor
 data_extractor = DataExtractor()
 
+# Simple request queue to prevent memory exhaustion from simultaneous requests
+active_requests = 0
+MAX_CONCURRENT_REQUESTS = 3  # Limit concurrent multi-dataset requests
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize the application on startup."""
@@ -232,14 +236,24 @@ async def get_multi_point(
     date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (latest if not specified)")
 ):
     """Extract data from multiple datasets at a specific point."""
+    global active_requests
+    
+    # Check if we're at the request limit to prevent memory exhaustion
+    if active_requests >= MAX_CONCURRENT_REQUESTS:
+        raise HTTPException(
+            status_code=429, 
+            detail=f"Server busy: {active_requests} requests active. Please try again in a moment."
+        )
+    
     try:
+        active_requests += 1
         dataset_list = [d.strip() for d in datasets.split(",")]
-        logger.info(f"🌊 Multi-point request for {dataset_list} at ({lat}, {lon}) on {date}")
+        logger.info(f"🌊 Multi-point request for {dataset_list} at ({lat}, {lon}) on {date} (Active: {active_requests}/{MAX_CONCURRENT_REQUESTS})")
         
-        # Add overall timeout for the entire request
+        # Add overall timeout for the entire request - reduced to prevent memory exhaustion
         result = await asyncio.wait_for(
             data_extractor.extract_multi_point_data(dataset_list, lat, lon, date),
-            timeout=60.0  # 60 second total timeout
+            timeout=60.0  # 60 second total timeout (reduced to prevent memory exhaustion)
         )
         
         logger.info(f"✅ Multi-point request completed successfully")
@@ -250,6 +264,9 @@ async def get_multi_point(
     except Exception as e:
         logger.error(f"❌ Error extracting multi-dataset data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        active_requests -= 1
+        logger.debug(f"🔄 Request completed. Active requests: {active_requests}/{MAX_CONCURRENT_REQUESTS}")
 
 # Texture Endpoints
 

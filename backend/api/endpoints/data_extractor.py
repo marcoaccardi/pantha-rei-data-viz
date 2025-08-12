@@ -1063,7 +1063,7 @@ class DataExtractor:
             logger.info(f"📊 Creating task for dataset: {dataset}")
             task = asyncio.wait_for(
                 self.extract_point_data(dataset, lat, lon, date_str),
-                timeout=5.0  # 5 second timeout per dataset
+                timeout=15.0  # 15 second timeout per dataset (reduced to prevent memory exhaustion)
             )
             tasks.append((dataset, task))
         

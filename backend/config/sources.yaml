@@ -146,7 +146,8 @@ datasets:
     variables: ["uo", "vo"]  # zonal and meridional velocity
     layers: ["surface"]  # Phase 1: surface only
     update_frequency: "daily"
-    file_size_mb: 15  # approximate size per file
+    file_size_mb: 270  # approximate size per daily file (UPDATED for accuracy)
+    max_daily_file_size_mb: 500  # maximum allowed size to prevent monthly aggregates
     processing:
       harmonize_coords: false
     credentials_required: true

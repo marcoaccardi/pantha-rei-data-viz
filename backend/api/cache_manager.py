@@ -66,48 +66,121 @@ class CoordinateGrid:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 await loop.run_in_executor(executor, self._load_coordinates)
             self.loaded = True
-            logger.info(f"✅ Coordinate grid loaded for {self.dataset}: {len(self.lats)} lat x {len(self.lons)} lon")
+            if hasattr(self, 'lat_size') and hasattr(self, 'lon_size'):
+                logger.info(f"✅ Coordinate grid loaded for {self.dataset}: {self.lat_size} lat x {self.lon_size} lon (optimized)")
+            elif self.lats is not None and self.lons is not None:
+                logger.info(f"✅ Coordinate grid loaded for {self.dataset}: {len(self.lats)} lat x {len(self.lons)} lon")
+            else:
+                logger.info(f"✅ Coordinate grid loaded for {self.dataset} (bounds-only mode)")
         except Exception as e:
             logger.error(f"❌ Failed to load coordinate grid for {self.dataset}: {e}")
+            # Set loaded to False so we don't try to use broken grid
+            self.loaded = False
             
     def _load_coordinates(self):
-        """Synchronously load coordinate arrays."""
+        """Synchronously load coordinate arrays with optimization for large datasets."""
         with xr.open_dataset(self.file_path) as ds:
             # Determine coordinate names
             lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
             lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
             
-            # Load coordinate arrays
-            self.lats = ds[lat_coord].values
-            self.lons = ds[lon_coord].values
+            # Check dataset size for optimization strategy
+            lat_size = ds[lat_coord].size
+            lon_size = ds[lon_coord].size
+            total_points = lat_size * lon_size
+            
+            # OPTIMIZATION: For large datasets (>500K points), use ultra-fast coordinate indexing
+            if total_points > 500_000:
+                logger.info(f"🚀 ULTRA-FAST OPTIMIZATION: {self.dataset} has {total_points:,} points, using minimal coordinate loading")
+                # ULTRA-OPTIMIZATION: Load only coordinate bounds, not full arrays
+                self.is_large_dataset = True
+                
+                # Get min/max without loading full arrays
+                lat_min = float(ds[lat_coord].min().values)
+                lat_max = float(ds[lat_coord].max().values)
+                lon_min = float(ds[lon_coord].min().values)
+                lon_max = float(ds[lon_coord].max().values)
+                
+                self.lat_min, self.lat_max = lat_min, lat_max
+                self.lon_min, self.lon_max = lon_min, lon_max
+                
+                # Calculate step sizes from dataset attributes or first few values
+                self.lat_step = (lat_max - lat_min) / (lat_size - 1) if lat_size > 1 else 1.0
+                self.lon_step = (lon_max - lon_min) / (lon_size - 1) if lon_size > 1 else 1.0
+                
+                # Store only array shapes for index calculations  
+                self.lat_size = lat_size
+                self.lon_size = lon_size
+                
+                # Don't load full coordinate arrays for ultra-large datasets
+                self.lats = None  # Will be computed on demand
+                self.lons = None  # Will be computed on demand
+                
+                logger.info(f"⚡ ULTRA-FAST: Loaded only bounds for {self.dataset}: lat({lat_min:.2f} to {lat_max:.2f}) lon({lon_min:.2f} to {lon_max:.2f})")
+            else:
+                # Standard loading for smaller datasets
+                self.lats = ds[lat_coord].values
+                self.lons = ds[lon_coord].values
+                self.is_large_dataset = False
             
             # Pre-calculate indices for common coordinate ranges
-            # Create lookup tables for faster nearest neighbor search
-            self.lat_indices = np.arange(len(self.lats))
-            self.lon_indices = np.arange(len(self.lons))
+            if self.lats is not None and self.lons is not None:
+                self.lat_indices = np.arange(len(self.lats))
+                self.lon_indices = np.arange(len(self.lons))
+            elif hasattr(self, 'lat_size') and hasattr(self, 'lon_size'):
+                self.lat_indices = np.arange(self.lat_size)  
+                self.lon_indices = np.arange(self.lon_size)
+            else:
+                self.lat_indices = None
+                self.lon_indices = None
     
     def find_nearest_indices(self, lat: float, lon: float) -> Tuple[int, int, float, float]:
-        """Find nearest grid indices quickly using pre-loaded arrays."""
+        """Find nearest grid indices quickly using optimized methods."""
         if not self.loaded:
             raise RuntimeError(f"Coordinate grid not loaded for {self.dataset}")
         
-        # Use numpy's optimized argmin for fast lookup
-        lat_idx = np.argmin(np.abs(self.lats - lat))
-        lon_idx = np.argmin(np.abs(self.lons - lon))
-        
-        actual_lat = float(self.lats[lat_idx])
-        actual_lon = float(self.lons[lon_idx])
-        
-        return lat_idx, lon_idx, actual_lat, actual_lon
+        # OPTIMIZATION: For large datasets, use mathematical calculation instead of array search
+        if hasattr(self, 'is_large_dataset') and self.is_large_dataset:
+            # Mathematical index calculation (much faster than array search)
+            lat_idx = int(round((lat - self.lat_min) / self.lat_step)) if hasattr(self, 'lat_step') else 0
+            lon_idx = int(round((lon - self.lon_min) / self.lon_step)) if hasattr(self, 'lon_step') else 0
+            
+            # Clamp to valid range using stored sizes
+            if hasattr(self, 'lat_size'):
+                lat_idx = max(0, min(lat_idx, self.lat_size - 1))
+            elif self.lats is not None:
+                lat_idx = max(0, min(lat_idx, len(self.lats) - 1))
+                
+            if hasattr(self, 'lon_size'):  
+                lon_idx = max(0, min(lon_idx, self.lon_size - 1))
+            elif self.lons is not None:
+                lon_idx = max(0, min(lon_idx, len(self.lons) - 1))
+            
+            # Calculate actual coordinates mathematically (no array lookup needed!)
+            actual_lat = float(self.lat_min + lat_idx * self.lat_step)
+            actual_lon = float(self.lon_min + lon_idx * self.lon_step)
+            
+            return lat_idx, lon_idx, actual_lat, actual_lon
+        else:
+            # Standard numpy argmin for smaller datasets
+            lat_idx = np.argmin(np.abs(self.lats - lat))
+            lon_idx = np.argmin(np.abs(self.lons - lon))
+            
+            actual_lat = float(self.lats[lat_idx])
+            actual_lon = float(self.lons[lon_idx])
+            
+            return lat_idx, lon_idx, actual_lat, actual_lon
 
 class SmartFileManager:
     """Manages NetCDF file handles with intelligent caching."""
     
-    def __init__(self, max_open_files: int = 5):
+    def __init__(self, max_open_files: int = 5, max_coordinate_grids: int = 10):
         self.max_open_files = max_open_files
+        self.max_coordinate_grids = max_coordinate_grids  # Limit coordinate grid cache
         self.open_files: Dict[str, xr.Dataset] = {}
         self.file_access_times: Dict[str, float] = {}
         self.coordinate_grids: Dict[str, CoordinateGrid] = {}
+        self.grid_access_times: Dict[str, float] = {}  # Track grid access for LRU
         
     async def get_dataset(self, file_path: Path, dataset_name: str) -> xr.Dataset:
         """Get dataset with intelligent caching and LRU eviction."""
@@ -130,11 +203,17 @@ class SmartFileManager:
             self.open_files[file_key] = ds
             self.file_access_times[file_key] = current_time
             
-            # Pre-load coordinate grid for spatial indexing
+            # Pre-load coordinate grid for spatial indexing with memory limits
             if file_key not in self.coordinate_grids:
+                # Check if we need to evict old coordinate grids
+                if len(self.coordinate_grids) >= self.max_coordinate_grids:
+                    await self._evict_oldest_grid()
+                    
                 grid = CoordinateGrid(dataset_name, file_path)
                 await grid.load()
-                self.coordinate_grids[file_key] = grid
+                if grid.loaded:  # Only cache if loading succeeded
+                    self.coordinate_grids[file_key] = grid
+                    self.grid_access_times[file_key] = current_time
             
             return ds
         except Exception as e:
@@ -160,10 +239,25 @@ class SmartFileManager:
         del self.open_files[oldest_key]
         del self.file_access_times[oldest_key]
     
+    async def _evict_oldest_grid(self):
+        """Remove least recently used coordinate grid from cache."""
+        if not self.coordinate_grids:
+            return
+            
+        oldest_key = min(self.grid_access_times.keys(), key=lambda k: self.grid_access_times[k])
+        logger.info(f"🗑️ Evicting old coordinate grid: {Path(oldest_key).name}")
+        
+        del self.coordinate_grids[oldest_key]
+        del self.grid_access_times[oldest_key]
+    
     def get_coordinate_grid(self, file_path: Path) -> Optional[CoordinateGrid]:
         """Get pre-loaded coordinate grid for fast spatial lookups."""
         file_key = str(file_path)
-        return self.coordinate_grids.get(file_key)
+        grid = self.coordinate_grids.get(file_key)
+        if grid and file_key in self.grid_access_times:
+            # Update access time for LRU
+            self.grid_access_times[file_key] = time.time()
+        return grid
     
     async def cleanup(self):
         """Close all open files."""

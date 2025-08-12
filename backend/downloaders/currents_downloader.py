@@ -34,16 +34,16 @@ class CurrentsDownloader(BaseDataDownloader):
         self.raw_data_path = self.base_path / self.storage_config["raw_data_path"] / "currents"
         self.raw_data_path.mkdir(parents=True, exist_ok=True)
         
-        # Currents-specific configuration
-        self.product_id = self.dataset_config["product_id"]
-        self.dataset_id = self.dataset_config["dataset_id"]
-        self.base_url = self.dataset_config["base_url"]
-        self.spatial_resolution = self.dataset_config["spatial_resolution"]
-        self.variables = self.dataset_config["variables"]
-        self.layers = self.dataset_config.get("layers", ["surface"])
+        # Currents-specific configuration - use CMEMS config directly
+        self.product_id = self.cmems_config["product_id"]
+        self.dataset_id = self.cmems_config["dataset_id"]
+        self.base_url = self.cmems_config["base_url"]
+        self.spatial_resolution = self.cmems_config["spatial_resolution"]
+        self.variables = self.cmems_config["variables"]
+        self.layers = self.cmems_config.get("layers", ["surface"])
         
-        # Processing configuration
-        self.needs_coord_harmonization = self.dataset_config["processing"]["harmonize_coords"]
+        # Processing configuration - use CMEMS config
+        self.needs_coord_harmonization = self.cmems_config["processing"]["harmonize_coords"]
         
         # Always create harmonized path for consistency, even if coordinates don't need conversion
         self.harmonized_path = self.processed_data_path / "unified_coords" / "currents"
@@ -256,7 +256,7 @@ class CurrentsDownloader(BaseDataDownloader):
     
     def _validate_netcdf_file(self, file_path: Path) -> bool:
         """
-        Validate NetCDF file structure and content for currents data.
+        Validate NetCDF file structure, content, and size for currents data.
         
         Args:
             file_path: Path to NetCDF file to validate
@@ -265,6 +265,20 @@ class CurrentsDownloader(BaseDataDownloader):
             True if file is valid, False otherwise
         """
         try:
+            # CRITICAL: Check file size first to prevent 99GB anomalies
+            file_size_mb = file_path.stat().st_size / (1024 * 1024)
+            max_daily_size_mb = 500  # Daily files should be ~270MB, max 500MB
+            
+            if file_size_mb > max_daily_size_mb:
+                self.logger.error(f"File too large ({file_size_mb:.1f}MB > {max_daily_size_mb}MB): {file_path}")
+                self.logger.error("This appears to be a monthly aggregate - REJECTING to prevent anomaly")
+                return False
+                
+            if file_size_mb < 50:  # Suspiciously small
+                self.logger.warning(f"File suspiciously small ({file_size_mb:.1f}MB): {file_path}")
+            else:
+                self.logger.info(f"File size validation passed: {file_size_mb:.1f}MB")
+                
             with xr.open_dataset(file_path) as ds:
                 # Check for required variables
                 required_vars = ["uo", "vo"]  # Zonal and meridional velocities
