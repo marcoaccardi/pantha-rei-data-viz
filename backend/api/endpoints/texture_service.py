@@ -21,13 +21,17 @@ class TextureService:
     
     def __init__(self, texture_base_path: str = "../ocean-data/textures"):
         """Initialize texture service with base path to textures directory."""
-        self.texture_base_path = Path(texture_base_path)
+        # Resolve the path relative to the backend directory
+        backend_dir = Path(__file__).parent.parent.parent  # Go up from api/endpoints/ to backend/
+        self.texture_base_path = (backend_dir / texture_base_path).resolve()
         self.supported_categories = ["sst"]
         self.supported_resolutions = ["preview", "low", "medium", "high", "ultra"]
         
         # Verify texture directory exists
         if not self.texture_base_path.exists():
             logger.error(f"Texture directory not found: {self.texture_base_path}")
+            logger.info(f"Current working directory: {Path.cwd()}")
+            logger.info(f"Backend directory: {backend_dir}")
             raise ValueError(f"Texture directory not found: {self.texture_base_path}")
     
     def get_available_textures(self) -> Dict[str, Dict[str, List[str]]]:
@@ -44,8 +48,13 @@ class TextureService:
             available[category] = {}
             
             if category_path.exists():
-                # Scan for texture files
-                for texture_file in category_path.rglob("*.png"):
+                logger.info(f"Scanning texture directory: {category_path}")
+                
+                # Scan for texture files recursively (handles year subdirectories)
+                texture_files = list(category_path.rglob("*.png"))
+                logger.info(f"Found {len(texture_files)} texture files for category {category}")
+                
+                for texture_file in texture_files:
                     # Extract date and resolution from filename
                     # Expected formats: 
                     # - Legacy: {category}_texture_YYYYMMDD_{resolution}.png
@@ -53,11 +62,13 @@ class TextureService:
                     filename = texture_file.stem
                     parts = filename.split('_')
                     
+                    logger.debug(f"Processing texture file: {texture_file} (parts: {parts})")
+                    
                     # Handle new ERDDAP format (SST_YYYYMMDD)
                     if category == "sst" and len(parts) == 2 and parts[0].upper() == "SST":
                         try:
                             date_str = parts[1]  # YYYYMMDD
-                            if len(date_str) == 8:
+                            if len(date_str) == 8 and date_str.isdigit():
                                 formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
                                 
                                 if formatted_date not in available[category]:
@@ -66,6 +77,7 @@ class TextureService:
                                 # ERDDAP textures are ultra-high resolution
                                 if "ultra" not in available[category][formatted_date]:
                                     available[category][formatted_date].append("ultra")
+                                    logger.debug(f"Added ERDDAP texture: {formatted_date} (ultra)")
                         except (IndexError, ValueError) as e:
                             logger.warning(f"Could not parse ERDDAP texture filename: {filename} - {e}")
                     
@@ -77,7 +89,7 @@ class TextureService:
                             resolution = parts[3] if len(parts) > 3 else "medium"
                             
                             # Convert YYYYMMDD to YYYY-MM-DD for consistency
-                            if len(date_str) == 8:
+                            if len(date_str) == 8 and date_str.isdigit():
                                 formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
                                 
                                 if formatted_date not in available[category]:
@@ -85,8 +97,11 @@ class TextureService:
                                 
                                 if resolution not in available[category][formatted_date]:
                                     available[category][formatted_date].append(resolution)
+                                    logger.debug(f"Added legacy texture: {formatted_date} ({resolution})")
                         except (IndexError, ValueError) as e:
                             logger.warning(f"Could not parse texture filename: {filename} - {e}")
+                
+                logger.info(f"Category {category}: {len(available[category])} dates available")
         
         return available
     
