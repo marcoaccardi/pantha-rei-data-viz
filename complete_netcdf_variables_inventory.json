@@ -1,0 +1,291 @@
+{
+  "sst": {
+    "anom": {
+      "name": "anom",
+      "dims": [
+        "time",
+        "zlev",
+        "lat",
+        "lon"
+      ],
+      "shape": [
+        1,
+        1,
+        720,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Daily sea surface temperature anomalies",
+      "units": "Celsius"
+    },
+    "err": {
+      "name": "err",
+      "dims": [
+        "time",
+        "zlev",
+        "lat",
+        "lon"
+      ],
+      "shape": [
+        1,
+        1,
+        720,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Estimated error standard deviation of analysed_sst",
+      "units": "Celsius"
+    },
+    "ice": {
+      "name": "ice",
+      "dims": [
+        "time",
+        "zlev",
+        "lat",
+        "lon"
+      ],
+      "shape": [
+        1,
+        1,
+        720,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Sea ice concentration",
+      "units": "%"
+    },
+    "sst": {
+      "name": "sst",
+      "dims": [
+        "time",
+        "zlev",
+        "lat",
+        "lon"
+      ],
+      "shape": [
+        1,
+        1,
+        720,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Daily sea surface temperature",
+      "units": "Celsius"
+    }
+  },
+  "currents": {
+    "uo": {
+      "name": "uo",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        2041,
+        4320
+      ],
+      "dtype": "float32",
+      "long_name": "Eastward velocity",
+      "standard_name": "eastward_sea_water_velocity",
+      "units": "m s-1"
+    },
+    "vo": {
+      "name": "vo",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        2041,
+        4320
+      ],
+      "dtype": "float32",
+      "long_name": "Northward velocity",
+      "standard_name": "northward_sea_water_velocity",
+      "units": "m s-1"
+    }
+  },
+  "acidity_historical": {
+    "chl": {
+      "name": "chl",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Total Chlorophyll",
+      "standard_name": "mass_concentration_of_chlorophyll_a_in_sea_water",
+      "units": "mg m-3"
+    },
+    "no3": {
+      "name": "no3",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Nitrate",
+      "standard_name": "mole_concentration_of_nitrate_in_sea_water",
+      "units": "mmol m-3"
+    },
+    "po4": {
+      "name": "po4",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Phosphate",
+      "standard_name": "mole_concentration_of_phosphate_in_sea_water",
+      "units": "mmol m-3"
+    },
+    "si": {
+      "name": "si",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Dissolved Silicate",
+      "standard_name": "mole_concentration_of_silicate_in_sea_water",
+      "units": "mmol m-3"
+    },
+    "o2": {
+      "name": "o2",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Dissolved Oxygen",
+      "standard_name": "mole_concentration_of_dissolved_molecular_oxygen_in_sea_water",
+      "units": "mmol m-3"
+    },
+    "nppv": {
+      "name": "nppv",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        4,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Total Primary Production of Phyto",
+      "standard_name": "net_primary_production_of_biomass_expressed_as_carbon_per_unit_volume_in_sea_water",
+      "units": "mg m-3 day-1"
+    }
+  },
+  "acidity_current": {
+    "ph": {
+      "name": "ph",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        3,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "PH",
+      "standard_name": "sea_water_ph_reported_on_total_scale",
+      "units": "1"
+    },
+    "dissic": {
+      "name": "dissic",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        3,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Dissolved Inorganic Carbon",
+      "standard_name": "mole_concentration_of_dissolved_inorganic_carbon_in_sea_water",
+      "units": "mol m-3"
+    },
+    "talk": {
+      "name": "talk",
+      "dims": [
+        "time",
+        "depth",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        3,
+        681,
+        1440
+      ],
+      "dtype": "float32",
+      "long_name": "Total Alkalinity",
+      "standard_name": "sea_water_alkalinity_expressed_as_mole_equivalent",
+      "units": "mol m-3"
+    }
+  }
+}
