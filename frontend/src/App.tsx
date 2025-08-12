@@ -28,17 +28,17 @@ function App() {
   const [showMicroplastics, setShowMicroplastics] = useState(false);
   const [hoveredMicroplastic, setHoveredMicroplastic] = useState<any>(null);
   
-  // Texture management
+  // Date management state - must be defined before texture loader
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  
+  // Texture management - pass selectedDate to sync texture with date selection
   const { 
     selectedCategory, 
     availableCategories, 
     changeCategory, 
     getAvailableOptions,
     metadata 
-  } = useTextureLoader();
-  
-  // Date management state
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  } = useTextureLoader(undefined, selectedDate);
   const [dateValidation, setDateValidation] = useState(validateDate(new Date().toISOString().split('T')[0]));
   const [showDatePicker, setShowDatePicker] = useState(false);
   
@@ -687,7 +687,7 @@ function App() {
                 🌊 Data Category
               </div>
               <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', marginBottom: '8px' }}>
-                {['sst', 'acidity', 'currents'].map(category => {
+                {availableCategories.map(category => {
                   const isAvailable = true; // Always allow category selection
                   const isSelected = selectedCategory === category;
                   const categoryLabels = {

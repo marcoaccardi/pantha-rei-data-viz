@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MultiDatasetOceanResponse, OceanDataValue, OceanPointData } from '../utils/types';
 import { classifyMeasurement, formatDirection } from '../services/oceanDataService';
+import ParameterExplanation from './ParameterExplanation';
 
 interface DataPanelProps {
   data: MultiDatasetOceanResponse | null;
@@ -9,6 +10,8 @@ interface DataPanelProps {
 }
 
 const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
+  const [showDetailedMode, setShowDetailedMode] = useState(false);
+  const [expandedParameters, setExpandedParameters] = useState<string[]>([]);
   const getFormattedLabel = (parameter: string, longName?: string): string => {
     const labelMap: Record<string, string> = {
       // SST parameters
@@ -104,6 +107,56 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       <span style={{ color: classification.color }}>
         {typeof value.value === 'number' ? value.value.toFixed(2) : value.value} {value.units}
       </span>
+    );
+  };
+
+  const renderEcosystemInsights = () => {
+    const insights = (data?.datasets as any)?._ecosystem_insights;
+    if (!insights?.insights || insights.insights.length === 0) {
+      return null;
+    }
+
+    return (
+      <div style={{
+        marginBottom: '24px',
+        padding: '16px',
+        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+        borderRadius: '8px',
+        border: '2px solid rgba(124, 58, 237, 0.3)'
+      }}>
+        <h4 style={{
+          color: '#a78bfa',
+          marginBottom: '12px',
+          fontSize: '1.1em',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          🌊 Ecosystem Health Analysis
+          <span style={{ fontSize: '0.8em', fontWeight: 'normal', color: '#9ca3af' }}>
+            ({insights.measurement_count} parameters analyzed)
+          </span>
+        </h4>
+        
+        <div style={{ fontSize: '0.9em' }}>
+          {insights.insights.map((insight: string, index: number) => (
+            <div 
+              key={index} 
+              style={{
+                marginBottom: '8px',
+                padding: '8px 12px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '6px',
+                color: '#e5e7eb',
+                lineHeight: '1.4'
+              }}
+            >
+              {insight}
+            </div>
+          ))}
+        </div>
+      </div>
     );
   };
 
@@ -204,38 +257,51 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
           {section.icon} {section.title}
         </h4>
         
-        <div style={{ fontSize: '0.85em', color: '#e5e7eb' }}>
+        <div>
           {availableVars.map(varName => {
             const varData = data.data[varName];
             if (!varData) return null;
             
-            return (
-              <div key={varName} style={{ 
-                marginBottom: '6px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                padding: '2px 0',
-                gap: '8px'
-              }}>
-                <span style={{ 
-                  color: '#d1d5db', 
-                  fontSize: '0.9em',
-                  lineHeight: '1.3',
-                  minWidth: '0',
-                  flexShrink: 0
+            if (showDetailedMode) {
+              // Use enhanced parameter explanation for detailed mode
+              return (
+                <ParameterExplanation
+                  key={varName}
+                  parameterName={varName}
+                  data={varData}
+                  showExpanded={expandedParameters.includes(varName)}
+                />
+              );
+            } else {
+              // Simple display for compact mode
+              return (
+                <div key={varName} style={{ 
+                  marginBottom: '6px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  padding: '2px 0',
+                  gap: '8px'
                 }}>
-                  {getFormattedLabel(varName, varData.long_name)}:
-                </span>
-                <span style={{ 
-                  fontWeight: '500', 
-                  textAlign: 'right',
-                  lineHeight: '1.3'
-                }}>
-                  {renderValue(varData, varName)}
-                </span>
-              </div>
-            );
+                  <span style={{ 
+                    color: '#d1d5db', 
+                    fontSize: '0.9em',
+                    lineHeight: '1.3',
+                    minWidth: '0',
+                    flexShrink: 0
+                  }}>
+                    {getFormattedLabel(varName, varData.long_name)}:
+                  </span>
+                  <span style={{ 
+                    fontWeight: '500', 
+                    textAlign: 'right',
+                    lineHeight: '1.3'
+                  }}>
+                    {renderValue(varData, varName)}
+                  </span>
+                </div>
+              );
+            }
           })}
         </div>
         
@@ -369,15 +435,38 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       scrollbarWidth: 'thin',
       scrollbarColor: '#4a5568 #1a202c'
     }}>
-      <h3 style={{ 
-        margin: '0 0 16px 0', 
-        fontSize: '1.3em', 
-        color: '#60a5fa',
-        borderBottom: '2px solid rgba(96, 165, 250, 0.3)',
-        paddingBottom: '8px'
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '16px',
+        paddingBottom: '8px',
+        borderBottom: '2px solid rgba(96, 165, 250, 0.3)'
       }}>
-        🌊 Ocean Data Analysis
-      </h3>
+        <h3 style={{ 
+          margin: 0, 
+          fontSize: '1.3em', 
+          color: '#60a5fa'
+        }}>
+          🌊 Ocean Data Analysis
+        </h3>
+        
+        <button
+          onClick={() => setShowDetailedMode(!showDetailedMode)}
+          style={{
+            backgroundColor: showDetailedMode ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)',
+            border: '1px solid #3b82f6',
+            borderRadius: '6px',
+            padding: '4px 8px',
+            color: showDetailedMode ? 'white' : '#60a5fa',
+            fontSize: '0.8em',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+        >
+          {showDetailedMode ? '📊 Simple' : '🎓 Detailed'}
+        </button>
+      </div>
       
       <div style={{ 
         marginBottom: '16px', 
@@ -390,8 +479,11 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         <span>📅 {data.date}</span>
       </div>
       
-      {Object.entries(data.datasets).map(([name, dataset]) => 
-        renderDataset(name, dataset)
+      {renderEcosystemInsights()}
+      
+      {Object.entries(data.datasets)
+        .filter(([name]) => name !== '_ecosystem_insights') // Filter out insights from regular dataset display
+        .map(([name, dataset]) => renderDataset(name, dataset)
       )}
       
       <div style={{ 

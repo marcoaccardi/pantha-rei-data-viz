@@ -6,7 +6,7 @@ import { requestCache } from '../utils/requestCache';
 interface TextureOptions {
   resolution?: 'preview' | 'low' | 'medium' | 'high';
   date?: string;
-  category?: 'sst' | 'acidity' | 'currents' | 'waves';
+  category?: 'sst';
 }
 
 interface TextureMetadata {
@@ -46,15 +46,16 @@ async function fetchTextureMetadata(): Promise<TextureMetadata | null> {
   }
 }
 
-export function useTextureLoader(externalCategory?: string) {
+export function useTextureLoader(externalCategory?: string, externalDate?: string) {
   // State for texture metadata
   const [metadata, setMetadata] = useState<TextureMetadata | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('sst');
-  const [selectedDate, setSelectedDate] = useState<string | undefined>('2024-07-24'); // Default to ultra-resolution date
+  const [selectedDate, setSelectedDate] = useState<string | undefined>('2025-08-12'); // Default to current date in August 2025
   const [selectedResolution, setSelectedResolution] = useState<string>('medium');
   
-  // Use external category if provided, otherwise use internal state
+  // Use external category and date if provided, otherwise use internal state
   const activeCategory = externalCategory || selectedCategory;
+  const activeDate = externalDate || selectedDate;
   
   // Load NASA Earth texture - fallback to local file if API is unavailable
   const earthTexture = useLoader(TextureLoader, `/textures/earth/nasa_world_topo_bathy.jpg`);
@@ -67,22 +68,22 @@ export function useTextureLoader(externalCategory?: string) {
   // Build current texture URL based on selections with caching
   const currentTextureUrl = useMemo(() => {
     // Always use API for texture serving
-    const apiUrl = buildTextureApiUrl(activeCategory, selectedDate, selectedResolution);
+    const apiUrl = buildTextureApiUrl(activeCategory, activeDate, selectedResolution);
     
     console.log(`🔧 Texture URL construction:`, {
       activeCategory,
-      selectedDate, 
+      activeDate, 
       selectedResolution,
       apiUrl
     });
     
     // Return stable URL to prevent infinite re-renders
     return apiUrl;
-  }, [activeCategory, selectedDate, selectedResolution]);
+  }, [activeCategory, activeDate, selectedResolution]);
   
   // Load current data texture with smart caching to prevent duplicate requests
   const dataTexture = useMemo(() => {
-    const cacheKey = requestCache.createTextureKey(activeCategory, selectedDate, selectedResolution);
+    const cacheKey = requestCache.createTextureKey(activeCategory, activeDate, selectedResolution);
     console.log(`🎨 Loading texture: ${cacheKey} from ${currentTextureUrl}`);
     
     // Use React Three Fiber's loader with enhanced settings for ultra-resolution
@@ -95,7 +96,7 @@ export function useTextureLoader(externalCategory?: string) {
     texture.minFilter = LinearMipmapLinearFilter;     // High-quality minification with mipmaps
     
     return texture;
-  }, [currentTextureUrl, activeCategory, selectedDate, selectedResolution]);
+  }, [currentTextureUrl, activeCategory, activeDate, selectedResolution]);
   
   // Function to change texture category with deferred updates
   const changeCategory = (category: string, date?: string, resolution: string = 'medium') => {
@@ -154,7 +155,7 @@ export function useTextureLoader(externalCategory?: string) {
     
     // Category management
     selectedCategory: activeCategory, // Return the active category (external or internal)
-    selectedDate,
+    selectedDate: activeDate,
     selectedResolution,
     changeCategory,
     

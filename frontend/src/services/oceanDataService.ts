@@ -206,9 +206,9 @@ export async function getLatestAvailableDate(): Promise<string> {
     }
     
     if (allDates.length === 0) {
-      // Fallback to a known available date
+      // Fallback to current date in August 2025
       console.warn('No available dates found, using fallback date');
-      return '2024-07-24'; // Use a date we know has some data
+      return '2025-08-12'; // Current date in August 2025
     }
     
     // Sort dates and return the most recent
@@ -216,8 +216,8 @@ export async function getLatestAvailableDate(): Promise<string> {
     return allDates[allDates.length - 1];
   } catch (error) {
     console.error('Error fetching available dates:', error);
-    // Return a known working date as fallback
-    return '2024-07-24';
+    // Return current date in August 2025 as fallback
+    return '2025-08-12';
   }
 }
 
