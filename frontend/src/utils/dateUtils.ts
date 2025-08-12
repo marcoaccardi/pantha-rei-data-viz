@@ -6,11 +6,11 @@
 export const TEMPORAL_COVERAGE = {
   // Guaranteed availability window (comprehensive data coverage period)
   GUARANTEED_START: '2003-01-01', // Updated to reflect hybrid currents system start
-  GUARANTEED_END: '2025-08-12',   // Current date in August 2025
+  GUARANTEED_END: '2025-07-31',   // Latest available texture date
   
   // Extended availability (some data types from later periods)
   EXTENDED_START: '2003-01-01',   // All datasets start from 2003 minimum
-  EXTENDED_END: '2025-08-12',
+  EXTENDED_END: '2025-07-31',
   
   // Maximum historical coverage (biodiversity and microplastics)
   HISTORICAL_START: '1972-01-01', // Microplastics historical data
@@ -85,7 +85,7 @@ export function generateRandomDate(options: {
     if (guaranteedOnly) {
       // Prevent infinite recursion - use hardcoded fallback
       console.error('Invalid guaranteed date range, using fallback');
-      return '2024-08-12';
+      return '2025-07-31';
     }
     console.warn('Invalid date range for random generation, using guaranteed window');
     return generateRandomDate({ guaranteedOnly: true });
@@ -162,7 +162,7 @@ export function validateDate(date: string): DateValidationResult {
   }
 
   const inputDate = new Date(date);
-  const currentDate = new Date('2025-08-12'); // Current date in August 2025
+  const currentDate = new Date('2025-07-31'); // Latest available data date
   
   // Check if date is valid
   if (isNaN(inputDate.getTime())) {
@@ -174,8 +174,8 @@ export function validateDate(date: string): DateValidationResult {
   // Check if date is in the future (beyond August 2025)
   if (inputDate > currentDate) {
     result.isValid = false;
-    result.errors.push('Date cannot be beyond August 2025.');
-    result.suggestedDate = '2025-08-12';
+    result.errors.push('Date cannot be beyond July 31, 2025 (latest available data).');
+    result.suggestedDate = '2025-07-31';
     return result;
   }
 

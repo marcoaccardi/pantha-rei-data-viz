@@ -206,9 +206,9 @@ export async function getLatestAvailableDate(): Promise<string> {
     }
     
     if (allDates.length === 0) {
-      // Fallback to current date in August 2025
+      // Fallback to latest available texture date
       console.warn('No available dates found, using fallback date');
-      return '2025-08-12'; // Current date in August 2025
+      return '2025-07-31'; // Latest available texture date
     }
     
     // Sort dates and return the most recent
@@ -216,8 +216,8 @@ export async function getLatestAvailableDate(): Promise<string> {
     return allDates[allDates.length - 1];
   } catch (error) {
     console.error('Error fetching available dates:', error);
-    // Return current date in August 2025 as fallback
-    return '2025-08-12';
+    // Return latest available texture date as fallback
+    return '2025-07-31';
   }
 }
 

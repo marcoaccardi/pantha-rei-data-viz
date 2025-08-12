@@ -50,7 +50,7 @@ export function useTextureLoader(externalCategory?: string, externalDate?: strin
   // State for texture metadata
   const [metadata, setMetadata] = useState<TextureMetadata | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('sst');
-  const [selectedDate, setSelectedDate] = useState<string | undefined>('2025-08-12'); // Default to current date in August 2025
+  const [selectedDate, setSelectedDate] = useState<string | undefined>('2025-08-11'); // Default to latest available texture date
   const [selectedResolution, setSelectedResolution] = useState<string>('medium');
   
   // Use external category and date if provided, otherwise use internal state
