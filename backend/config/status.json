@@ -1,5 +1,5 @@
 {
-  "last_updated": "2025-08-12T11:06:52.526757",
+  "last_updated": "2025-08-12T14:13:09.927344",
   "datasets": {
     "sst": {
       "last_date": "2024-05-31",
@@ -32,7 +32,7 @@
       "status": "downloading"
     },
     "acidity": {
-      "last_date": "2025-07-28",
+      "last_date": "2025-08-11",
       "total_files": 524,
       "storage_gb": 0.0,
       "last_success": "2025-07-26T18:22:33.423391",
@@ -70,30 +70,31 @@
         "2023-09-01": "acidity_current",
         "2023-12-15": "acidity_current",
         "2023-03-15": "acidity_current",
-        "2023-07-01": "acidity_current"
+        "2023-07-01": "acidity_current",
+        "2025-08-11": "acidity_current"
       }
     },
     "acidity_current": {
       "status": "active",
-      "last_optimization": "2025-07-29T17:54:09.670149",
+      "last_optimization": "2025-08-12T14:13:09.885603",
       "space_freed_mb": 0,
       "final_file_size_kb": 34512.3,
       "api_ready": true,
-      "total_files": 512,
-      "storage_gb": 15.561,
-      "last_date": "2024-09-07",
-      "last_success": "2025-07-29T13:14:04.779312"
+      "total_files": 552,
+      "storage_gb": 16.877,
+      "last_date": "2023-02-14",
+      "last_success": "2025-08-12T14:13:09.927220"
     },
     "acidity_historical": {
       "status": "active",
-      "last_optimization": "2025-08-12T11:06:52.119419",
+      "last_optimization": "2025-08-12T14:09:43.156488",
       "space_freed_mb": 0,
       "final_file_size_kb": 91981.7,
       "api_ready": true,
-      "total_files": 6474,
-      "storage_gb": 435.451,
-      "last_date": "2016-08-13",
-      "last_success": "2025-08-12T11:06:52.526633"
+      "total_files": 7196,
+      "storage_gb": 497.99,
+      "last_date": "2018-07-18",
+      "last_success": "2025-08-12T14:09:45.257477"
     },
     "microplastics": {
       "status": "downloading"
