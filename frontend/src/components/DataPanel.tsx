@@ -187,7 +187,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       currents: {
         title: 'Currents',
         icon: '🌀',
-        variables: ['uo', 'vo', 'speed', 'direction', 'thetao', 'so']
+        variables: ['uo', 'vo', 'u', 'v', 'ug', 'vg', 'current_speed', 'current_direction', 'thetao', 'so']
       },
       acidity: {
         title: 'Ocean Chemistry',
