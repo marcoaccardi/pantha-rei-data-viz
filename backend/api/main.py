@@ -92,8 +92,8 @@ async def health_check():
         # Fast health check - skip dataset scanning
         return HealthResponse(
             status="healthy",
-            message="Ocean Data API is operational",
-            datasets_available=["sst", "currents", "acidity", "microplastics"],
+            message="Ocean Data API is operational (currents temporarily disabled)",
+            datasets_available=["sst", "acidity", "microplastics"],
             total_files=19  # Known file count
         )
     except Exception as e:
@@ -219,41 +219,26 @@ async def get_microplastics_points(
 async def get_multi_point(
     lat: float = Query(..., ge=-90, le=90, description="Latitude in degrees"),
     lon: float = Query(..., ge=-180, le=180, description="Longitude in degrees"),
-    datasets: str = Query("sst,currents,acidity,microplastics", description="Comma-separated list of datasets"),
+    datasets: str = Query("sst,acidity,microplastics", description="Comma-separated list of datasets (currents temporarily disabled)"),
     date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (latest if not specified)")
 ):
     """Extract data from multiple datasets at a specific point."""
+    # Rate limiting to prevent server overload
     global active_requests
-    
-    # Check if we're at the request limit to prevent memory exhaustion
     if active_requests >= MAX_CONCURRENT_REQUESTS:
-        raise HTTPException(
-            status_code=429, 
-            detail=f"Server busy: {active_requests} requests active. Please try again in a moment."
-        )
+        raise HTTPException(status_code=503, detail="Server busy - too many concurrent requests")
     
+    active_requests += 1
     try:
-        active_requests += 1
-        dataset_list = [d.strip() for d in datasets.split(",")]
-        logger.info(f"🌊 Multi-point request for {dataset_list} at ({lat}, {lon}) on {date} (Active: {active_requests}/{MAX_CONCURRENT_REQUESTS})")
-        
-        # Add overall timeout for the entire request - increased for large files
-        result = await asyncio.wait_for(
-            data_extractor.extract_multi_point_data(dataset_list, lat, lon, date),
-            timeout=120.0  # 120 second total timeout (increased for large currents files)
+        return await data_extractor.extract_multi_point_data(
+            datasets.split(','), lat, lon, date
         )
-        
-        logger.info(f"✅ Multi-point request completed successfully")
-        return result
-    except asyncio.TimeoutError:
-        logger.error(f"⏰ Multi-point request timed out after 60 seconds")
-        raise HTTPException(status_code=504, detail="Request timed out")
     except Exception as e:
-        logger.error(f"❌ Error extracting multi-dataset data: {e}")
+        logger.error(f"Error extracting multi-point data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         active_requests -= 1
-        logger.debug(f"🔄 Request completed. Active requests: {active_requests}/{MAX_CONCURRENT_REQUESTS}")
+
 
 # Texture Endpoints
 

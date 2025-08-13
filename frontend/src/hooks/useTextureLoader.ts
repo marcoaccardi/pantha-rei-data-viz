@@ -1,6 +1,7 @@
 import { useLoader } from '@react-three/fiber';
-import { TextureLoader, LinearFilter, LinearMipmapLinearFilter } from 'three';
+import { TextureLoader, LinearFilter, LinearMipmapLinearFilter, Texture } from 'three';
 import { useMemo, useState, useEffect, startTransition } from 'react';
+import * as React from 'react';
 import { requestCache } from '../utils/requestCache';
 
 interface TextureOptions {
@@ -21,15 +22,11 @@ interface TextureMetadata {
 // Configuration
 const API_BASE_URL = 'http://localhost:8000';
 
-// Function to construct API texture URL
-function buildTextureApiUrl(category: string, date?: string, resolution: string = 'medium'): string {
+// Simple texture URL construction
+function buildTextureApiUrl(category: string, date?: string): string {
   const params = new URLSearchParams();
   if (date) params.append('date', date);
-  params.append('resolution', resolution);
-  
-  const url = `${API_BASE_URL}/textures/${category}?${params.toString()}`;
-  console.log(`🌐 Built texture API URL: ${url}`);
-  return url;
+  return `${API_BASE_URL}/textures/${category}?${params.toString()}`;
 }
 
 // Function to get texture metadata from API
@@ -41,7 +38,6 @@ async function fetchTextureMetadata(): Promise<TextureMetadata | null> {
     }
     return await response.json();
   } catch (error) {
-    console.warn('Failed to fetch texture metadata from API:', error);
     return null;
   }
 }
@@ -50,60 +46,118 @@ export function useTextureLoader(externalCategory?: string, externalDate?: strin
   // State for texture metadata
   const [metadata, setMetadata] = useState<TextureMetadata | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('sst');
-  const [selectedDate, setSelectedDate] = useState<string | undefined>('2025-08-11'); // Default to latest available texture date
-  const [selectedResolution, setSelectedResolution] = useState<string>('medium');
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(new Date().toISOString().split('T')[0]);
+  
+  // State for data texture
+  const [dataTexture, setDataTexture] = useState<Texture | null>(null);
+  const [isLoadingTexture, setIsLoadingTexture] = useState<boolean>(false);
+  const [textureLoadError, setTextureLoadError] = useState<boolean>(false);
+  const [isLoadingEarthTexture, setIsLoadingEarthTexture] = useState<boolean>(true);
+  const [earthTexture, setEarthTexture] = useState<Texture | null>(null);
   
   // Use external category and date if provided, otherwise use internal state
   const activeCategory = externalCategory || selectedCategory;
   const activeDate = externalDate || selectedDate;
   
-  // Load NASA Earth texture - fallback to local file if API is unavailable
-  const earthTexture = useLoader(TextureLoader, `/textures/earth/nasa_world_topo_bathy.jpg`);
+  // Load NASA Earth texture with proper loading states
+  useEffect(() => {
+    const loader = new TextureLoader();
+    setIsLoadingEarthTexture(true);
+    
+    loader.load(
+      `${API_BASE_URL}/textures/earth/nasa_world_topo_bathy.jpg`,
+      (texture) => {
+        // Configure earth texture
+        texture.flipY = true;
+        texture.generateMipmaps = true;
+        texture.magFilter = LinearFilter;
+        texture.minFilter = LinearMipmapLinearFilter;
+        
+        setEarthTexture(texture);
+        setIsLoadingEarthTexture(false);
+      },
+      undefined,
+      (error) => {
+        setIsLoadingEarthTexture(false);
+      }
+    );
+  }, []);
   
   // Fetch texture metadata on mount
   useEffect(() => {
     fetchTextureMetadata().then(setMetadata);
   }, []);
   
-  // Build current texture URL based on selections with caching
+  // Build current texture URL based on selections
   const currentTextureUrl = useMemo(() => {
-    // Always use API for texture serving
-    const apiUrl = buildTextureApiUrl(activeCategory, activeDate, selectedResolution);
-    
-    console.log(`🔧 Texture URL construction:`, {
-      activeCategory,
-      activeDate, 
-      selectedResolution,
-      apiUrl
-    });
-    
-    // Return stable URL to prevent infinite re-renders
-    return apiUrl;
-  }, [activeCategory, activeDate, selectedResolution]);
+    return buildTextureApiUrl(activeCategory, activeDate);
+  }, [activeCategory, activeDate]);
   
-  // Load current data texture with smart caching to prevent duplicate requests
-  const dataTexture = useMemo(() => {
-    const cacheKey = requestCache.createTextureKey(activeCategory, activeDate, selectedResolution);
-    console.log(`🎨 Loading texture: ${cacheKey} from ${currentTextureUrl}`);
+  // Load data texture when URL changes - key fix for date synchronization
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingTexture(true);
+    setTextureLoadError(false);
     
-    // Use React Three Fiber's loader with enhanced settings for ultra-resolution
-    const texture = new TextureLoader().load(currentTextureUrl);
+    const loader = new TextureLoader();
     
-    // Configure texture for ultra-high resolution display
-    texture.generateMipmaps = true;                    // Enable mipmaps for smooth scaling
-    texture.flipY = true;                             // Correct orientation for globe mapping
-    texture.magFilter = LinearFilter;                 // High-quality magnification
-    texture.minFilter = LinearMipmapLinearFilter;     // High-quality minification with mipmaps
+    // Load new texture
+    loader.load(
+      currentTextureUrl,
+      // On success
+      (texture) => {
+        if (!isMounted) {
+          texture.dispose();
+          return;
+        }
+        
+        // Configure texture
+        texture.flipY = true;
+        texture.generateMipmaps = true;
+        texture.magFilter = LinearFilter;
+        texture.minFilter = LinearMipmapLinearFilter;
+        
+        setDataTexture(prevTexture => {
+          // Dispose previous texture
+          if (prevTexture) {
+            prevTexture.dispose();
+          }
+          return texture;
+        });
+        setIsLoadingTexture(false);
+        setTextureLoadError(false);
+      },
+      // On progress (optional)
+      undefined,
+      // On error
+      (error) => {
+        if (isMounted) {
+          setIsLoadingTexture(false);
+          setTextureLoadError(true);
+        }
+      }
+    );
     
-    return texture;
-  }, [currentTextureUrl, activeCategory, activeDate, selectedResolution]);
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [currentTextureUrl, activeCategory, activeDate]); // Added activeCategory and activeDate as deps
   
-  // Function to change texture category with deferred updates
-  const changeCategory = (category: string, date?: string, resolution: string = 'medium') => {
+  // Cleanup effect - dispose textures on unmount
+  useEffect(() => {
+    return () => {
+      if (dataTexture) {
+        dataTexture.dispose();
+      }
+    };
+  }, [dataTexture]);
+  
+  // Function to change texture category
+  const changeCategory = (category: string, date?: string) => {
     startTransition(() => {
       setSelectedCategory(category);
       setSelectedDate(date);
-      setSelectedResolution(resolution);
     });
   };
   
@@ -115,48 +169,26 @@ export function useTextureLoader(externalCategory?: string, externalDate?: strin
     
     const categoryData = metadata.available_textures[category];
     const dates = Object.keys(categoryData);
-    const allResolutions = new Set<string>();
-    
-    Object.values(categoryData).forEach(resolutions => {
-      resolutions.forEach(res => allResolutions.add(res));
-    });
     
     return {
-      dates: dates.sort(),
-      resolutions: Array.from(allResolutions)
+      dates: dates.sort()
     };
   };
   
-  // Log successful texture loading
-  useEffect(() => {
-    if (dataTexture) {
-      console.log(`✅ Successfully loaded ${activeCategory} texture: ${currentTextureUrl}`);
-      console.log(`🔄 Texture object:`, dataTexture);
-    }
-  }, [dataTexture, activeCategory, currentTextureUrl]);
-
-  // Log category changes
-  useEffect(() => {
-    console.log(`🎯 Category changed to: ${activeCategory}`);
-    console.log(`📍 Current texture URL: ${currentTextureUrl}`);
-  }, [activeCategory, currentTextureUrl]);
-  
-  // Log metadata loading
-  useEffect(() => {
-    if (metadata) {
-      console.log('📊 Texture metadata loaded:', metadata.summary);
-    }
-  }, [metadata]);
 
   return {
     // Textures
     earthTexture,
     dataTexture, // Current data overlay texture
     
+    // Loading states
+    isLoadingTexture,
+    isLoadingEarthTexture,
+    textureLoadError,
+    
     // Category management
     selectedCategory: activeCategory, // Return the active category (external or internal)
     selectedDate: activeDate,
-    selectedResolution,
     changeCategory,
     
     // Available options
@@ -170,10 +202,6 @@ export function useTextureLoader(externalCategory?: string, externalDate?: strin
     currentTextureUrl,
     
     // Legacy compatibility (for SST)
-    sstTexture: dataTexture, // Alias for backward compatibility
-    loadSSTTexture: (options: TextureOptions = {}) => {
-      changeCategory('sst', options.date, options.resolution);
-      return dataTexture;
-    }
+    sstTexture: dataTexture
   };
 }

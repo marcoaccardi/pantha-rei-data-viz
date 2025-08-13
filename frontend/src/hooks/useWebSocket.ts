@@ -19,7 +19,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       const ws = new WebSocket('ws://localhost:8765');
       
       ws.onopen = () => {
-        console.log('WebSocket connected');
         setIsConnected(true);
         wsRef.current = ws;
         onConnect?.();
@@ -35,28 +34,23 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           const message: WebSocketMessage = JSON.parse(event.data);
           onMessage?.(message);
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
         }
       };
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected');
         setIsConnected(false);
         wsRef.current = null;
         onDisconnect?.();
         
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('Attempting to reconnect...');
           connect();
         }, reconnectDelay);
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
       };
 
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
       reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay);
     }
   };
@@ -65,7 +59,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
     } else {
-      console.warn('WebSocket not connected, cannot send message');
     }
   };
 
@@ -83,7 +76,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   useEffect(() => {
     // Simulate connection when using REST API instead
-    console.log('Using REST API for data fetching - simulating connected state');
     setIsConnected(true);
     
     return () => {

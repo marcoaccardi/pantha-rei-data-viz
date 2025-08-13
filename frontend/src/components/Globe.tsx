@@ -62,21 +62,17 @@ const GlobeMesh: React.FC<{
   selectedCoordinates?: Coordinates;
   showDataOverlay?: boolean;
   dataCategory?: string;
+  selectedDate?: string;
   showMicroplastics?: boolean;
   onMicroplasticsPointHover?: (point: any) => void;
   onMicroplasticsPointClick?: (point: any) => void;
-}> = ({ isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst', showMicroplastics = false, onMicroplasticsPointHover, onMicroplasticsPointClick }) => {
+}> = ({ isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst', selectedDate, showMicroplastics = false, onMicroplasticsPointHover, onMicroplasticsPointClick }) => {
   const meshRef = useRef<Mesh>(null);
   const sstMeshRef = useRef<Mesh>(null);
 
-  // Load textures using the texture loader hook - pass external category
-  const { earthTexture, dataTexture, selectedCategory } = useTextureLoader(dataCategory);
+  // Load textures using the texture loader hook - pass external category and date
+  const { earthTexture, dataTexture, selectedCategory, isLoadingEarthTexture, isLoadingTexture, textureLoadError } = useTextureLoader(dataCategory, selectedDate);
 
-  // Debug: Log when dataTexture changes
-  React.useEffect(() => {
-    console.log(`🌍 Globe received dataTexture for category: ${selectedCategory}`);
-    console.log(`🌍 DataTexture object:`, dataTexture);
-  }, [dataTexture, selectedCategory]);
 
   // Remove auto-rotation - globe should only rotate with user interaction
 
@@ -90,7 +86,8 @@ const GlobeMesh: React.FC<{
         <meshStandardMaterial 
           map={earthTexture} 
           transparent
-          opacity={0.7}
+          opacity={isLoadingEarthTexture ? 0.3 : 1.0}
+          color="#ffffff"
         />
       </mesh>
       
@@ -129,6 +126,8 @@ const Globe: React.FC<GlobeProps> = ({
   isLoading = false,
   showDataOverlay = false,
   dataCategory = 'sst',
+  selectedDate,
+  isTextureLoading = false,
   showSSTOverlay = false, // Legacy support
   onZoomFunctionsReady,
   showMicroplastics = false,
@@ -139,13 +138,34 @@ const Globe: React.FC<GlobeProps> = ({
   const { animateToCoordinates, orbitControlsRef, resetView, zoomIn, zoomOut } = useGlobeCamera();
 
 
-  // Animate to coordinates when they change externally
+  // Animate to coordinates when they change externally - wait for texture loading
   React.useEffect(() => {
     if (coordinates) {
       setSelectedCoordinates(coordinates);
-      animateToCoordinates(coordinates);
+      
+      // If texture loading is disabled or we're not showing data overlay, animate immediately
+      if (!showDataOverlay && !showSSTOverlay) {
+        animateToCoordinates(coordinates);
+        return;
+      }
+      
+      // If texture is loading, wait for it to complete
+      if (isTextureLoading) {
+        const checkTextureLoaded = () => {
+          if (!isTextureLoading) {
+            animateToCoordinates(coordinates);
+          } else {
+            // Check again in a short interval
+            setTimeout(checkTextureLoaded, 50);
+          }
+        };
+        checkTextureLoaded();
+      } else {
+        // Texture already loaded, animate immediately
+        animateToCoordinates(coordinates);
+      }
     }
-  }, [coordinates, animateToCoordinates]);
+  }, [coordinates, animateToCoordinates, isTextureLoading, showDataOverlay, showSSTOverlay]);
 
   // Expose zoom functions to parent component
   React.useEffect(() => {
@@ -175,6 +195,7 @@ const Globe: React.FC<GlobeProps> = ({
         selectedCoordinates={selectedCoordinates}
         showDataOverlay={showDataOverlay || showSSTOverlay} // Support legacy prop
         dataCategory={dataCategory}
+        selectedDate={selectedDate}
         showMicroplastics={showMicroplastics}
         onMicroplasticsPointHover={onMicroplasticsPointHover}
         onMicroplasticsPointClick={onMicroplasticsPointClick}

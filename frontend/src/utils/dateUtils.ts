@@ -83,10 +83,8 @@ export function generateRandomDate(options: {
   if (startDate >= endDate) {
     if (guaranteedOnly) {
       // Prevent infinite recursion - use hardcoded fallback
-      console.error('Invalid guaranteed date range, using fallback');
       return '2025-07-31';
     }
-    console.warn('Invalid date range for random generation, using guaranteed window');
     return generateRandomDate({ guaranteedOnly: true });
   }
 
@@ -121,7 +119,6 @@ export function generateRandomDate(options: {
   const result = selectedDate.toISOString().split('T')[0];
   
   // Development logging (can be replaced with proper logging system)
-  console.log(`📅 Generated random date: ${result} (range: ${startDateStr} to ${endDateStr})`);
   
   return result;
 }
@@ -173,7 +170,7 @@ export function validateDate(date: string): DateValidationResult {
   // Check if date is in the future (beyond August 2025)
   if (inputDate > currentDate) {
     result.isValid = false;
-    result.errors.push('Date cannot be beyond July 31, 2025 (latest available data).');
+    result.errors.push('Date cannot be in the future (beyond current available data).');
     result.suggestedDate = '2025-07-31';
     return result;
   }

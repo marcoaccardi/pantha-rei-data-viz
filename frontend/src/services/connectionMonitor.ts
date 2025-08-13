@@ -76,7 +76,6 @@ class ConnectionMonitor {
         this.reconnectAttempts = 0;
         
         if (wasDisconnected) {
-          console.log('✅ Backend connection restored');
           // Clear cache on reconnection to ensure fresh data
           requestCache.clearAll();
         }
@@ -95,7 +94,6 @@ class ConnectionMonitor {
    * Handle connection errors
    */
   private handleConnectionError(error: any) {
-    console.warn('🔌 Backend connection error:', error.message);
     
     if (this.status === 'connected') {
       // Just disconnected
@@ -120,14 +118,12 @@ class ConnectionMonitor {
   private updateStatus(status: ConnectionStatus, details?: string) {
     if (this.status !== status) {
       this.status = status;
-      console.log(`🔌 Connection status: ${status}${details ? ` - ${details}` : ''}`);
       
       // Notify all listeners
       this.listeners.forEach(listener => {
         try {
           listener(status, details);
         } catch (error) {
-          console.error('Error in connection status listener:', error);
         }
       });
     }

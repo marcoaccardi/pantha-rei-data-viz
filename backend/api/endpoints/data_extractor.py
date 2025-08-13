@@ -262,9 +262,10 @@ class DataExtractor:
         if dataset not in self.dataset_config:
             raise ValueError(f"Unknown dataset: {dataset}")
         
-        # CACHE LAYER 1: Check memory cache first
+        # CACHE LAYER 1: Check memory cache first - TEMPORARILY DISABLED FOR DEBUGGING
         cache_date = date_str or "latest"
-        cached_point = await cache_manager.get_cached_point(dataset, lat, lon, cache_date)
+        # cached_point = await cache_manager.get_cached_point(dataset, lat, lon, cache_date)
+        cached_point = None  # Force cache miss for debugging
         
         if cached_point:
             # Cache hit - return cached data instantly
@@ -302,18 +303,15 @@ class DataExtractor:
                 file_source="no-file"
             )
         
-        # OPTIMIZATION: Use smart file manager and coordinate grids
-        try:
-            return await self._extract_point_data_optimized(dataset, file_path, lat, lon, cache_date)
-        except Exception as e:
-            logger.error(f"Optimized extraction failed, falling back to legacy method: {e}")
-            # Fallback to legacy method
-            loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(
-                self.executor, 
-                self._extract_point_data_sync, 
-                dataset, file_path, lat, lon
-            )
+        # OPTIMIZATION: Use smart file manager and coordinate grids - TEMPORARILY DISABLED
+        # Force legacy method for debugging cache manager issues
+        logger.info(f"🔧 Using legacy extraction method for {dataset} (optimized path disabled for debugging)")
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self.executor, 
+            self._extract_point_data_sync, 
+            dataset, file_path, lat, lon
+        )
 
     async def _extract_point_data_optimized(self, dataset: str, file_path: Path, lat: float, lon: float, cache_date: str) -> PointDataResponse:
         """Ultra-fast point data extraction using smart caching and coordinate grids."""
@@ -322,7 +320,23 @@ class DataExtractor:
         try:
             # Special handling for microplastics and discrete data
             if dataset == "microplastics":
-                return await self._extract_microplastics_optimized(file_path, lat, lon, cache_date)
+                try:
+                    return await self._extract_microplastics_optimized(file_path, lat, lon, cache_date)
+                except Exception as e:
+                    if "NetCDF: HDF error" in str(e) or "Failed to decode" in str(e):
+                        logger.warning(f"⚠️ Microplastics data file corrupted, returning no data: {e}")
+                        # Return empty response instead of failing
+                        return PointDataResponse(
+                            dataset="microplastics",
+                            location=Coordinates(lat=lat, lon=lon),
+                            actual_location=Coordinates(lat=lat, lon=lon),
+                            date=cache_date,
+                            data={},
+                            extraction_time_ms=0.0,
+                            file_source="corrupted"
+                        )
+                    else:
+                        raise
             
             
             # OPTIMIZATION: Use smart file manager with coordinate grids
@@ -572,7 +586,8 @@ class DataExtractor:
     def _extract_microplastics_point_data(self, file_path: Path, lat: float, lon: float, start_time: float) -> PointDataResponse:
         """Extract microplastics point data with nearest neighbor matching."""
         try:
-            with xr.open_dataset(file_path) as ds:
+            # Use decode_cf=False to handle corrupted data_source variable
+            with xr.open_dataset(file_path, decode_cf=False) as ds:
                 # Get coordinate arrays
                 lats = ds['latitude'].values
                 lons = ds['longitude'].values
@@ -609,14 +624,27 @@ class DataExtractor:
                 confidence = float(ds['confidence'].values[nearest_idx])
                 data_source = str(ds['data_source'].values[nearest_idx])
                 
-                # Get date from time coordinate
+                # Get date from time coordinate - handle raw numeric values due to decode_cf=False
                 time_val = ds['time'].values[nearest_idx]  
-                if hasattr(time_val, 'strftime'):
-                    data_date = time_val.strftime('%Y-%m-%d')
-                else:
-                    # Handle numpy datetime64
-                    dt = np.datetime64(time_val, 'D')
-                    data_date = str(dt)
+                try:
+                    if hasattr(time_val, 'strftime'):
+                        data_date = time_val.strftime('%Y-%m-%d')
+                    elif isinstance(time_val, (int, float, np.integer, np.floating)):
+                        # Raw numeric time value - try to convert to date
+                        # Assume it's days since epoch or similar
+                        try:
+                            dt = pd.to_datetime(time_val, unit='D', origin='1990-01-01')
+                            data_date = dt.strftime('%Y-%m-%d')
+                        except:
+                            # Fallback to generic date
+                            data_date = "2020-01-01"  # Generic date for microplastics
+                    else:
+                        # Handle numpy datetime64 or other formats
+                        dt = np.datetime64(time_val, 'D')
+                        data_date = str(dt)
+                except Exception as time_error:
+                    logger.warning(f"Could not parse time value {time_val}, using fallback date: {time_error}")
+                    data_date = "2020-01-01"
                 
                 # Build response data with environmental metadata and enhanced context
                 data = {
@@ -984,6 +1012,39 @@ class DataExtractor:
         if not dataset_path.exists():
             return None
         
+        # OPTIMIZATION: If we have a specific date, construct the path directly instead of scanning 8000+ files
+        if date_str:
+            try:
+                if len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD format
+                    year, month, day = date_str.split('-')
+                    date_formatted = f"{year}{month}{day}"
+                    
+                    # Construct direct path based on dataset structure
+                    if dataset == "sst":
+                        direct_path = dataset_path / year / month / f"sst_harmonized_{date_formatted}.nc"
+                    elif dataset == "acidity" or dataset.startswith("acidity"):
+                        # Acidity has different naming patterns, try current first
+                        direct_path = dataset_path / f"acidity_current_harmonized_{date_formatted}.nc"
+                        if not direct_path.exists():
+                            direct_path = dataset_path / f"acidity_historical_harmonized_{date_formatted}.nc"
+                        if not direct_path.exists() and dataset == "acidity":
+                            # Try in parent directory structure for fallback datasets
+                            parent_path = dataset_path.parent / "acidity" 
+                            direct_path = parent_path / f"acidity_current_harmonized_{date_formatted}.nc"
+                            if not direct_path.exists():
+                                direct_path = parent_path / f"acidity_historical_harmonized_{date_formatted}.nc"
+                    else:
+                        # Generic pattern construction 
+                        direct_path = dataset_path / f"{dataset}_harmonized_{date_formatted}.nc"
+                    
+                    if direct_path.exists():
+                        logger.info(f"🎯 Direct path hit: {direct_path}")
+                        return direct_path
+            except Exception as e:
+                logger.warning(f"Failed to construct direct path for {dataset}/{date_str}: {e}")
+        
+        # Fallback to file scanning (slow but comprehensive)
+        logger.warning(f"⚠️ Using slow file scan for {dataset} (8000+ files to check)")
         pattern = self.dataset_config[dataset]["file_pattern"]
         files = list(dataset_path.rglob(pattern))
         

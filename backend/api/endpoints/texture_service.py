@@ -199,7 +199,47 @@ class TextureService:
                         logger.info(f"Found same date, different resolution without year dir: {texture_file}")
                         return texture_file
         
-        # Strategy 3: Different date, same/similar resolution
+        # Strategy 3: Find closest date texture
+        if date:
+            from datetime import datetime
+            try:
+                target_date = datetime.strptime(date, "%Y-%m-%d")
+                
+                # Find the closest date
+                closest_date = None
+                min_diff = float('inf')
+                
+                for avail_date in available.keys():
+                    avail_datetime = datetime.strptime(avail_date, "%Y-%m-%d") 
+                    diff = abs((target_date - avail_datetime).days)
+                    if diff < min_diff:
+                        min_diff = diff
+                        closest_date = avail_date
+                
+                if closest_date:
+                    logger.info(f"Using closest date: {closest_date} (requested: {date})")
+                    alt_date = closest_date
+                    date_str = alt_date.replace('-', '')
+                    year = alt_date[:4]
+                    
+                    # Try ERDDAP format first
+                    if category == "sst" and "ultra" in available[alt_date]:
+                        texture_file = category_path / year / f"SST_{date_str}.png"
+                        if texture_file.exists():
+                            logger.info(f"Found closest ERDDAP texture: {texture_file}")
+                            return texture_file
+                    
+                    # Try other resolutions for closest date
+                    for alt_resolution in available[alt_date]:
+                        if alt_resolution != "ultra":
+                            texture_file = category_path / year / f"{category}_texture_{date_str}_{alt_resolution}.png"
+                            if texture_file.exists():
+                                logger.info(f"Found closest texture: {texture_file}")
+                                return texture_file
+            except:
+                pass
+        
+        # Strategy 4: Fallback to most recent if no date provided
         for alt_date in sorted(available.keys(), reverse=True):  # Most recent first
             date_str = alt_date.replace('-', '')  # Convert to YYYYMMDD
             year = alt_date[:4]
@@ -348,14 +388,18 @@ class TextureService:
         # Get metadata for response headers
         metadata = self.get_texture_metadata(texture_path)
         
-        # Prepare response headers - DISABLE CACHING for development
+        # Prepare response headers - DISABLE CACHING for development + add timestamp
+        import time
         headers = {
             "Cache-Control": "no-cache, no-store, must-revalidate",  # Disable caching
             "Pragma": "no-cache",
             "Expires": "0",
             "X-Texture-Category": metadata["category"],
             "X-Texture-Date": metadata["date"],
-            "X-Texture-Resolution": metadata["resolution"]
+            "X-Texture-Resolution": metadata["resolution"],
+            "X-Texture-Timestamp": str(int(time.time())),  # Force refresh with timestamp
+            "Last-Modified": "Wed, 01 Jan 1970 00:00:00 GMT",  # Force stale
+            "ETag": f'"{int(time.time())}"'  # Unique ETag each time
         }
         
         logger.info(f"Serving texture: {texture_path}")

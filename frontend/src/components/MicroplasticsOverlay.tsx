@@ -107,31 +107,21 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
     const loadPoints = async () => {
       try {
         setLoading(true);
-        console.log('🏭 Loading microplastics points...');
         const response = await fetch('http://localhost:8000/microplastics/points');
-        console.log('🏭 Response:', response.status, response.statusText);
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('🏭 Error response:', errorText);
           throw new Error(`Failed to load microplastics data: ${response.status} ${response.statusText}`);
         }
         
         const text = await response.text();
-        console.log('🏭 Response text preview:', text.substring(0, 200));
         
         let data;
         try {
           data = JSON.parse(text);
         } catch (parseError) {
-          console.error('🏭 Failed to parse JSON:', parseError);
-          console.error('🏭 Response was:', text);
           throw new Error('Invalid JSON response');
         }
         
-        console.log('🏭 Loaded data:', data);
-        console.log('🏭 Data type:', data.type);
-        console.log('🏭 Features count:', data.features?.length);
-        console.log('🏭 Summary:', data.summary);
         
         // Transform GeoJSON features to point objects
         const transformedPoints: MicroplasticsPoint[] = (data.features || []).map((feature: any) => {
@@ -150,9 +140,7 @@ const MicroplasticsOverlay: React.FC<MicroplasticsOverlayProps> = ({
         });
         
         setPoints(transformedPoints);
-        console.log(`Loaded ${transformedPoints.length} microplastics points`);
       } catch (error) {
-        console.error('Error loading microplastics data:', error);
       } finally {
         setLoading(false);
       }

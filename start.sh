@@ -37,15 +37,31 @@ NC='\033[0m' # No Color
 cleanup() {
     echo -e "\n${YELLOW}Shutting down services...${NC}"
     
-    # Kill monitor process first
+    # Stop monitor process by removing flag file and killing process
+    rm -f "/tmp/monitor_services_$$" 2>/dev/null || true
     if [ -n "$MONITOR_PID" ]; then
-        kill $MONITOR_PID 2>/dev/null
+        kill -KILL $MONITOR_PID 2>/dev/null || true
         echo -e "${BLUE}🔍 Background monitor stopped${NC}"
     fi
     
-    # Kill main services
-    kill $API_PID 2>/dev/null
-    kill $FRONTEND_PID 2>/dev/null
+    # Kill main services and their children aggressively
+    if [ -n "$API_PID" ]; then
+        # Kill the process group
+        kill -KILL -$API_PID 2>/dev/null || true
+        kill -KILL $API_PID 2>/dev/null || true
+        echo -e "${BLUE}🌊 API server stopped${NC}"
+    fi
+    
+    if [ -n "$FRONTEND_PID" ]; then
+        # Kill the process group  
+        kill -KILL -$FRONTEND_PID 2>/dev/null || true
+        kill -KILL $FRONTEND_PID 2>/dev/null || true
+        echo -e "${BLUE}⚛️  Frontend server stopped${NC}"
+    fi
+    
+    # Force kill any remaining processes on our ports
+    sudo fuser -k 8000/tcp 2>/dev/null || true
+    sudo fuser -k 5173/tcp 2>/dev/null || true
     
     # Deactivate virtual environment if it was activated
     if [ -n "$VIRTUAL_ENV" ]; then
@@ -165,9 +181,9 @@ echo -e "${BLUE}🔬 Starting FastAPI ocean data server...${NC}"
 # Use explicit Python path if available, otherwise fallback to 'python'
 if [ -n "$PYTHON_BIN" ]; then
     echo -e "${BLUE}🐍 Using Python: ${PYTHON_BIN}${NC}"
-    cd backend && $PYTHON_BIN -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
+    cd backend && setsid $PYTHON_BIN -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
 else
-    cd backend && python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
+    cd backend && setsid python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
 fi
 API_PID=$!
 cd "$ROOT_DIR"
@@ -230,7 +246,7 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Start development server (background)
-npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1 &
+setsid npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 
 # Return to root directory
@@ -271,8 +287,15 @@ echo -e "${RED}Press Ctrl+C to stop all services${NC}"
 
 # Background process monitoring function
 monitor_services() {
-    while true; do
+    # Create a flag file to control monitoring
+    local monitor_flag="/tmp/monitor_services_$$"
+    touch "$monitor_flag"
+    
+    while [ -f "$monitor_flag" ]; do
         sleep 30  # Check every 30 seconds
+        
+        # Exit if flag file is removed
+        [ ! -f "$monitor_flag" ] && break
         
         # Check API server
         if ! ps -p $API_PID > /dev/null 2>&1; then
@@ -281,9 +304,9 @@ monitor_services() {
             # Try to restart API server
             cd backend
             if [ -n "$PYTHON_BIN" ]; then
-                $PYTHON_BIN -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
+                setsid $PYTHON_BIN -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
             else
-                python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
+                setsid python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > "$ROOT_DIR/logs/api.log" 2>&1 &
             fi
             API_PID=$!
             cd "$ROOT_DIR"
@@ -302,7 +325,7 @@ monitor_services() {
             echo -e "\n${RED}⚠️  Frontend server crashed! Attempting restart...${NC}"
             
             cd frontend
-            npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1 &
+            setsid npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1 &
             FRONTEND_PID=$!
             cd "$ROOT_DIR"
             
@@ -315,6 +338,9 @@ monitor_services() {
             fi
         fi
     done
+    
+    # Clean up flag file
+    rm -f "$monitor_flag"
 }
 
 # Start background monitoring
@@ -324,6 +350,4 @@ MONITOR_PID=$!
 echo -e "${BLUE}🔍 Background service monitoring active (PID: $MONITOR_PID)${NC}"
 
 # Wait for user interruption
-while true; do
-    sleep 1
-done
+wait

@@ -154,6 +154,8 @@ export interface GlobeProps {
   isLoading?: boolean;
   showDataOverlay?: boolean;
   dataCategory?: string;
+  selectedDate?: string; // Pass date for texture synchronization
+  isTextureLoading?: boolean; // Indicate if texture is still loading
   showSSTOverlay?: boolean; // Legacy prop for backward compatibility
   onZoomFunctionsReady?: (zoomIn: () => void, zoomOut: () => void) => void;
   showMicroplastics?: boolean;

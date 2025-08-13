@@ -70,11 +70,9 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.log('ErrorBoundary caught error:', error, errorInfo);
     
     // If it's a texture loading error, we can try to recover
     if (error.message.includes('Could not load') || error.message.includes('texture')) {
-      console.log('🔄 Texture loading error detected, will retry...');
       // Auto-retry after a short delay
       setTimeout(() => {
         this.setState({ hasError: false, error: undefined });

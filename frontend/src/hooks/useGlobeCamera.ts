@@ -13,7 +13,6 @@ export function useGlobeCamera() {
       if (currentTargetRef.current && 
           Math.abs(currentTargetRef.current.lat - coords.lat) < 0.001 && 
           Math.abs(currentTargetRef.current.lng - coords.lng) < 0.001) {
-        console.log('Skipping duplicate animation to same coordinates');
         return;
       }
 
@@ -60,16 +59,13 @@ export function useGlobeCamera() {
               requestAnimationFrame(animateCamera);
             }
           } catch (error) {
-            console.warn('Animation error:', error);
           }
         };
         
         animateCamera();
       }
 
-      console.log(`Centering on coordinates: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
     } catch (error) {
-      console.error('Error in animateToCoordinates:', error);
     }
   }, []);
 
@@ -104,7 +100,6 @@ export function useGlobeCamera() {
             requestAnimationFrame(animateZoom);
           }
         } catch (error) {
-          console.warn('Zoom animation error:', error);
         }
       };
       
@@ -143,7 +138,6 @@ export function useGlobeCamera() {
             requestAnimationFrame(animateZoom);
           }
         } catch (error) {
-          console.warn('Zoom animation error:', error);
         }
       };
       
@@ -170,7 +164,6 @@ export function useGlobeCamera() {
       camera.position.copy(direction.multiplyScalar(5));
       controls.update();
     }
-    console.log('Reset view to default position');
   }, []);
 
   return {

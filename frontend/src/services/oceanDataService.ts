@@ -84,9 +84,9 @@ export async function fetchMultiPointData(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds for large files
       
+      const startTime = Date.now();
       try {
         console.log(`🌊 FETCHING OCEAN DATA: ${cacheKey}`);
-        const startTime = Date.now();
         
         const response = await fetch(`${API_BASE_URL}/multi/point?${params}`, {
           signal: controller.signal

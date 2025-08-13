@@ -56,7 +56,6 @@ class HighPerformanceRequestCache {
     const pendingRequest = this.pendingRequests.get(key);
     if (pendingRequest) {
       this.stats.deduped++;
-      console.log(`🔄 REQUEST DEDUPED: ${key}`);
       return pendingRequest.promise;
     }
 
@@ -64,7 +63,6 @@ class HighPerformanceRequestCache {
     const memoryEntry = this.memoryCache.get(key);
     if (memoryEntry && this.isValid(memoryEntry)) {
       this.stats.hits++;
-      console.log(`⚡ MEMORY CACHE HIT: ${key}`);
       return memoryEntry.data;
     }
 
@@ -73,7 +71,6 @@ class HighPerformanceRequestCache {
       const storageData = this.getFromStorage<T>(key);
       if (storageData && this.isValid(storageData)) {
         this.stats.hits++;
-        console.log(`💾 STORAGE CACHE HIT: ${key}`);
         // Also store in memory for faster access
         this.memoryCache.set(key, storageData);
         this.enforceMemoryCacheSize();
@@ -83,7 +80,6 @@ class HighPerformanceRequestCache {
 
     // Step 4: Cache miss - make the request with deduplication
     this.stats.misses++;
-    console.log(`🌐 CACHE MISS - FETCHING: ${key}`);
 
     // Create and store pending request with retry logic
     const requestPromise = this.executeRequestWithRetry(key, fetcher, ttl, useStorage, retry);
@@ -128,17 +124,14 @@ class HighPerformanceRequestCache {
         if (error instanceof Error) {
           const message = error.message.toLowerCase();
           if (message.includes('404') || message.includes('not found') || 
-              message.includes('unauthorized') || message.includes('forbidden')) {
+              message.includes('unauthorized') || message.includes('forbidden') ||
+              message.includes('503') || message.includes('service unavailable')) {
             throw error;
           }
         }
 
         // If this is not the last attempt, wait before retrying
         if (attempt < maxRetries) {
-          console.warn(
-            `⚠️ Request failed for ${key} (attempt ${attempt + 1}/${maxRetries + 1}), ` +
-            `retrying in ${delay}ms...`, error
-          );
           
           await new Promise(resolve => setTimeout(resolve, delay));
           
@@ -148,7 +141,6 @@ class HighPerformanceRequestCache {
       }
     }
 
-    console.error(`❌ All retry attempts failed for ${key}`, lastError);
     throw lastError || new Error('Request failed after all retries');
   }
 
@@ -163,7 +155,6 @@ class HighPerformanceRequestCache {
       const data = await fetcher();
       const requestTime = Date.now() - startTime;
 
-      console.log(`✅ REQUEST COMPLETED: ${key} in ${requestTime}ms`);
 
       // Cache the successful response
       const cacheEntry: CacheEntry<T> = {
@@ -183,7 +174,6 @@ class HighPerformanceRequestCache {
 
       return data;
     } catch (error) {
-      console.error(`❌ REQUEST FAILED: ${key}`, error);
       throw error;
     }
   }
@@ -210,7 +200,6 @@ class HighPerformanceRequestCache {
       
       return JSON.parse(stored) as CacheEntry<T>;
     } catch (error) {
-      console.warn(`Error reading from storage for key ${key}:`, error);
       return null;
     }
   }
@@ -222,7 +211,6 @@ class HighPerformanceRequestCache {
         JSON.stringify(entry)
       );
     } catch (error) {
-      console.warn(`Error saving to storage for key ${key}:`, error);
       // Storage might be full - try clearing old entries
       this.cleanupStorage();
     }
@@ -247,9 +235,7 @@ class HighPerformanceRequestCache {
       }
 
       keysToRemove.forEach(key => localStorage.removeItem(key));
-      console.log(`🧹 Cleaned up ${keysToRemove.length} expired cache entries`);
     } catch (error) {
-      console.warn('Error during storage cleanup:', error);
     }
   }
 
@@ -260,7 +246,9 @@ class HighPerformanceRequestCache {
     // Round coordinates to reduce cache fragmentation
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    const datasetsStr = datasets.sort().join(',');
+    // Filter out currents to ensure consistency (temporarily disabled due to large file issues)
+    const filteredDatasets = datasets.filter(d => d !== 'currents');
+    const datasetsStr = filteredDatasets.sort().join(',');
     return `ocean-data:${roundedLat}:${roundedLon}:${date}:${datasetsStr}`;
   }
 
@@ -288,7 +276,6 @@ class HighPerformanceRequestCache {
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
     
-    console.log('🗑️ All caches cleared');
   }
 
   /**
@@ -324,7 +311,6 @@ class HighPerformanceRequestCache {
       this.cleanupStorage();
 
       if (expiredKeys.length > 0) {
-        console.log(`🧹 Cleaned up ${expiredKeys.length} expired cache entries`);
       }
     }, intervalMs);
   }
