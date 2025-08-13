@@ -399,10 +399,29 @@ class DataExtractor:
                 for var_name in dataset_vars:
                     if var_name in ds.data_vars and len(ds[var_name].dims) >= 2:  # Skip scalar variables
                         try:
-                            # Select by lat/lon first with proper coordinate names
-                            lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
-                            lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
-                            var_data = ds[var_name].sel({lat_coord: nearest_lat, lon_coord: nearest_lon}, method='nearest')
+                            # Determine coordinate/dimension names for this specific variable
+                            var_dims = ds[var_name].dims
+                            
+                            # Find the latitude dimension name for this variable
+                            lat_dim = None
+                            for dim in var_dims:
+                                if dim in ['latitude', 'lat']:
+                                    lat_dim = dim
+                                    break
+                            
+                            # Find the longitude dimension name for this variable  
+                            lon_dim = None
+                            for dim in var_dims:
+                                if dim in ['longitude', 'lon']:
+                                    lon_dim = dim
+                                    break
+                            
+                            if lat_dim is None or lon_dim is None:
+                                logger.warning(f"Could not find lat/lon dimensions for {var_name}, dims: {var_dims}")
+                                continue
+                                
+                            # Select data using the correct dimension names for this variable
+                            var_data = ds[var_name].sel({lat_dim: nearest_lat, lon_dim: nearest_lon}, method='nearest')
                             
                             # Handle time dimension - take the first/only time if present
                             if 'time' in var_data.dims:

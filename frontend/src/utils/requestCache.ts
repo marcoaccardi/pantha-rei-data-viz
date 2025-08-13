@@ -246,9 +246,8 @@ class HighPerformanceRequestCache {
     // Round coordinates to reduce cache fragmentation
     const roundedLat = Math.round(lat * 100) / 100;
     const roundedLon = Math.round(lon * 100) / 100;
-    // Filter out currents to ensure consistency (temporarily disabled due to large file issues)
-    const filteredDatasets = datasets.filter(d => d !== 'currents');
-    const datasetsStr = filteredDatasets.sort().join(',');
+    // Include all datasets (currents performance issues have been resolved)
+    const datasetsStr = datasets.sort().join(',');
     return `ocean-data:${roundedLat}:${roundedLon}:${date}:${datasetsStr}`;
   }
 
