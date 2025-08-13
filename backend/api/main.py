@@ -57,7 +57,7 @@ data_extractor = DataExtractor()
 
 # Simple request queue to prevent memory exhaustion from simultaneous requests
 active_requests = 0
-MAX_CONCURRENT_REQUESTS = 3  # Limit concurrent multi-dataset requests
+MAX_CONCURRENT_REQUESTS = 10  # Increased limit to support more concurrent users
 
 @app.on_event("startup")
 async def startup_event():

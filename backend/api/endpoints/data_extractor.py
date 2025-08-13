@@ -33,7 +33,11 @@ class DataExtractor:
     def __init__(self):
         """Initialize the data extractor."""
         self.data_path = Path("../ocean-data/processed/unified_coords")
-        self.executor = ThreadPoolExecutor(max_workers=8)
+        self.executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ocean_data")
+        
+        # Register cleanup for graceful shutdown
+        import atexit
+        atexit.register(self._cleanup)
         
         # Dataset configuration with ALL available variables
         self.dataset_config = {
@@ -94,6 +98,16 @@ class DataExtractor:
         }
         
         logger.info("🔧 Data extractor initialized")
+    
+    def _cleanup(self):
+        """Clean up resources on shutdown."""
+        try:
+            if hasattr(self, 'executor') and self.executor:
+                logger.info("🧹 Shutting down ThreadPoolExecutor...")
+                self.executor.shutdown(wait=True, timeout=5.0)
+                logger.info("✅ ThreadPoolExecutor shutdown complete")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
     
     def _create_enhanced_data_value(
         self, 
@@ -262,10 +276,9 @@ class DataExtractor:
         if dataset not in self.dataset_config:
             raise ValueError(f"Unknown dataset: {dataset}")
         
-        # CACHE LAYER 1: Check memory cache first - TEMPORARILY DISABLED FOR DEBUGGING
+        # CACHE LAYER 1: Check memory cache first - RE-ENABLED FOR PERFORMANCE
         cache_date = date_str or "latest"
-        # cached_point = await cache_manager.get_cached_point(dataset, lat, lon, cache_date)
-        cached_point = None  # Force cache miss for debugging
+        cached_point = await cache_manager.get_cached_point(dataset, lat, lon, cache_date)
         
         if cached_point:
             # Cache hit - return cached data instantly
@@ -1043,65 +1056,10 @@ class DataExtractor:
             except Exception as e:
                 logger.warning(f"Failed to construct direct path for {dataset}/{date_str}: {e}")
         
-        # Fallback to file scanning (slow but comprehensive)
-        logger.warning(f"⚠️ Using slow file scan for {dataset} (8000+ files to check)")
-        pattern = self.dataset_config[dataset]["file_pattern"]
-        files = list(dataset_path.rglob(pattern))
-        
-        if not files:
-            return None
-        
-        if date_str is None:
-            # Return the most recent valid file
-            files_with_dates = []
-            for f in files:
-                file_date = self._extract_date_from_filename(f.name)
-                if file_date and self._validate_dataset_file(f):
-                    files_with_dates.append((file_date, f))
-            
-            if files_with_dates:
-                files_with_dates.sort(key=lambda x: x[0], reverse=True)
-                return files_with_dates[0][1]
-            else:
-                # Fallback: find any valid file
-                for f in files:
-                    if self._validate_dataset_file(f):
-                        return f
-                return None  # No valid files found
-        
-        else:
-            # Find file matching the date or nearest available
-            files_with_dates = []
-            for f in files:
-                file_date = self._extract_date_from_filename(f.name)
-                if file_date and self._validate_dataset_file(f):
-                    if file_date == date_str:
-                        # Exact match found
-                        return f
-                    files_with_dates.append((file_date, f))
-            
-            # No exact match, find nearest date
-            if files_with_dates:
-                from datetime import datetime
-                
-                try:
-                    target_date = datetime.strptime(date_str, "%Y-%m-%d")
-                    
-                    # Sort by distance from target date
-                    files_with_dates.sort(key=lambda x: abs((datetime.strptime(x[0], "%Y-%m-%d") - target_date).days))
-                    
-                    nearest_file = files_with_dates[0][1]
-                    nearest_date = files_with_dates[0][0]
-                    
-                    logger.info(f"No exact date match for {date_str}, using nearest available: {nearest_date}")
-                    return nearest_file
-                except Exception as e:
-                    logger.error(f"Error finding nearest date: {e}")
-                    # Fallback to most recent
-                    files_with_dates.sort(key=lambda x: x[0], reverse=True)
-                    return files_with_dates[0][1]
-            
-            return None
+        # OPTIMIZATION: Skip slow file scanning, return None for direct fallback strategies
+        # This prevents scanning 8000+ files and lets the caller handle with fallback datasets
+        logger.info(f"📁 No direct path found for {dataset}/{date_str}, skipping file scan for performance")
+        return None  # Let caller handle with fallback strategies (e.g., acidity fallback)
     
     def _validate_dataset_file(self, file_path: Path) -> bool:
         """Validate that a dataset file has proper coordinates and variables."""
