@@ -27,11 +27,19 @@ class CoordinateHarmonizer:
         Returns:
             '0-360' or '-180-180' or 'mixed' or 'unknown'
         """
-        if 'lon' not in ds.dims and 'longitude' not in ds.dims:
-            return 'unknown'
+        # Look for longitude coordinate, checking both common names
+        lon_coord = None
+        if 'lon' in ds.coords:
+            lon_coord = ds.lon
+        elif 'longitude' in ds.coords:
+            lon_coord = ds.longitude
+        elif 'lon' in ds.dims:
+            lon_coord = ds.lon
+        elif 'longitude' in ds.dims:
+            lon_coord = ds.longitude
         
-        # Get longitude coordinate
-        lon_coord = ds.lon if 'lon' in ds.dims else ds.longitude
+        if lon_coord is None:
+            return 'unknown'
         
         lon_min, lon_max = float(lon_coord.min()), float(lon_coord.max())
         
@@ -56,10 +64,18 @@ class CoordinateHarmonizer:
         Returns:
             Dataset with converted coordinates
         """
-        # Determine longitude coordinate name
-        lon_name = 'lon' if 'lon' in ds.dims else 'longitude'
+        # Find longitude coordinate name (similar logic to detect_longitude_convention)
+        lon_name = None
+        if 'lon' in ds.coords:
+            lon_name = 'lon'
+        elif 'longitude' in ds.coords:
+            lon_name = 'longitude'
+        elif 'lon' in ds.dims:
+            lon_name = 'lon'
+        elif 'longitude' in ds.dims:
+            lon_name = 'longitude'
         
-        if lon_name not in ds.dims:
+        if lon_name is None:
             raise ValueError("No longitude coordinate found in dataset")
         
         current_convention = self.detect_longitude_convention(ds)
@@ -175,16 +191,21 @@ class CoordinateHarmonizer:
             'latitude_info': {}
         }
         
-        # Longitude information
-        if 'lon' in ds.dims:
+        # Longitude information (use same logic as detect_longitude_convention)
+        lon_coord = None
+        lon_name = None
+        if 'lon' in ds.coords:
+            lon_coord = ds.lon
+            lon_name = 'lon'
+        elif 'longitude' in ds.coords:
+            lon_coord = ds.longitude
+            lon_name = 'longitude'
+        elif 'lon' in ds.dims:
             lon_coord = ds.lon
             lon_name = 'lon'
         elif 'longitude' in ds.dims:
             lon_coord = ds.longitude
             lon_name = 'longitude'
-        else:
-            lon_coord = None
-            lon_name = None
         
         if lon_coord is not None:
             info['longitude_info'] = {
@@ -197,16 +218,21 @@ class CoordinateHarmonizer:
                 'units': lon_coord.attrs.get('units', 'unknown')
             }
         
-        # Latitude information
-        if 'lat' in ds.dims:
+        # Latitude information (use same logic for coordinates)
+        lat_coord = None
+        lat_name = None
+        if 'lat' in ds.coords:
+            lat_coord = ds.lat
+            lat_name = 'lat'
+        elif 'latitude' in ds.coords:
+            lat_coord = ds.latitude
+            lat_name = 'latitude'
+        elif 'lat' in ds.dims:
             lat_coord = ds.lat
             lat_name = 'lat'
         elif 'latitude' in ds.dims:
             lat_coord = ds.latitude
             lat_name = 'latitude'
-        else:
-            lat_coord = None
-            lat_name = None
         
         if lat_coord is not None:
             info['latitude_info'] = {

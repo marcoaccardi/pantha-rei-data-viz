@@ -466,19 +466,20 @@ class CurrentsProcessor:
         # Use coordinate harmonizer to convert to -180-180 longitude
         ds_harmonized = self.harmonizer.harmonize_dataset(ds, target_convention='-180-180')
         
-        # Ensure coordinate names are standardized
-        coord_mapping = {}
+        # Ensure coordinate names are standardized using swap_dims
+        # This properly handles cases where dimension and coordinate names differ
+        dims_to_swap = {}
         
-        # Standardize latitude coordinate name
-        if 'latitude' in ds_harmonized.dims:
-            coord_mapping['latitude'] = 'lat'
+        # Standardize latitude dimension name
+        if 'latitude' in ds_harmonized.dims and 'lat' in ds_harmonized.coords:
+            dims_to_swap['latitude'] = 'lat'
         
-        # Standardize longitude coordinate name  
-        if 'longitude' in ds_harmonized.dims:
-            coord_mapping['longitude'] = 'lon'
+        # Standardize longitude dimension name
+        if 'longitude' in ds_harmonized.dims and 'lon' in ds_harmonized.coords:
+            dims_to_swap['longitude'] = 'lon'
         
-        if coord_mapping:
-            ds_harmonized = ds_harmonized.rename(coord_mapping)
+        if dims_to_swap:
+            ds_harmonized = ds_harmonized.swap_dims(dims_to_swap)
         
         return ds_harmonized
     
