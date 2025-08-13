@@ -21,10 +21,6 @@ panta-rhei-data-map/
 │   ├── tests/              # Test files
 │   └── utils/              # Utility functions
 ├── frontend/                  # React/TypeScript frontend
-│   ├── public/              # Static assets
-│   │   └── textures/        # 3D texture assets
-│   │       ├── earth/       # Earth texture files
-│   │       └── sst/         # Sea surface temperature textures
 │   └── src/                 # Source code
 │       ├── components/      # React components
 │       ├── hooks/          # Custom React hooks
@@ -41,13 +37,15 @@ panta-rhei-data-map/
 │   │   ├── microplastics_filtered/
 │   │   ├── sst_downsampled/
 │   │   └── unified_coords/ # Unified coordinate system data
-│   │       ├── acidity/
+│   │       ├── acidity_current/
+│   │       ├── acidity_historical/
 │   │       ├── currents/
 │   │       ├── microplastics/
 │   │       ├── sst/
 │   │       └── /
 │   └── raw/               # Raw downloaded data
-│       ├── acidity/
+│       ├── acidity_current/
+│       ├── acidity_historical/
 │       ├── currents/
 │       ├── microplastics/
 │       ├── sst/
@@ -86,33 +84,7 @@ panta-rhei-data-map/
   - Never leave contradictions between docs and implementation
   - Never try making code with synthetic data when the resource is not available. Ask instead what to do or find an alternative resource.
 
-## Data Processing Workflow
-The system now has a complete data processing pipeline:
 
-### Processing Pipeline
-1. **Download**: Raw data saved to `ocean-data/raw/{dataset}/`
-2. **Preserve**: Raw files preserved (no longer auto-deleted)
-3. **Process**: Dataset-specific processors convert to unified coordinates
-4. **Output**: Harmonized data in `ocean-data/processed/unified_coords/{dataset}/`
-
-### Available Processors
-- **SST**: `sst_downsampler.py` - 0.25° → 1° spatial downsampling
-- **Acidity**: `acidity_processor.py` - biogeochemistry data processing
-- **Currents**: `currents_processor.py` - ocean currents with derived variables
-- **Waves**: `coordinate_harmonizer.py` - coordinate system harmonization
-- **Coordinate Harmonizer**: Base processor for longitude conversion (0-360° ↔ -180-180°)
-
-### Processing Commands
-```bash
-# Test processors with synthetic data
-python scripts/test_processors.py
-
-# Process existing raw data to unified coordinates
-python scripts/process_raw_to_unified.py
-
-# Test raw data preservation
-python scripts/test_raw_preservation.py
-```
 
 ## Validation Tools
 - **CMEMS Dataset Validation**: Use `python scripts/validate_cmems_datasets.py` to verify dataset IDs before deployment
