@@ -80,13 +80,15 @@ export async function fetchMultiPointData(
         params.append('date', date);
       }
 
-      // Add timeout to prevent hanging - increased for large files
+      // Add dynamic timeout based on dataset types - increased for currents
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds for large files
+      const hasCurrents = datasets.includes('currents');
+      const timeoutMs = hasCurrents ? 60000 : 30000; // 60s for currents, 30s for others
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       
       const startTime = Date.now();
       try {
-        console.log(`🌊 FETCHING OCEAN DATA: ${cacheKey}`);
+        console.log(`🌊 FETCHING OCEAN DATA: ${cacheKey} (timeout: ${timeoutMs/1000}s)`);
         
         const response = await fetch(`${API_BASE_URL}/multi/point?${params}`, {
           signal: controller.signal
@@ -107,7 +109,7 @@ export async function fetchMultiPointData(
         clearTimeout(timeoutId);
         if (error instanceof Error && error.name === 'AbortError') {
           // Fallback to individual dataset requests for better reliability
-          console.warn('Multi-dataset request timed out, falling back to individual requests');
+          console.warn(`Multi-dataset request timed out after ${timeoutMs/1000}s (${hasCurrents ? 'large currents file' : 'standard datasets'}), falling back to individual requests`);
           try {
             // Fetch all datasets individually in parallel
             const individualRequests = datasets.map(async (dataset) => {
