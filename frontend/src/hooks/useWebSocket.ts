@@ -15,51 +15,21 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const connect = () => {
-    try {
-      const ws = new WebSocket('ws://localhost:8765');
-      
-      ws.onopen = () => {
-        setIsConnected(true);
-        wsRef.current = ws;
-        onConnect?.();
-        
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = null;
-        }
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const message: WebSocketMessage = JSON.parse(event.data);
-          onMessage?.(message);
-        } catch (error) {
-        }
-      };
-
-      ws.onclose = () => {
-        setIsConnected(false);
-        wsRef.current = null;
-        onDisconnect?.();
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
-        }, reconnectDelay);
-      };
-
-      ws.onerror = (error) => {
-      };
-
-    } catch (error) {
-      reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay);
+    // REST API only - no WebSocket server exists
+    // Simulate immediate connection for compatibility
+    setIsConnected(true);
+    onConnect?.();
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
   };
 
   const sendMessage = (message: WebSocketMessage) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
-    } else {
-    }
+    // REST API only - WebSocket messages not supported
+    // This function is kept for compatibility but does nothing
+    console.warn('WebSocket sendMessage called but only REST API is available');
   };
 
   const disconnect = () => {
@@ -68,10 +38,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       reconnectTimeoutRef.current = null;
     }
     
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+    // REST API only - no WebSocket connection to close
+    setIsConnected(false);
+    onDisconnect?.();
   };
 
   useEffect(() => {

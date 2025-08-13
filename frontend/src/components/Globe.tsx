@@ -1,11 +1,12 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Mesh, TextureLoader } from 'three';
+import * as THREE from 'three';
 import Scene from './Scene';
 import MicroplasticsOverlay from './MicroplasticsOverlay';
 import { useGlobeCamera } from '../hooks/useGlobeCamera';
-import { useTextureLoader } from '../hooks/useTextureLoader';
+import { useAnimationController } from '../hooks/useAnimationController';
 import type { GlobeProps, Coordinates } from '../utils/types';
 
 const LoadingIndicator: React.FC = () => {
@@ -66,12 +67,52 @@ const GlobeMesh: React.FC<{
   showMicroplastics?: boolean;
   onMicroplasticsPointHover?: (point: any) => void;
   onMicroplasticsPointClick?: (point: any) => void;
-}> = ({ isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst', selectedDate, showMicroplastics = false, onMicroplasticsPointHover, onMicroplasticsPointClick }) => {
+  onSstTextureLoaded?: () => void;
+}> = ({ isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst', selectedDate, showMicroplastics = false, onMicroplasticsPointHover, onMicroplasticsPointClick, onSstTextureLoaded }) => {
   const meshRef = useRef<Mesh>(null);
   const sstMeshRef = useRef<Mesh>(null);
 
-  // Load textures using the texture loader hook - pass external category and date
-  const { earthTexture, dataTexture, selectedCategory, isLoadingEarthTexture, isLoadingTexture, textureLoadError } = useTextureLoader(dataCategory, selectedDate);
+  // Load earth texture directly using useLoader
+  const earthTexture = useLoader(TextureLoader, 'http://localhost:8000/textures/earth/nasa_world_topo_bathy.jpg');
+  
+  // Load SST texture directly based on date
+  const sstTextureUrl = React.useMemo(() => {
+    const date = selectedDate || new Date().toISOString().split('T')[0];
+    return `http://localhost:8000/textures/sst?date=${date}`;
+  }, [selectedDate]);
+  
+  const [sstTexture, setSstTexture] = useState<THREE.Texture | null>(null);
+  const [isSstLoading, setIsSstLoading] = useState<boolean>(false);
+  
+  // Load SST texture when URL changes
+  React.useEffect(() => {
+    setIsSstLoading(true);
+    const loader = new TextureLoader();
+    loader.load(
+      sstTextureUrl,
+      (texture) => {
+        texture.flipY = true;
+        setSstTexture(texture);
+        setIsSstLoading(false);
+        // Notify parent that SST texture is loaded
+        if (onSstTextureLoaded) {
+          onSstTextureLoaded();
+        }
+      },
+      undefined,
+      (error) => {
+        console.error('Error loading SST texture:', error);
+        setIsSstLoading(false);
+      }
+    );
+  }, [sstTextureUrl, onSstTextureLoaded]);
+  
+  // Configure earth texture
+  React.useEffect(() => {
+    if (earthTexture) {
+      earthTexture.flipY = true;
+    }
+  }, [earthTexture]);
 
 
   // Remove auto-rotation - globe should only rotate with user interaction
@@ -84,10 +125,10 @@ const GlobeMesh: React.FC<{
       >
         <sphereGeometry args={[1, 360, 180]} />
         <meshStandardMaterial 
-          map={earthTexture} 
+          map={earthTexture || undefined} 
           transparent
-          opacity={isLoadingEarthTexture ? 0.3 : 1.0}
-          color="#ffffff"
+          opacity={1.0}
+          color={earthTexture ? "#ffffff" : "#4a5568"}
         />
       </mesh>
       
@@ -96,9 +137,9 @@ const GlobeMesh: React.FC<{
         <mesh ref={sstMeshRef}>
           <sphereGeometry args={[1.001, 360, 180]} />
           <meshStandardMaterial
-            map={dataTexture}
+            map={sstTexture || undefined}
             transparent
-            opacity={0.9}
+            opacity={sstTexture ? 0.9 : 0}
           />
         </mesh>
       )}
@@ -135,37 +176,65 @@ const Globe: React.FC<GlobeProps> = ({
   onMicroplasticsPointClick
 }) => {
   const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | undefined>(coordinates);
-  const { animateToCoordinates, orbitControlsRef, resetView, zoomIn, zoomOut } = useGlobeCamera();
-
-
-  // Animate to coordinates when they change externally - wait for texture loading
+  const { animateToCoordinates, setControls, resetView, zoomIn, zoomOut } = useGlobeCamera();
+  
+  // Animation controller - handles all animation logic with state machine
+  const { requestAnimation, onTextureLoaded } = useAnimationController(animateToCoordinates, {
+    debounceMs: 300,
+    animationDurationMs: 1200,
+    cooldownMs: 100,
+    onAnimationStart: (coords) => {
+      console.log(`🎬 Animation started to: ${coords.lat.toFixed(4)}°, ${coords.lng.toFixed(4)}°`);
+    },
+    onAnimationComplete: (coords) => {
+      console.log(`🎯 Animation completed to: ${coords.lat.toFixed(4)}°, ${coords.lng.toFixed(4)}°`);
+    },
+    onStateChange: (state) => {
+      console.log(`🎭 Animation state changed to: ${state}`);
+    }
+  });
+  
+  // Handle SST texture loaded - notify animation controller
+  const handleSstTextureLoaded = useCallback(() => {
+    console.log('✅ SST texture loaded');
+    onTextureLoaded();
+  }, [onTextureLoaded]);
+  
+  // Track coordinate and date changes
+  const prevCoordsRef = useRef(coordinates);
+  const prevDateRef = useRef(selectedDate);
+  
+  // Single effect to handle all coordinate/date changes
   React.useEffect(() => {
-    if (coordinates) {
-      setSelectedCoordinates(coordinates);
+    const coordsChanged = coordinates && 
+      (!prevCoordsRef.current || 
+       Math.abs(coordinates.lat - prevCoordsRef.current.lat) > 0.001 || 
+       Math.abs(coordinates.lng - prevCoordsRef.current.lng) > 0.001);
+    
+    const dateChanged = selectedDate !== prevDateRef.current;
+    
+    if (coordsChanged || dateChanged) {
+      console.log(`📍 Changes detected - Coords: ${coordsChanged}, Date: ${dateChanged}`);
       
-      // If texture loading is disabled or we're not showing data overlay, animate immediately
-      if (!showDataOverlay && !showSSTOverlay) {
-        animateToCoordinates(coordinates);
-        return;
-      }
-      
-      // If texture is loading, wait for it to complete
-      if (isTextureLoading) {
-        const checkTextureLoaded = () => {
-          if (!isTextureLoading) {
-            animateToCoordinates(coordinates);
-          } else {
-            // Check again in a short interval
-            setTimeout(checkTextureLoaded, 50);
-          }
-        };
-        checkTextureLoaded();
-      } else {
-        // Texture already loaded, animate immediately
-        animateToCoordinates(coordinates);
+      // Update selected coordinates for display
+      if (coordinates) {
+        setSelectedCoordinates(coordinates);
+        
+        // Determine animation priority and texture requirements
+        const priority = (coordsChanged && dateChanged) ? 'HIGH' : 'NORMAL';
+        const requiresTexture = (showDataOverlay || showSSTOverlay) && dateChanged;
+        
+        // Request animation through the controller
+        requestAnimation(coordinates, {
+          priority,
+          requiresTexture
+        });
       }
     }
-  }, [coordinates, animateToCoordinates, isTextureLoading, showDataOverlay, showSSTOverlay]);
+    
+    prevCoordsRef.current = coordinates;
+    prevDateRef.current = selectedDate;
+  }, [coordinates, selectedDate, showDataOverlay, showSSTOverlay, requestAnimation]);
 
   // Expose zoom functions to parent component
   React.useEffect(() => {
@@ -174,10 +243,12 @@ const Globe: React.FC<GlobeProps> = ({
     }
   }, [zoomIn, zoomOut, onZoomFunctionsReady]);
 
+  // Animation controller handles its own cleanup
+
   return (
     <Scene>
       <OrbitControls
-        ref={orbitControlsRef}
+        ref={setControls}
         enablePan={false}
         enableZoom={true}
         enableRotate={true}
@@ -185,7 +256,6 @@ const Globe: React.FC<GlobeProps> = ({
         maxDistance={10}
         rotateSpeed={0.8}
         zoomSpeed={1.0}
-        target={[0, 0, 0]}
         enableDamping={true}
         dampingFactor={0.05}
       />
@@ -199,6 +269,7 @@ const Globe: React.FC<GlobeProps> = ({
         showMicroplastics={showMicroplastics}
         onMicroplasticsPointHover={onMicroplasticsPointHover}
         onMicroplasticsPointClick={onMicroplasticsPointClick}
+        onSstTextureLoaded={handleSstTextureLoaded}
       />
     </Scene>
   );

@@ -22,7 +22,7 @@ function App() {
   const [oceanData, setOceanData] = useState<MultiDatasetOceanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
-  const [showDataOverlay, setShowDataOverlay] = useState(true);
+  const [showDataOverlay, setShowDataOverlay] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [showMicroplastics, setShowMicroplastics] = useState(false);
@@ -53,6 +53,8 @@ function App() {
     }
   }, [errorMessage]);
 
+  // Animation controller now handles debouncing internally
+  
   // Function to generate random ocean coordinates (strictly avoiding all land)
   const generateRandomOceanLocation = () => {
     // PREMIUM LOCATIONS - Complete coverage for ALL 3 datasets (SST + Acidity + Currents)
@@ -288,8 +290,7 @@ function App() {
   const generateRandomDateOnly = () => {
     const randomDate = generateRandomDate({ preferRecent: true, guaranteedOnly: false });
     handleDateChange(randomDate);
-    // Trigger data fetch with current coordinates and new date
-    handleLocationChange(coordinates, randomDate);
+    // Only update date for texture change, no data fetch
   };
 
   const generateRandomDateAndLocation = () => {
@@ -297,7 +298,8 @@ function App() {
     const randomCoords = generateRandomOceanLocation();
     
     handleDateChange(randomDate);
-    handleLocationChange(randomCoords, randomDate);
+    setCoordinates(randomCoords);
+    // Only update coordinates and date for texture change, no data fetch
   };
 
   const useGuaranteedDate = () => {
@@ -456,6 +458,8 @@ function App() {
   });
 
   const handleLocationChange = useCallback(async (coords: Coordinates, useDate?: string) => {
+    // This function is now only called when the user explicitly wants to fetch data
+    // Random buttons no longer use this function
     startTransition(() => {
       setCoordinates(coords);
       setIsLoading(true);
@@ -530,6 +534,7 @@ function App() {
           isLoading={isLoading}
           showDataOverlay={showDataOverlay}
           dataCategory={selectedCategory}
+          selectedDate={selectedDate}
           onZoomFunctionsReady={() => {}}
           showMicroplastics={showMicroplastics}
           onMicroplasticsPointHover={setHoveredMicroplastic}
@@ -631,7 +636,7 @@ function App() {
               <button 
                 onClick={() => {
                   const randomCoords = generateRandomOceanLocation();
-                  handleLocationChange(randomCoords);
+                  setCoordinates(randomCoords);
                 }}
                 aria-label="Generate random ocean location"
                 style={{
@@ -681,43 +686,8 @@ function App() {
               </button>
             </div>
             
-            {/* Data Category Selection */}
+            {/* SST Texture Controls */}
             <div style={{ marginTop: '16px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
-              <div style={{ fontSize: '0.9em', marginBottom: '6px', color: '#cbd5e1' }}>
-                🌊 Data Category
-              </div>
-              <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', marginBottom: '8px' }}>
-                {availableCategories.map(category => {
-                  const isAvailable = true; // Always allow category selection
-                  const isSelected = selectedCategory === category;
-                  const categoryLabels = {
-                    sst: '🌡️ SST',
-                    acidity: '🧪 Acidity', 
-                    currents: '🌀 Currents'
-                  };
-                  
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => isAvailable && startTransition(() => changeCategory(category))}
-                      disabled={!isAvailable}
-                      style={{
-                        backgroundColor: isSelected ? '#4a90e2' : isAvailable ? '#64748b' : '#374151',
-                        color: isAvailable ? 'white' : '#9ca3af',
-                        border: isSelected ? '2px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.1)',
-                        padding: '6px 8px',
-                        borderRadius: '4px',
-                        cursor: isAvailable ? 'pointer' : 'not-allowed',
-                        fontSize: '0.75em',
-                        opacity: isAvailable ? 1 : 0.6,
-                        flex: '1'
-                      }}
-                    >
-                      {categoryLabels[category as keyof typeof categoryLabels]}
-                    </button>
-                  );
-                })}
-              </div>
               
               {/* SST Texture Show/Hide Toggle */}
               <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
@@ -855,12 +825,7 @@ function App() {
           </div>
         )}
         
-        {/* Comprehensive Data Panel */}
-        <DataPanel 
-          data={oceanData}
-          isLoading={isLoading}
-          error={apiError}
-        />
+        {/* Data Panel removed - texture only mode */}
       </div>
     </div>
   );
