@@ -1,12 +1,12 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback } from 'react';
 import { Vector3 } from 'three';
 import type { Coordinates } from '../utils/types';
 import { latLngToVector3 } from '../utils/coordinates';
 
 export function useGlobeCamera() {
   const currentTargetRef = useRef<Coordinates | null>(null);
+  const orbitControlsRef = useRef<any>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const [controls, setControls] = useState<any>(null); // State to hold OrbitControls instance
 
   const animateToCoordinates = useCallback((coords: Coordinates) => {
     try {
@@ -25,22 +25,31 @@ export function useGlobeCamera() {
 
       currentTargetRef.current = coords;
 
-      if (controls && controls.object) { // Use the controls state variable
-        controls.enabled = false; // Disable controls during animation
+      // Function to execute animation when controls are ready
+      const executeAnimation = () => {
+        console.log('🔍 Checking controls ref:', orbitControlsRef.current);
+        if (!orbitControlsRef.current || !orbitControlsRef.current.object) {
+          console.log('⏳ Controls not ready, retrying...');
+          // If controls not ready, try again in a moment
+          setTimeout(executeAnimation, 100);
+          return;
+        }
+
+        console.log('✅ Controls ready, starting animation');
+        const controls = orbitControlsRef.current;
         const camera = controls.object;
         
         // Calculate the 3D position of the selected coordinates on the globe
-        const targetPosition = latLngToVector3(coords.lat, coords.lng, 1); // Point on globe
+        const targetPosition = latLngToVector3(coords.lat, coords.lng, 1);
         
-        // Calculate the ideal camera position relative to the target
-        // This vector points from the globe's center to the target, then scaled outwards
+        // Calculate the ideal camera position to look at this point
+        // Camera should be positioned so the target point is centered
         const idealCameraPosition = targetPosition.clone().multiplyScalar(2.5); // Distance from globe
         
-        // Get current camera position and target for animation
+        // Get current camera position for smooth animation
         const startCameraPosition = camera.position.clone();
-        const startTargetPosition = controls.target.clone();
         const startTime = Date.now();
-        const duration = 1200; // Longer for smooth rotation + zoom
+        const duration = 1200; // Smooth rotation duration
         
         const animateCamera = () => {
           try {
@@ -51,13 +60,13 @@ export function useGlobeCamera() {
             const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
             const easedProgress = easeInOut(progress);
             
-            // Interpolate camera position
+            // Interpolate camera position on a spherical path
             const currentCameraPosition = startCameraPosition.clone().lerp(idealCameraPosition, easedProgress);
             camera.position.copy(currentCameraPosition);
             
-            // Interpolate controls target
-            const currentTarget = startTargetPosition.clone().lerp(targetPosition, easedProgress);
-            controls.target.copy(currentTarget);
+            // Always look at the center of the globe
+            camera.lookAt(0, 0, 0);
+            controls.target.set(0, 0, 0);
             
             // Update controls
             if (controls && controls.update) {
@@ -68,24 +77,27 @@ export function useGlobeCamera() {
               animationFrameRef.current = requestAnimationFrame(animateCamera);
             } else {
               animationFrameRef.current = null;
-              controls.enabled = true; // Re-enable controls after animation
             }
           } catch (error) {
             animationFrameRef.current = null;
-            controls.enabled = true; // Re-enable controls on error
           }
         };
         
         animateCamera();
-      }
+      };
+
+      // Start the animation execution
+      executeAnimation();
 
     } catch (error) {
+      console.error('Animation error:', error);
     }
-  }, [controls]); // Add controls to dependency array
+  }, []);
 
   const zoomIn = useCallback(() => {
-    if (controls && controls.object) { // Use the controls state variable
-      const camera = controls.object;
+    if (orbitControlsRef.current && orbitControlsRef.current.object) {
+      const camera = orbitControlsRef.current.object;
+      const controls = orbitControlsRef.current;
       
       const currentDistance = camera.position.length();
       const targetDistance = Math.max(currentDistance * 0.7, 1.5); // Zoom in, but not too close
@@ -113,16 +125,18 @@ export function useGlobeCamera() {
             requestAnimationFrame(animateZoom);
           }
         } catch (error) {
+          console.error('Zoom error:', error);
         }
       };
       
       animateZoom();
     }
-  }, [controls]); // Add controls to dependency array
+  }, []);
 
   const zoomOut = useCallback(() => {
-    if (controls && controls.object) { // Use the controls state variable
-      const camera = controls.object;
+    if (orbitControlsRef.current && orbitControlsRef.current.object) {
+      const camera = orbitControlsRef.current.object;
+      const controls = orbitControlsRef.current;
       
       const currentDistance = camera.position.length();
       const targetDistance = Math.min(currentDistance * 1.4, 10); // Zoom out, but not too far
@@ -150,12 +164,13 @@ export function useGlobeCamera() {
             requestAnimationFrame(animateZoom);
           }
         } catch (error) {
+          console.error('Zoom error:', error);
         }
       };
       
       animateZoom();
     }
-  }, [controls]); // Add controls to dependency array
+  }, []);
 
   const getCurrentView = useCallback(() => {
     return {
@@ -167,15 +182,16 @@ export function useGlobeCamera() {
 
   const resetView = useCallback(() => {
     currentTargetRef.current = null;
-    if (controls && controls.object) { // Use the controls state variable
-      const camera = controls.object;
+    if (orbitControlsRef.current && orbitControlsRef.current.object) {
+      const camera = orbitControlsRef.current.object;
+      const controls = orbitControlsRef.current;
       
       // Reset to default distance
       const direction = camera.position.clone().normalize();
       camera.position.copy(direction.multiplyScalar(5));
       controls.update();
     }
-  }, [controls]); // Add controls to dependency array
+  }, []);
 
   return {
     animateToCoordinates,
@@ -183,6 +199,6 @@ export function useGlobeCamera() {
     resetView,
     zoomIn,
     zoomOut,
-    setControls // Return setControls
+    orbitControlsRef
   };
 }

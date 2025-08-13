@@ -172,8 +172,8 @@ export function useAnimationController(
     // Handle different states
     switch (stateRef.current) {
       case 'IDLE':
-        // Start new animation immediately
-        currentRequestRef.current = newRequest;
+        // Start new animation immediately by queuing it and processing
+        queuedRequestRef.current = newRequest;
         processQueue();
         break;
         

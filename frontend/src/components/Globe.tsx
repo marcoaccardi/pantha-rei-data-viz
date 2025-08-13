@@ -8,12 +8,13 @@ import MicroplasticsOverlay from './MicroplasticsOverlay';
 import { useGlobeCamera } from '../hooks/useGlobeCamera';
 import { useAnimationController } from '../hooks/useAnimationController';
 import type { GlobeProps, Coordinates } from '../utils/types';
+import { latLngToVector3 } from '../utils/coordinates'; // Import latLngToVector3
 
-const LoadingIndicator: React.FC = () => {
+const GlobeLoadingIndicator: React.FC = () => {
   return <group />; // Empty - no visual elements
 };
 
-const PositionMarker: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) => {
+const GlobePositionMarker: React.FC<{ coordinates: Coordinates }> = ({ coordinates }) => {
   const markerRef = useRef<Mesh>(null);
   
   const position = React.useMemo(() => {
@@ -146,7 +147,7 @@ const GlobeMesh: React.FC<{
       
       {/* Position marker */}
       {selectedCoordinates && (
-        <PositionMarker coordinates={selectedCoordinates} />
+        <GlobePositionMarker coordinates={selectedCoordinates} />
       )}
       
       {/* Microplastics overlay - renders above all other layers */}
@@ -156,7 +157,7 @@ const GlobeMesh: React.FC<{
         onPointClick={onMicroplasticsPointClick}
       />
       
-      {isLoading && <LoadingIndicator />}
+      {isLoading && <GlobeLoadingIndicator />}
     </group>
   );
 };
@@ -176,7 +177,7 @@ const Globe: React.FC<GlobeProps> = ({
   onMicroplasticsPointClick
 }) => {
   const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | undefined>(coordinates);
-  const { animateToCoordinates, setControls, resetView, zoomIn, zoomOut } = useGlobeCamera();
+  const { animateToCoordinates, orbitControlsRef, resetView, zoomIn, zoomOut } = useGlobeCamera();
   
   // Animation controller - handles all animation logic with state machine
   const { requestAnimation, onTextureLoaded } = useAnimationController(animateToCoordinates, {
@@ -248,7 +249,12 @@ const Globe: React.FC<GlobeProps> = ({
   return (
     <Scene>
       <OrbitControls
-        ref={setControls}
+        ref={(ref) => {
+          if (ref) {
+            console.log('🎮 OrbitControls ref set:', ref);
+            orbitControlsRef.current = ref;
+          }
+        }}
         enablePan={false}
         enableZoom={true}
         enableRotate={true}
@@ -256,6 +262,7 @@ const Globe: React.FC<GlobeProps> = ({
         maxDistance={10}
         rotateSpeed={0.8}
         zoomSpeed={1.0}
+        target={[0, 0, 0]}
         enableDamping={true}
         dampingFactor={0.05}
       />
