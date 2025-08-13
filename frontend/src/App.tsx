@@ -631,14 +631,29 @@ function App() {
               
             </div>
             
+            {/* Auto Data Fetching Info */}
+            <div style={{ marginTop: '16px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
+              <div style={{ fontSize: '0.9em', marginBottom: '6px', color: '#cbd5e1' }}>
+                🌊 Ocean Data
+              </div>
+              <div style={{ fontSize: '0.75em', color: '#94a3b8' }}>
+                Data fetches automatically when you change location or date
+              </div>
+              {isLoading && (
+                <div style={{ fontSize: '0.75em', color: '#fbbf24', marginTop: '4px' }}>
+                  ⏳ Loading ocean data...
+                </div>
+              )}
+            </div>
+            
             {/* Random Controls */}
-            <div style={{ marginTop: '16px', display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+            <div style={{ marginTop: '12px', display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
               <button 
                 onClick={() => {
                   const randomCoords = generateRandomOceanLocation();
-                  setCoordinates(randomCoords);
+                  handleLocationChange(randomCoords);
                 }}
-                aria-label="Generate random ocean location"
+                aria-label="Generate random ocean location and fetch data"
                 style={{
                   backgroundColor: '#059669',
                   color: 'white',
@@ -653,8 +668,12 @@ function App() {
                 📍 Random Location
               </button>
               <button 
-                onClick={generateRandomDateOnly}
-                aria-label="Generate random date"
+                onClick={() => {
+                  const randomDate = generateRandomDate({ preferRecent: true, guaranteedOnly: false });
+                  handleDateChange(randomDate);
+                  handleLocationChange(coordinates, randomDate);
+                }}
+                aria-label="Generate random date and fetch data"
                 style={{
                   backgroundColor: '#7c3aed',
                   color: 'white',
@@ -669,7 +688,12 @@ function App() {
                 📅 Random Date
               </button>
               <button 
-                onClick={generateRandomDateAndLocation}
+                onClick={() => {
+                  const randomDate = generateRandomDate({ preferRecent: true, guaranteedOnly: false });
+                  const randomCoords = generateRandomOceanLocation();
+                  handleDateChange(randomDate);
+                  handleLocationChange(randomCoords, randomDate);
+                }}
                 aria-label="Generate random date and ocean location combination"
                 style={{
                   backgroundColor: '#dc2626',
@@ -825,7 +849,12 @@ function App() {
           </div>
         )}
         
-        {/* Data Panel removed - texture only mode */}
+        {/* Data Panel */}
+        <DataPanel 
+          data={oceanData}
+          isLoading={isLoading}
+          error={apiError}
+        />
       </div>
     </div>
   );

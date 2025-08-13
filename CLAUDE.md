@@ -103,3 +103,4 @@ panta-rhei-data-map/
 - **Keep the backend root directory clean** - only config files and folders belong there
 - **Always handle both string and date object inputs in downloaders**
 - **Test bash script integration for all new downloaders**
+- DATA IS LOCATED IN THE `ocean-data` FOLDER

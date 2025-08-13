@@ -342,21 +342,35 @@ class HighPerformanceCacheManager:
         self.total_cache_time = 0
         self.total_extraction_time = 0
         
+        # Dataset-specific cache TTL optimization
+        self.dataset_cache_ttl = {
+            'sst': 1800,  # 30 minutes for SST (changes frequently) 
+            'acidity_current': 7200,  # 2 hours for current acidity (daily updates)
+            'acidity_historical': 86400,  # 24 hours for historical acidity (static data)
+            'acidity': 7200,  # 2 hours for generic acidity requests
+            'currents': 1800,  # 30 minutes for currents (changes frequently)
+            'microplastics': 86400  # 24 hours for microplastics (static data)
+        }
+        
     async def get_cached_point(self, dataset: str, lat: float, lon: float, date: str) -> Optional[CachedPoint]:
-        """Get point data from cache if available and not expired."""
+        """Get point data from cache if available and not expired (with dataset-specific TTL)."""
         cache_key = CacheKey(dataset, lat, lon, date)
         current_time = time.time()
         
         if cache_key in self.point_cache:
             cached_point = self.point_cache[cache_key]
             
+            # Use dataset-specific TTL for more efficient caching
+            dataset_ttl = self.dataset_cache_ttl.get(dataset, self.cache_ttl)
+            
             # Check if cache entry is still valid
-            if current_time - cached_point.timestamp < self.cache_ttl:
+            if current_time - cached_point.timestamp < dataset_ttl:
                 self.cache_hits += 1
-                logger.debug(f"🎯 Cache HIT for {dataset} at ({lat}, {lon})")
+                logger.debug(f"🎯 Cache HIT for {dataset} at ({lat}, {lon}) [TTL: {dataset_ttl}s]")
                 return cached_point
             else:
                 # Expired - remove from cache
+                logger.debug(f"⏱️ Cache EXPIRED for {dataset} at ({lat}, {lon}) after {dataset_ttl}s")
                 del self.point_cache[cache_key]
         
         self.cache_misses += 1

@@ -7,6 +7,7 @@ import Scene from './Scene';
 import MicroplasticsOverlay from './MicroplasticsOverlay';
 import { useGlobeCamera } from '../hooks/useGlobeCamera';
 import { useAnimationController } from '../hooks/useAnimationController';
+import { useTextureLoader } from '../hooks/useTextureLoader';
 import type { GlobeProps, Coordinates } from '../utils/types';
 import { latLngToVector3 } from '../utils/coordinates'; // Import latLngToVector3
 
@@ -76,37 +77,8 @@ const GlobeMesh: React.FC<{
   // Load earth texture directly using useLoader
   const earthTexture = useLoader(TextureLoader, 'http://localhost:8000/textures/earth/nasa_world_topo_bathy.jpg');
   
-  // Load SST texture directly based on date
-  const sstTextureUrl = React.useMemo(() => {
-    const date = selectedDate || new Date().toISOString().split('T')[0];
-    return `http://localhost:8000/textures/sst?date=${date}`;
-  }, [selectedDate]);
-  
-  const [sstTexture, setSstTexture] = useState<THREE.Texture | null>(null);
-  const [isSstLoading, setIsSstLoading] = useState<boolean>(false);
-  
-  // Load SST texture when URL changes
-  React.useEffect(() => {
-    setIsSstLoading(true);
-    const loader = new TextureLoader();
-    loader.load(
-      sstTextureUrl,
-      (texture) => {
-        texture.flipY = true;
-        setSstTexture(texture);
-        setIsSstLoading(false);
-        // Notify parent that SST texture is loaded
-        if (onSstTextureLoaded) {
-          onSstTextureLoaded();
-        }
-      },
-      undefined,
-      (error) => {
-        console.error('Error loading SST texture:', error);
-        setIsSstLoading(false);
-      }
-    );
-  }, [sstTextureUrl, onSstTextureLoaded]);
+  // Use centralized texture loader for SST data
+  const { dataTexture, isLoadingTexture } = useTextureLoader(dataCategory, selectedDate);
   
   // Configure earth texture
   React.useEffect(() => {
@@ -114,6 +86,13 @@ const GlobeMesh: React.FC<{
       earthTexture.flipY = true;
     }
   }, [earthTexture]);
+  
+  // Notify parent when SST texture is loaded
+  React.useEffect(() => {
+    if (!isLoadingTexture && dataTexture && onSstTextureLoaded) {
+      onSstTextureLoaded();
+    }
+  }, [isLoadingTexture, dataTexture, onSstTextureLoaded]);
 
 
   // Remove auto-rotation - globe should only rotate with user interaction
@@ -138,9 +117,9 @@ const GlobeMesh: React.FC<{
         <mesh ref={sstMeshRef}>
           <sphereGeometry args={[1.001, 360, 180]} />
           <meshStandardMaterial
-            map={sstTexture || undefined}
+            map={dataTexture || undefined}
             transparent
-            opacity={sstTexture ? 0.9 : 0}
+            opacity={dataTexture ? 0.9 : 0}
           />
         </mesh>
       )}

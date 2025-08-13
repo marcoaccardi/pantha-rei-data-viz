@@ -32,7 +32,7 @@ class DataExtractor:
     
     def __init__(self):
         """Initialize the data extractor."""
-        self.data_path = Path("../ocean-data/processed/unified_coords")
+        self.data_path = Path(__file__).parent.parent.parent.parent / "ocean-data" / "processed" / "unified_coords"
         self.executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ocean_data")
         
         # Register cleanup for graceful shutdown
@@ -73,16 +73,6 @@ class DataExtractor:
                 "temporal_coverage": "2021-present",
                 "data_source": "GLOBAL_ANALYSISFORECAST_BGC_001_028"
             },
-            "acidity": {
-                "name": "Ocean Acidity (Multi-Source)",
-                "description": "Comprehensive ocean acidity data combining historical nutrients, current pH/carbon, and discrete observations",
-                "variables": ["ph", "ph_insitu", "ph_insitu_total", "talk", "dissic", "pco2", "revelle", "no3", "po4", "si", "o2", "chl", "nppv"],
-                "file_pattern": "acidity_*.nc",
-                "spatial_resolution": "Multi-resolution (0.25° gridded + discrete samples)",
-                "temporal_coverage": "1993-present",
-                "data_source": "Hybrid (CMEMS + GLODAP)",
-                "fallback_datasets": ["acidity_current", "acidity_historical"]
-            },
             "microplastics": {
                 "name": "Marine Microplastics",
                 "description": "NOAA microplastics data (1993-2019) combined with GAN-generated synthetic data (2019-2025)",
@@ -104,7 +94,7 @@ class DataExtractor:
         try:
             if hasattr(self, 'executor') and self.executor:
                 logger.info("🧹 Shutting down ThreadPoolExecutor...")
-                self.executor.shutdown(wait=True, timeout=5.0)
+                self.executor.shutdown(wait=True)
                 logger.info("✅ ThreadPoolExecutor shutdown complete")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
@@ -269,45 +259,53 @@ class DataExtractor:
             return f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]}"
         return None
 
-    async def extract_point_data(self, dataset: str, lat: float, lon: float, date_str: Optional[str] = None) -> PointDataResponse:
-        """Extract data at a specific point from the specified dataset with ultra-fast caching."""
+    def _resolve_acidity_dataset(self, dataset: str, date_str: Optional[str] = None) -> str:
+        """Resolve 'acidity' requests to the appropriate historical/current dataset."""
+        # If not an acidity request, return as-is
+        if dataset != "acidity":
+            return dataset
+        
+        # If no date provided, default to current data
+        if not date_str:
+            logger.info("🔄 No date provided for acidity request, defaulting to acidity_current")
+            return "acidity_current"
+        
+        # Parse the date to determine which dataset to use
+        try:
+            from datetime import datetime
+            target_date = datetime.strptime(date_str, "%Y-%m-%d")
+            year = target_date.year
+            
+            # Route based on temporal coverage
+            if year <= 2022:
+                # Historical period (2003-2022): use historical data
+                resolved = "acidity_historical"
+                logger.info(f"📅 Date {date_str} (year {year}) → using acidity_historical")
+            else:
+                # Current period (2023-present): use current data
+                resolved = "acidity_current"
+                logger.info(f"📅 Date {date_str} (year {year}) → using acidity_current")
+            
+            return resolved
+            
+        except Exception as e:
+            logger.warning(f"❌ Could not parse date {date_str}: {e}, defaulting to acidity_current")
+            return "acidity_current"
+
+    def extract_point_data(self, dataset: str, lat: float, lon: float, date_str: Optional[str] = None) -> PointDataResponse:
+        """Smart data extraction with automatic acidity dataset routing."""
         start_time = time.time()
         
-        if dataset not in self.dataset_config:
-            raise ValueError(f"Unknown dataset: {dataset}")
+        # Smart dataset resolution for acidity data
+        resolved_dataset = self._resolve_acidity_dataset(dataset, date_str)
+        logger.info(f"📊 Dataset resolution: {dataset} → {resolved_dataset} for date {date_str}")
         
-        # CACHE LAYER 1: Check memory cache first - RE-ENABLED FOR PERFORMANCE
-        cache_date = date_str or "latest"
-        cached_point = await cache_manager.get_cached_point(dataset, lat, lon, cache_date)
-        
-        if cached_point:
-            # Cache hit - return cached data instantly
-            cache_time = (time.time() - start_time) * 1000
-            logger.info(f"🚀 CACHE HIT: {dataset} at ({lat}, {lon}) in {cache_time:.1f}ms")
-            
-            return PointDataResponse(
-                dataset=dataset,
-                location=Coordinates(lat=lat, lon=lon),
-                actual_location=Coordinates(lat=cached_point.actual_location[0], 
-                                          lon=cached_point.actual_location[1]),
-                date=cache_date,
-                data=cached_point.data,
-                extraction_time_ms=cache_time,
-                file_source="cache"
-            )
-        
-        # Cache miss - extract from file with optimization and fallback strategy
-        file_path = await self._find_dataset_file(dataset, date_str)
+        # Find the data file directly
+        file_path = self._find_dataset_file(resolved_dataset, date_str)
         if not file_path:
-            # ACIDITY FALLBACK STRATEGY: Try alternative acidity datasets
-            if dataset in ["acidity_historical", "acidity_current", "acidity"] or dataset.startswith("acidity"):
-                logger.info(f"No direct data for {dataset}, attempting acidity fallback strategy")
-                return await self._handle_acidity_fallback(dataset, lat, lon, date_str, start_time)
-            
-            # Return empty response for other datasets
-            logger.warning(f"No data file found for dataset {dataset}, returning empty response")
+            logger.warning(f"No data file found for dataset {resolved_dataset} (original: {dataset}) on {date_str}")
             return PointDataResponse(
-                dataset=dataset,
+                dataset=dataset,  # Keep original dataset name in response
                 location=Coordinates(lat=lat, lon=lon),
                 actual_location=Coordinates(lat=lat, lon=lon),
                 date=date_str or "no-data",
@@ -316,15 +314,77 @@ class DataExtractor:
                 file_source="no-file"
             )
         
-        # OPTIMIZATION: Use smart file manager and coordinate grids - TEMPORARILY DISABLED
-        # Force legacy method for debugging cache manager issues
-        logger.info(f"🔧 Using legacy extraction method for {dataset} (optimized path disabled for debugging)")
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            self.executor, 
-            self._extract_point_data_sync, 
-            dataset, file_path, lat, lon
-        )
+        # Direct data extraction using xarray
+        try:
+            with xr.open_dataset(file_path) as ds:
+                # Find nearest point
+                nearest_lat = ds.lat.sel(lat=lat, method='nearest').values
+                nearest_lon = ds.lon.sel(lon=lon, method='nearest').values
+                
+                # Extract data at the point using variables from resolved dataset
+                point_data = {}
+                dataset_vars = self.dataset_config.get(resolved_dataset, {}).get("variables", list(ds.data_vars))
+                logger.info(f"🔍 Extracting variables for {resolved_dataset}: {dataset_vars}")
+                
+                for var_name in dataset_vars:
+                    if var_name in ds.data_vars and len(ds[var_name].dims) >= 2:  # Skip scalar variables
+                        try:
+                            # Select by lat/lon first
+                            var_data = ds[var_name].sel(lat=nearest_lat, lon=nearest_lon, method='nearest')
+                            
+                            # Handle time dimension - take the first/only time if present
+                            if 'time' in var_data.dims:
+                                var_data = var_data.isel(time=0)
+                            
+                            # Handle depth/zlev dimension - take surface (first level) if present
+                            if 'zlev' in var_data.dims:
+                                var_data = var_data.isel(zlev=0)
+                            elif 'depth' in var_data.dims:
+                                var_data = var_data.isel(depth=0)
+                            
+                            value = var_data.values
+                            
+                            # Handle numpy types
+                            if hasattr(value, 'item'):
+                                value = value.item()
+                            
+                            # Get units and long_name if available
+                            units = ds[var_name].attrs.get('units', '')
+                            long_name = ds[var_name].attrs.get('long_name', var_name)
+                            
+                            point_data[var_name] = {
+                                'value': float(value) if not np.isnan(value) else None,
+                                'units': units,
+                                'long_name': long_name,
+                                'valid': not np.isnan(value)
+                            }
+                        except Exception as e:
+                            logger.warning(f"Failed to extract {var_name}: {e}")
+                
+                extraction_time = (time.time() - start_time) * 1000
+                logger.info(f"✅ Extracted {dataset} data in {extraction_time:.1f}ms")
+                
+                return PointDataResponse(
+                    dataset=dataset,
+                    location=Coordinates(lat=lat, lon=lon),
+                    actual_location=Coordinates(lat=float(nearest_lat), lon=float(nearest_lon)),
+                    date=date_str or "latest",
+                    data=point_data,
+                    extraction_time_ms=extraction_time,
+                    file_source=str(file_path.name)
+                )
+                
+        except Exception as e:
+            logger.error(f"Failed to extract data from {file_path}: {e}")
+            return PointDataResponse(
+                dataset=dataset,
+                location=Coordinates(lat=lat, lon=lon),
+                actual_location=Coordinates(lat=lat, lon=lon),
+                date=date_str or "error",
+                data={},
+                extraction_time_ms=(time.time() - start_time) * 1000,
+                file_source="error"
+            )
 
     async def _extract_point_data_optimized(self, dataset: str, file_path: Path, lat: float, lon: float, cache_date: str) -> PointDataResponse:
         """Ultra-fast point data extraction using smart caching and coordinate grids."""
@@ -873,7 +933,7 @@ class DataExtractor:
         logger.info("Fetching all microplastics points for visualization overlay")
         
         # Find microplastics file
-        file_path = await self._find_dataset_file("microplastics")
+        file_path = self._find_dataset_file("microplastics")
         if not file_path:
             raise ValueError("Microplastics dataset not found")
         
@@ -1013,53 +1073,48 @@ class DataExtractor:
         # Fallback to filename
         return self._extract_date_from_filename(file_path.name) or "unknown"
 
-    async def _find_dataset_file(self, dataset: str, date_str: Optional[str] = None) -> Optional[Path]:
-        """Find the appropriate file for the dataset and date."""
-        # Special handling for microplastics - single file with all data
-        if dataset == "microplastics":
-            microplastics_path = self.data_path / "microplastics" / "unified" / "microplastics_complete_1993_2025.nc"
-            return microplastics_path if microplastics_path.exists() else None
+    def _find_dataset_file(self, dataset: str, date_str: Optional[str] = None) -> Optional[Path]:
+        """
+        Simple, direct file path construction - no scanning, no fallbacks.
+        Since all data is available, we use predictable file paths.
+        """
+        base_path = Path(__file__).parent.parent.parent.parent / "ocean-data" / "processed" / "unified_coords"
         
-        # Standard file finding for other datasets
-        dataset_path = self.data_path / dataset
-        if not dataset_path.exists():
+        # Handle latest date requests by using today's date
+        if not date_str or date_str == "latest":
+            date_str = datetime.now().strftime("%Y-%m-%d")
+        
+        # Convert date format and extract year/month
+        try:
+            date_formatted = date_str.replace('-', '')
+            year = date_str[:4]
+            month = date_str[5:7]
+        except:
+            logger.error(f"Invalid date format: {date_str}")
             return None
         
-        # OPTIMIZATION: If we have a specific date, construct the path directly instead of scanning 8000+ files
-        if date_str:
-            try:
-                if len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD format
-                    year, month, day = date_str.split('-')
-                    date_formatted = f"{year}{month}{day}"
-                    
-                    # Construct direct path based on dataset structure
-                    if dataset == "sst":
-                        direct_path = dataset_path / year / month / f"sst_harmonized_{date_formatted}.nc"
-                    elif dataset == "acidity" or dataset.startswith("acidity"):
-                        # Acidity has different naming patterns, try current first
-                        direct_path = dataset_path / f"acidity_current_harmonized_{date_formatted}.nc"
-                        if not direct_path.exists():
-                            direct_path = dataset_path / f"acidity_historical_harmonized_{date_formatted}.nc"
-                        if not direct_path.exists() and dataset == "acidity":
-                            # Try in parent directory structure for fallback datasets
-                            parent_path = dataset_path.parent / "acidity" 
-                            direct_path = parent_path / f"acidity_current_harmonized_{date_formatted}.nc"
-                            if not direct_path.exists():
-                                direct_path = parent_path / f"acidity_historical_harmonized_{date_formatted}.nc"
-                    else:
-                        # Generic pattern construction 
-                        direct_path = dataset_path / f"{dataset}_harmonized_{date_formatted}.nc"
-                    
-                    if direct_path.exists():
-                        logger.info(f"🎯 Direct path hit: {direct_path}")
-                        return direct_path
-            except Exception as e:
-                logger.warning(f"Failed to construct direct path for {dataset}/{date_str}: {e}")
+        # Direct path construction with proper directory structure
+        file_patterns = {
+            "sst": f"sst/{year}/{month}/sst_harmonized_{date_formatted}.nc",
+            "currents": f"currents/currents_harmonized_{date_formatted}.nc", 
+            "acidity": f"acidity_current/{year}/{month}/acidity_current_harmonized_{date_formatted}.nc",
+            "acidity_current": f"acidity_current/{year}/{month}/acidity_current_harmonized_{date_formatted}.nc",
+            "acidity_historical": f"acidity_historical/{year}/{month}/acidity_historical_harmonized_{date_formatted}.nc",
+            "microplastics": "microplastics/unified/microplastics_complete_1993_2025.nc"
+        }
         
-        # OPTIMIZATION: Skip slow file scanning, return None for direct fallback strategies
-        # This prevents scanning 8000+ files and lets the caller handle with fallback datasets
-        logger.info(f"📁 No direct path found for {dataset}/{date_str}, skipping file scan for performance")
-        return None  # Let caller handle with fallback strategies (e.g., acidity fallback)
+        if dataset not in file_patterns:
+            logger.error(f"Unknown dataset: {dataset}")
+            return None
+        
+        file_path = base_path / file_patterns[dataset]
+        
+        if file_path.exists():
+            logger.info(f"✅ Found file: {file_path}")
+            return file_path
+        else:
+            logger.warning(f"❌ File not found: {file_path}")
+            return None
     
     def _validate_dataset_file(self, file_path: Path) -> bool:
         """Validate that a dataset file has proper coordinates and variables."""
@@ -1084,127 +1139,109 @@ class DataExtractor:
             logger.warning(f"Error validating file {file_path.name}: {e}")
             return False
 
-    async def extract_multi_point_data(self, datasets: List[str], lat: float, lon: float, date_str: Optional[str] = None) -> MultiDatasetResponse:
-        """Extract data from multiple datasets at a single point."""
+    def extract_multi_point_data(self, datasets: List[str], lat: float, lon: float, date_str: Optional[str] = None) -> MultiDatasetResponse:
+        """Simple multi-dataset extraction - no async, no timeouts, no parallel complexity."""
         start_time = time.time()
-        logger.info(f"🔄 Starting multi-dataset extraction for {datasets} at ({lat}, {lon})")
+        logger.info(f"🔄 Simple multi-dataset extraction for {datasets} at ({lat}, {lon})")
         
-        # Validate datasets
-        invalid_datasets = [d for d in datasets if d not in self.dataset_config]
-        if invalid_datasets:
-            raise ValueError(f"Unknown datasets: {invalid_datasets}")
-        
-        # Create tasks for all datasets with adaptive timeouts
-        async def extract_with_timeout(dataset: str) -> Tuple[str, Any]:
-            """Extract data for a single dataset with timeout protection."""
+        # Extract data from each dataset sequentially
+        dataset_data = {}
+        for dataset in datasets:
             try:
-                # Adaptive timeout based on dataset (currents files are large)
-                timeout_seconds = 45.0 if dataset == 'currents' else 30.0
-                logger.info(f"📊 Extracting {dataset} with {timeout_seconds}s timeout")
-                
-                result = await asyncio.wait_for(
-                    self.extract_point_data(dataset, lat, lon, date_str),
-                    timeout=timeout_seconds
-                )
+                logger.info(f"📊 Extracting {dataset}")
+                result = self.extract_point_data(dataset, lat, lon, date_str)
+                dataset_data[dataset] = result
                 logger.info(f"✅ Successfully extracted data for {dataset}")
-                return (dataset, result)
-            except asyncio.TimeoutError:
-                logger.warning(f"⏰ Timeout extracting data for {dataset}")
-                return (dataset, Exception(f"Timeout extracting {dataset} data"))
             except Exception as e:
                 logger.error(f"❌ Error extracting data for {dataset}: {e}")
-                return (dataset, e)
-        
-        # Use asyncio.gather for proper parallel execution
-        logger.info(f"🚀 Starting parallel extraction for {len(datasets)} datasets")
-        tasks = [extract_with_timeout(dataset) for dataset in datasets]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Process results  
-        dataset_data = {}
-        for result in results:
-            if isinstance(result, Exception):
-                # Handle top-level exceptions from asyncio.gather
-                logger.error(f"Top-level error in multi-dataset extraction: {result}")
-                continue
-                
-            dataset, data = result
-            if isinstance(data, Exception):
-                logger.error(f"Error extracting data for {dataset}: {data}")
-                # Create error response
                 dataset_data[dataset] = {
-                    "error": str(data),
+                    "error": str(e),
                     "dataset": dataset
                 }
-            else:
-                dataset_data[dataset] = data
         
         total_time = (time.time() - start_time) * 1000
         
-        # Use date from first successful extraction, or provided date
-        response_date = date_str or "unknown"
+        # Use provided date or "latest"
+        response_date = date_str or "latest"
         if dataset_data and not date_str:
             for data in dataset_data.values():
                 if hasattr(data, 'date'):
                     response_date = data.date
                     break
         
-        # Add ecosystem-level insights based on multi-parameter analysis
-        enhanced_datasets = self._add_ecosystem_insights(dataset_data, (lat, lon))
-        
         return MultiDatasetResponse(
             location=Coordinates(lat=lat, lon=lon),
             date=response_date,
-            datasets=enhanced_datasets,
+            datasets=dataset_data,
             total_extraction_time_ms=round(total_time, 2)
         )
 
     async def _handle_acidity_fallback(self, requested_dataset: str, lat: float, lon: float, date_str: Optional[str], start_time: float) -> PointDataResponse:
-        """Handle acidity data fallback by trying available acidity datasets."""
+        """Optimized acidity data fallback with intelligent dataset selection."""
         from datetime import datetime
         
-        logger.info(f"🔄 Handling acidity fallback for {requested_dataset}, date: {date_str}")
+        logger.info(f"🔄 Optimized acidity fallback for {requested_dataset}, date: {date_str}")
         
-        # Define fallback strategy based on date and dataset
+        # Define optimal fallback strategy based on date and temporal coverage
         fallback_order = []
+        optimal_dataset = None
         
         if date_str:
             try:
                 target_date = datetime.strptime(date_str, "%Y-%m-%d")
                 year = target_date.year
                 
-                # Smart fallback based on temporal coverage
-                if year <= 2021:
-                    # Historical period: prefer historical data, then current
+                # Optimized dataset selection based on temporal coverage
+                if year <= 2022:
+                    # Historical period (2003-2022): historical data is primary
+                    optimal_dataset = "acidity_historical"
                     fallback_order = ["acidity_historical", "acidity_current"]
-                else:
-                    # Current period: prefer current data, then historical
+                elif year >= 2023:
+                    # Current period (2023-present): current data is primary
+                    optimal_dataset = "acidity_current" 
                     fallback_order = ["acidity_current", "acidity_historical"]
-            except:
-                # Invalid date format, try all options
+                else:
+                    # Edge case: try both
+                    fallback_order = ["acidity_current", "acidity_historical"]
+                
+                logger.info(f"📅 Date {date_str} (year {year}) → optimal dataset: {optimal_dataset}")
+                
+            except Exception as e:
+                logger.warning(f"Invalid date format {date_str}: {e}, trying all datasets")
                 fallback_order = ["acidity_current", "acidity_historical"]
         else:
-            # No date specified, try current first then historical
+            # No date specified, prefer current data for real-time queries
+            optimal_dataset = "acidity_current"
             fallback_order = ["acidity_current", "acidity_historical"]
         
         # Remove the originally requested dataset to avoid infinite recursion
         fallback_order = [ds for ds in fallback_order if ds != requested_dataset]
         
-        # Try each fallback dataset
+        # Track fallback performance
+        fallback_attempts = 0
+        fallback_start_time = time.time()
+        
+        # Try each fallback dataset with early success detection
         for fallback_dataset in fallback_order:
             try:
-                logger.info(f"🧪 Trying fallback dataset: {fallback_dataset}")
+                fallback_attempts += 1
+                attempt_start = time.time()
+                logger.info(f"🧪 Trying fallback dataset {fallback_attempts}/{len(fallback_order)}: {fallback_dataset}")
                 
-                # Check if the fallback dataset has data
-                file_path = await self._find_dataset_file(fallback_dataset, date_str)
+                # Fast file existence check before extraction attempt
+                file_path = self._find_dataset_file(fallback_dataset, date_str)
                 if file_path:
-                    logger.info(f"✅ Found data in {fallback_dataset}, extracting...")
+                    logger.info(f"✅ Found data file in {fallback_dataset}, extracting...")
                     
                     # Extract data using the fallback dataset
                     try:
                         result = await self._extract_point_data_optimized(fallback_dataset, file_path, lat, lon, date_str or "latest")
                         
-                        # Add metadata about fallback
+                        # Calculate fallback performance metrics
+                        attempt_time = (time.time() - attempt_start) * 1000
+                        total_fallback_time = (time.time() - fallback_start_time) * 1000
+                        
+                        # Add enhanced metadata about fallback with performance info
                         if result.data:
                             result.data["_fallback_info"] = DataValue(
                                 value=f"Data from {fallback_dataset} (fallback from {requested_dataset})",
@@ -1212,22 +1249,33 @@ class DataExtractor:
                                 long_name="Data Source Fallback Information",
                                 valid=True
                             )
-                            result.data["_original_request"] = DataValue(
-                                value=requested_dataset,
+                            result.data["_fallback_performance"] = DataValue(
+                                value=f"Success in {attempt_time:.1f}ms (attempt {fallback_attempts}/{len(fallback_order)})",
+                                units="metadata",
+                                long_name="Fallback Performance Metrics",
+                                valid=True
+                            )
+                            result.data["_optimal_dataset"] = DataValue(
+                                value=optimal_dataset or "unknown",
                                 units="metadata", 
-                                long_name="Originally Requested Dataset",
+                                long_name="Optimal Dataset for This Date",
                                 valid=True
                             )
                         
-                        logger.info(f"🎯 Successfully extracted acidity data using fallback: {fallback_dataset}")
+                        logger.info(f"🎯 SUCCESS: Acidity fallback to {fallback_dataset} completed in {attempt_time:.1f}ms (total: {total_fallback_time:.1f}ms)")
                         return result
                         
                     except Exception as e:
-                        logger.warning(f"Failed to extract from fallback {fallback_dataset}: {e}")
+                        attempt_time = (time.time() - attempt_start) * 1000
+                        logger.warning(f"❌ Extraction failed for {fallback_dataset} in {attempt_time:.1f}ms: {e}")
                         continue
+                else:
+                    attempt_time = (time.time() - attempt_start) * 1000
+                    logger.warning(f"❌ No file found for {fallback_dataset} in {attempt_time:.1f}ms")
                         
             except Exception as e:
-                logger.warning(f"Error checking fallback dataset {fallback_dataset}: {e}")
+                attempt_time = (time.time() - attempt_start) * 1000
+                logger.warning(f"❌ Error checking fallback dataset {fallback_dataset} in {attempt_time:.1f}ms: {e}")
                 continue
         
         # No fallback worked, return empty response with information

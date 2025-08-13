@@ -131,7 +131,7 @@ async def get_sst_point(
 ):
     """Extract SST data at a specific point."""
     try:
-        return await data_extractor.extract_point_data("sst", lat, lon, date)
+        return data_extractor.extract_point_data("sst", lat, lon, date)
     except Exception as e:
         logger.error(f"Error extracting SST data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -145,7 +145,7 @@ async def get_currents_point(
 ):
     """Extract current data at a specific point."""
     try:
-        return await data_extractor.extract_point_data("currents", lat, lon, date)
+        return data_extractor.extract_point_data("currents", lat, lon, date)
     except Exception as e:
         logger.error(f"Error extracting currents data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -158,7 +158,7 @@ async def get_acidity_point(
 ):
     """Extract ocean acidity/biogeochemistry data at a specific point."""
     try:
-        return await data_extractor.extract_point_data("acidity", lat, lon, date)
+        return data_extractor.extract_point_data("acidity", lat, lon, date)
     except Exception as e:
         logger.error(f"Error extracting acidity data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -171,7 +171,7 @@ async def get_microplastics_point(
 ):
     """Extract microplastics data at a specific point. Includes real data (1993-2019) and synthetic predictions (2019-2025)."""
     try:
-        return await data_extractor.extract_point_data("microplastics", lat, lon, date)
+        return data_extractor.extract_point_data("microplastics", lat, lon, date)
     except Exception as e:
         logger.error(f"Error extracting microplastics data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -230,7 +230,7 @@ async def get_multi_point(
     
     active_requests += 1
     try:
-        return await data_extractor.extract_multi_point_data(
+        return data_extractor.extract_multi_point_data(
             datasets.split(','), lat, lon, date
         )
     except Exception as e:

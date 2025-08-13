@@ -43,14 +43,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       'speed': 'Current speed',
       'direction': 'Current direction',
       'thetao': 'Sea water potential temperature',
-      'so': 'Sea water salinity',
-      
-      
-      // Microplastics parameters
-      'microplastics_concentration': 'Microplastics concentration',
-      'confidence': 'Confidence level',
-      'data_source': 'Data source',
-      'concentration_class': 'Concentration class'
+      'so': 'Sea water salinity'
     };
     
     return labelMap[parameter] || longName || parameter;
@@ -158,8 +151,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       const sections: Record<string, { title: string; icon: string }> = {
         sst: { title: 'Temperature', icon: '🌡️' },
         currents: { title: 'Currents', icon: '🌀' },
-        acidity: { title: 'Ocean Chemistry', icon: '🧪' },
-        microplastics: { title: 'Microplastics', icon: '🏭' }
+        acidity: { title: 'Ocean Chemistry', icon: '🧪' }
       };
       
       const section = sections[datasetName] || { title: datasetName.toUpperCase(), icon: '📊' };
@@ -201,11 +193,6 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         title: 'Ocean Chemistry',
         icon: '🧪',
         variables: ['ph', 'ph_insitu', 'ph_insitu_total', 'dissic', 'dic', 'talk', 'pco2', 'revelle', 'o2', 'no3', 'po4', 'si', 'chl', 'nppv']
-      },
-      microplastics: {
-        title: 'Microplastics',
-        icon: '🏭',
-        variables: ['microplastics_concentration', 'confidence', 'data_source', 'concentration_class']
       }
     };
 
@@ -302,24 +289,6 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
           }}>
             <div style={{ fontSize: '0.8em', color: '#60a5fa' }}>
               Current Vector: {data.data.speed.value} m/s @ {formatDirection(data.data.direction.value as number)}
-            </div>
-          </div>
-        )}
-        
-        {datasetName === 'microplastics' && data.data.concentration_class && (
-          <div style={{
-            marginTop: '12px',
-            padding: '8px',
-            backgroundColor: 'rgba(124, 58, 237, 0.1)',
-            borderRadius: '4px'
-          }}>
-            <div style={{ 
-              fontSize: '0.9em', 
-              color: classifyMeasurement('microplastics_concentration', 
-                data.data.microplastics_concentration?.value as number || 0).color,
-              fontWeight: '600'
-            }}>
-              {data.data.concentration_class.value}
             </div>
           </div>
         )}
@@ -469,7 +438,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       {renderEcosystemInsights()}
       
       {Object.entries(data.datasets)
-        .filter(([name]) => name !== '_ecosystem_insights') // Filter out insights from regular dataset display
+        .filter(([name]) => name !== '_ecosystem_insights' && name !== 'microplastics') // Filter out insights and microplastics from regular dataset display
         .map(([name, dataset]) => renderDataset(name, dataset)
       )}
       

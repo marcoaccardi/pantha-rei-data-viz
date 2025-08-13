@@ -166,7 +166,7 @@ export async function fetchMultiPointData(
         throw error;
       }
     },
-    { ttl: 2 * 60 * 1000 } // 2 minute cache for ocean data
+    { ttl: 5 * 60 * 1000 } // 5 minute cache for ocean data (increased for better performance)
   );
 }
 
