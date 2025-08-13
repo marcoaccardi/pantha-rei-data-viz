@@ -50,10 +50,10 @@ class DataExtractor:
             },
             "currents": {
                 "name": "Ocean Currents",
-                "description": "CMEMS Global Ocean Currents Analysis and Forecast",
-                "variables": ["uo", "vo", "u", "v", "speed", "direction", "thetao", "so"],
+                "description": "Global Ocean Currents from OSCAR (2003-2022) and CMEMS (2023-present)",
+                "variables": ["uo", "vo", "u", "v", "ug", "vg", "current_speed", "current_direction", "speed", "direction", "thetao", "so"],
                 "file_pattern": "currents_harmonized_*.nc",
-                "spatial_resolution": "0.083° (1/12 degree)"
+                "spatial_resolution": "Variable: OSCAR 1°, CMEMS 0.083°"
             },
             "acidity_historical": {
                 "name": "Ocean Biogeochemistry - Historical Nutrients",
@@ -243,6 +243,64 @@ class DataExtractor:
             
         return available_dates
 
+    def _open_dataset_optimized(self, file_path: Path, chunks: Optional[Dict] = None) -> xr.Dataset:
+        """
+        Open dataset with optimizations for large files.
+        Uses dask for chunked loading and memory efficiency.
+        """
+        try:
+            # For large files, use dask chunks for memory efficiency
+            if chunks:
+                logger.info(f"🚀 Opening large dataset with chunks: {chunks}")
+                ds = xr.open_dataset(file_path, chunks=chunks, engine='netcdf4')
+            else:
+                ds = xr.open_dataset(file_path, engine='netcdf4')
+            
+            # Check file size and log performance info
+            file_size_mb = file_path.stat().st_size / (1024 * 1024)
+            if file_size_mb > 50:
+                logger.info(f"📊 Large file detected: {file_size_mb:.1f}MB, using optimized loading")
+            
+            return ds
+            
+        except Exception as e:
+            logger.error(f"Failed to open dataset {file_path}: {e}")
+            # Fallback to standard opening
+            return xr.open_dataset(file_path)
+
+    def _find_nearest_point_optimized(self, ds: xr.Dataset, lat: float, lon: float) -> Tuple[float, float]:
+        """
+        Optimized spatial lookup for large datasets using numpy operations.
+        Faster than xarray sel for chunked/large files.
+        """
+        try:
+            # Determine coordinate names (different datasets use different naming)
+            lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
+            lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
+            
+            # Use numpy operations for faster spatial lookup on large files
+            lat_values = ds[lat_coord].values
+            lon_values = ds[lon_coord].values
+            
+            # Find nearest indices using numpy
+            lat_idx = np.argmin(np.abs(lat_values - lat))
+            lon_idx = np.argmin(np.abs(lon_values - lon))
+            
+            nearest_lat = float(lat_values[lat_idx])
+            nearest_lon = float(lon_values[lon_idx])
+            
+            logger.debug(f"🎯 Fast spatial lookup: ({lat:.3f}, {lon:.3f}) → ({nearest_lat:.3f}, {nearest_lon:.3f})")
+            return nearest_lat, nearest_lon
+            
+        except Exception as e:
+            logger.warning(f"Optimized spatial lookup failed, falling back to standard method: {e}")
+            # Fallback to standard xarray method with coordinate detection
+            lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
+            lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
+            nearest_lat = ds[lat_coord].sel({lat_coord: lat}, method='nearest').values
+            nearest_lon = ds[lon_coord].sel({lon_coord: lon}, method='nearest').values
+            return float(nearest_lat), float(nearest_lon)
+
     def _extract_date_from_filename(self, filename: str) -> Optional[str]:
         """Extract date from filename in YYYY-MM-DD format."""
         # Handle different filename patterns
@@ -314,12 +372,24 @@ class DataExtractor:
                 file_source="no-file"
             )
         
-        # Direct data extraction using xarray
+        # Optimized data extraction with chunked loading for large files
         try:
-            with xr.open_dataset(file_path) as ds:
-                # Find nearest point
-                nearest_lat = ds.lat.sel(lat=lat, method='nearest').values
-                nearest_lon = ds.lon.sel(lon=lon, method='nearest').values
+            # Use chunked loading for large currents files
+            if resolved_dataset == "currents":
+                ds = self._open_dataset_optimized(file_path, chunks={'lat': 100, 'lon': 100})
+            else:
+                ds = xr.open_dataset(file_path)
+                
+            with ds:
+                # Find nearest point with optimized spatial lookup
+                if resolved_dataset == "currents":
+                    nearest_lat, nearest_lon = self._find_nearest_point_optimized(ds, lat, lon)
+                else:
+                    # Standard coordinate detection for other datasets
+                    lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
+                    lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
+                    nearest_lat = ds[lat_coord].sel({lat_coord: lat}, method='nearest').values
+                    nearest_lon = ds[lon_coord].sel({lon_coord: lon}, method='nearest').values
                 
                 # Extract data at the point using variables from resolved dataset
                 point_data = {}
@@ -329,8 +399,10 @@ class DataExtractor:
                 for var_name in dataset_vars:
                     if var_name in ds.data_vars and len(ds[var_name].dims) >= 2:  # Skip scalar variables
                         try:
-                            # Select by lat/lon first
-                            var_data = ds[var_name].sel(lat=nearest_lat, lon=nearest_lon, method='nearest')
+                            # Select by lat/lon first with proper coordinate names
+                            lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
+                            lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
+                            var_data = ds[var_name].sel({lat_coord: nearest_lat, lon_coord: nearest_lon}, method='nearest')
                             
                             # Handle time dimension - take the first/only time if present
                             if 'time' in var_data.dims:
@@ -1096,12 +1168,14 @@ class DataExtractor:
         # Direct path construction with proper directory structure
         file_patterns = {
             "sst": f"sst/{year}/{month}/sst_harmonized_{date_formatted}.nc",
-            "currents": f"currents/currents_harmonized_{date_formatted}.nc", 
+            "currents": f"currents/{year}/{month}/currents_harmonized_{date_formatted}.nc", 
             "acidity": f"acidity_current/{year}/{month}/acidity_current_harmonized_{date_formatted}.nc",
             "acidity_current": f"acidity_current/{year}/{month}/acidity_current_harmonized_{date_formatted}.nc",
             "acidity_historical": f"acidity_historical/{year}/{month}/acidity_historical_harmonized_{date_formatted}.nc",
             "microplastics": "microplastics/unified/microplastics_complete_1993_2025.nc"
         }
+        
+# All currents files now use uniform naming - no special handling needed
         
         if dataset not in file_patterns:
             logger.error(f"Unknown dataset: {dataset}")
