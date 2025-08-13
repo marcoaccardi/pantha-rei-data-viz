@@ -383,7 +383,6 @@ class DeepDatasetValidator:
         
         coverage_assessment = {
             'sst': '✅ Full coverage (1981-present)',
-            'waves': '✅ Full coverage (1993-present)',
             'currents': '❌ Limited coverage (2022-present only)',
             'acidity': '✅ Hybrid coverage (1993-present)',
         }

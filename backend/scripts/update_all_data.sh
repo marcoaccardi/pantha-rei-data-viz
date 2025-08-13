@@ -22,7 +22,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Default options
-DATASETS="sst,waves,currents,acidity,microplastics"
+DATASETS="sst,currents,acidity,microplastics"
 MAX_FILES=""
 START_DATE=""
 END_DATE=""
@@ -41,7 +41,7 @@ Ocean Data Management System - Update all datasets to current date
 
 OPTIONS:
     -d, --datasets DATASETS     Comma-separated list of datasets to update
-                               (default: sst,waves,currents,acidity,microplastics)
+                               (default: sst,currents,acidity,microplastics)
     -s, --start-date DATE      Start date in YYYY-MM-DD format (overrides status.json)
     -e, --end-date DATE        End date in YYYY-MM-DD format (default: yesterday)
     -m, --max-files NUM        Maximum number of files to download per dataset
@@ -59,7 +59,7 @@ OPTIONS:
 EXAMPLES:
     $0                                      # Update all datasets to current date
     $0 -d sst                              # Update only SST data
-    $0 -d sst,waves -m 10                  # Update SST and waves, max 10 files each
+    $0 -d sst,currents -m 10               # Update SST and currents, max 10 files each
     $0 -s 2024-01-01 -e 2024-01-31        # Update specific date range
     $0 -n                                  # Dry run to see what would be downloaded
     
@@ -71,7 +71,6 @@ EXAMPLES:
 
 DATASETS:
     sst          Sea Surface Temperature (NOAA OISST v2.1)
-    waves        Ocean Waves (CMEMS)
     currents     Ocean Currents (CMEMS)
     acidity      Ocean Biogeochemistry (Hybrid approach)
                  - 1993-2022: CMEMS nutrients (NO3, PO4, SI, O2)
@@ -117,7 +116,7 @@ check_dependencies() {
     }
     
     # Check for CMEMS credentials if needed
-    if [[ "$DATASETS" =~ (waves|currents|acidity) ]]; then
+    if [[ "$DATASETS" =~ (currents|acidity) ]]; then
         if [ ! -f "$CONFIG_DIR/credentials.env" ]; then
             log_warn "credentials.env not found. CMEMS datasets may fail without credentials."
             log_warn "Copy credentials.env.template and fill in your credentials."
@@ -258,9 +257,6 @@ download_dataset() {
     case "$dataset" in
         "sst")
             dataset_class="SSTDownloader"
-            ;;
-        "waves")
-            dataset_class="WavesDownloader"
             ;;
         "currents")
             dataset_class="CurrentsDownloader"

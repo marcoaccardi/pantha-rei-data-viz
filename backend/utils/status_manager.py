@@ -221,14 +221,6 @@ class StatusManager:
                     "last_error": None,
                     "status": "not_started"
                 },
-                "waves": {
-                    "last_date": None,
-                    "total_files": 0,
-                    "storage_gb": 0.0,
-                    "last_success": None,
-                    "last_error": None,
-                    "status": "not_started"
-                },
                 "currents": {
                     "last_date": None,
                     "total_files": 0,

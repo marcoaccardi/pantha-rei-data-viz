@@ -42,8 +42,7 @@ python scripts/test_single_date.py --test-all
 ./scripts/update_all_data.sh
 
 # Update specific datasets
-./scripts/update_all_data.sh -d sst,waves
-
+./scripts/update_all_data.sh -d sst,
 # Dry run to see what would be downloaded
 ./scripts/update_all_data.sh -n
 ```
@@ -126,8 +125,7 @@ ocean-data/
 ./scripts/update_all_data.sh
 
 # Update specific datasets only
-./scripts/update_all_data.sh -d sst,waves
-
+./scripts/update_all_data.sh -d sst,
 # Update specific date range
 ./scripts/update_all_data.sh -s 2024-01-01 -e 2024-01-31
 

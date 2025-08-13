@@ -24,7 +24,7 @@ class BaseDataDownloader(ABC):
         Initialize base downloader.
         
         Args:
-            dataset_name: Name of the dataset (sst, waves, currents, acidity, microplastics)
+            dataset_name: Name of the dataset (sst, currents, acidity, microplastics)
             config_path: Optional path to config directory
         """
         self.dataset_name = dataset_name

@@ -376,7 +376,7 @@ class ParameterInterpreter:
             
             if current_val > 0.5 and wave_val > 3.0:
                 insights.append(
-                    "🌊 High energy environment: strong currents + large waves - extreme mixing conditions"
+                    "🌊 High energy environment: strong currents detected - extreme mixing conditions"
                 )
         
         return insights

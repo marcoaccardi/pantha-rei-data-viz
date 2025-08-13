@@ -94,7 +94,6 @@ python -c "from utils.status_manager import StatusManager;
 | Dataset | 3-File Test Status | Test Dates | Issues Found | Ready for Full Download |
 |---------|-------------------|------------|--------------|------------------------|
 | **SST** | ✅ **Passed** | 2024-01-15, 2024-06-15, 2024-12-15 | None | ✅ Yes |
-| **Waves** | ✅ **Passed** | 2024-07-23, 2024-07-24, 2024-07-25 | None | ✅ Yes |
 | **Currents** | ✅ **Processor Ready** | Ready for testing | Unified coordinate processor implemented | ✅ Ready |
 | **Acidity** | ✅ **Passed** | 2024-01-06 | Unified coordinate processor implemented | ✅ Yes |
 | **Microplastics** | ❌ **Not Implemented** | - | Downloader needs debugging | ❌ No |
@@ -106,7 +105,6 @@ python -c "from utils.status_manager import StatusManager;
 | Dataset | Source | Status | Resolution | Test Storage | Coverage |
 |---------|--------|---------|------------|--------------|----------|
 | **SST** | NOAA OISST v2.1 | ✅ Complete | 0.25°→1° | ~1 GB | 1981-present |
-| **Waves** | CMEMS WAV_001_027 | ✅ Implemented | 0.2° | ~25MB/day | 1993-present |
 | **Currents** | CMEMS PHY_001_024 | ✅ Implemented | 0.083° (1/12°) | ~45KB/day | 1993-present |
 | **Acidity** | CMEMS BGC_001_028 | ✅ Implemented | 0.25° | ~20MB/day | 1993-present |
 | **Microplastics** | NOAA NCEI Portal | ❌ Not Working | Point data | ~20KB/quarter | 1972-present |
@@ -116,7 +114,6 @@ python -c "from utils.status_manager import StatusManager;
 | Dataset | Latitude Range | Longitude Range | Notes |
 |---------|----------------|-----------------|-------|
 | SST (NOAA) | -89.875° to +89.875° | 0-360° (converted to -180-180°) | Global coverage |
-| Waves (CMEMS) | -80° to +90° | -180° to +180° | Limited polar coverage |
 | Currents (CMEMS) | -80° to +90° | -180° to +180° | Surface layer priority |
 | Acidity (CMEMS) | -80° to +90° | -180° to +180° | Model-based |
 | Microplastics | Irregular | Irregular | Observation-based |
@@ -143,7 +140,6 @@ backend/
 ├── downloaders/
 │   ├── base_downloader.py    ✅ Abstract base with date gap detection
 │   ├── sst_downloader.py     ✅ Full NOAA OISST implementation
-│   ├── waves_downloader.py   ✅ CMEMS waves implementation complete
 │   ├── currents_downloader.py ✅ CMEMS currents implementation complete
 │   └── acidity_downloader.py ✅ CMEMS acidity implementation complete
 ├── processors/
@@ -223,7 +219,6 @@ ocean-data/
 #### CMEMS Downloaders
 
 ✅ **Completed**:
-1. **waves_downloader.py** - CMEMS WAV_001_027 (✅ Implementation complete)
 2. **currents_downloader.py** - CMEMS PHY_001_024 surface only (✅ Implementation complete)
 3. **acidity_downloader.py** - CMEMS BGC_001_028 pH, fCO2 (✅ Implementation complete)
 
@@ -250,7 +245,6 @@ ocean-data/
 ```bash
 # Planned shell scripts for targeted updates
 scripts/update_sst.sh        # Individual SST updates
-scripts/update_waves.sh      # CMEMS waves only
 scripts/update_currents.sh   # CMEMS currents only
 scripts/update_acidity.sh    # CMEMS acidity only
 scripts/update_microplastics.sh # NCEI microplastics
@@ -395,8 +389,6 @@ ocean-data/                           # Base: ../ocean-data
 ├── raw/                             # Original downloaded files
 │   ├── sst/
 │   │   └── {year}/{month}/          # 2024/01/oisst-avhrr-v02r01.20240115.nc
-│   ├── waves/
-│   │   └── {year}/{month}/          # waves_global_20240115.nc
 │   ├── currents/
 │   │   └── {year}/{month}/          # currents_surface_20240115.nc
 │   ├── acidity/
@@ -470,9 +462,6 @@ Response:
   "date": "2024-06-15",
   "data": {
     "sst": {"value": 28.5, "unit": "°C", "source": "NOAA_OISST"},
-    "waves": {
-      "significant_height": {"value": 1.8, "unit": "m"},
-      "direction": {"value": 225, "unit": "degrees"},
       "period": {"value": 8.2, "unit": "s"}
     },
     "currents": {
@@ -511,7 +500,6 @@ Response:
   "system_health": "healthy",
   "datasets": {
     "sst": {"status": "active", "last_update": "2024-01-24", "files": 400},
-    "waves": {"status": "active", "last_update": "2024-01-24", "files": 400},
     "currents": {"status": "active", "last_update": "2024-01-24", "files": 400},
     "acidity": {"status": "active", "last_update": "2024-01-24", "files": 400},
     "microplastics": {"status": "active", "last_update": "2024-01-20", "files": 1}
@@ -587,8 +575,6 @@ class OceanDataReader:
 
 - **CMEMS Integration with 3-File Testing** (In Progress)
   - ⏳ Set up CMEMS credentials and authentication
-  - ⏳ Implement waves downloader (CMEMS WAV_001_027)
-    - **Required**: Pass 3-file test before full download capability
   - ⏳ Implement currents downloader (CMEMS PHY_001_024)
     - **Required**: Pass 3-file test before full download capability
   - ⏳ Implement acidity downloader (CMEMS BGC_001_028)
@@ -634,7 +620,6 @@ python scripts/test_single_date.py --dataset sst --date 2024-01-15
 
 # 3-File Testing Protocol (REQUIRED for each dataset)
 ./scripts/update_all_data.sh -d sst -m 3 --start-date 2024-01-15     # Exactly 3 files
-./scripts/update_all_data.sh -d waves -m 3 --start-date 2024-01-15   # When implemented
 ./scripts/update_all_data.sh -d currents -m 3 --start-date 2024-01-15 # When implemented
 
 # Integration testing
@@ -716,7 +701,6 @@ health = status_manager.perform_health_check(base_path)
 ocean-data/logs/
 ├── downloads/
 │   ├── 20240125_140530_sst_download.log      # Individual download logs
-│   ├── 20240125_141200_waves_download.log    # Timestamped entries
 │   └── 20240125_142000_system_health.log     # Health check logs
 └── processing/
     ├── sst_downsampling_20240125.log         # Processing logs
@@ -781,7 +765,7 @@ grep -i error ocean-data/logs/downloads/*.log
   - Apply scientific colormaps with proper value scaling
   - Generate multiple resolutions (low/medium/high) for web performance
   - Include land masking for continental boundaries
-  - Support all dataset categories: SST, waves, currents, acidity, microplastics
+  - Support all dataset categories: SST, currents, acidity, microplastics
 - FastAPI server implementation
 - Phase 2 temporal expansion (2020-2023)
 - Performance optimization and caching
@@ -885,7 +869,7 @@ OPTIONS:
 python scripts/test_single_date.py [OPTIONS]
 
 OPTIONS:
-  --dataset {sst,waves,currents,acidity,microplastics}
+  --dataset {sst,currents,acidity,microplastics}
   --date YYYY-MM-DD           # Date to test (default: yesterday)
   --test-config               # Test configuration loading
   --test-status               # Test status management

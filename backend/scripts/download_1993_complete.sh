@@ -65,18 +65,9 @@ else
 fi
 echo ""
 
-# 2. Waves Data (Available from 1993-01-01) ✅  
-log_info "2/4 Downloading waves data for ${YEAR}..."
-./scripts/update_all_data.sh -d waves -s "$START_DATE" -e "$END_DATE" --verbose
-if [ $? -eq 0 ]; then
-    log_info "✅ Waves data download completed"
-else
-    log_error "❌ Waves data download failed"
-fi
-echo ""
 
-# 3. Acidity Historical Data (Available from 1993-01-01) ✅
-log_info "3/4 Downloading acidity historical data for ${YEAR}..."
+# 2. Acidity Historical Data (Available from 1993-01-01) ✅
+log_info "2/3 Downloading acidity historical data for ${YEAR}..."
 ./scripts/update_all_data.sh -d acidity --acidity-source historical -s "$START_DATE" -e "$END_DATE" --verbose
 if [ $? -eq 0 ]; then
     log_info "✅ Acidity historical data download completed"
@@ -85,8 +76,8 @@ else
 fi
 echo ""
 
-# 4. Microplastics Data (Available from 1972-04-01, but sparse in early years) ⚠️
-log_info "4/4 Downloading microplastics data for ${YEAR}..."
+# 3. Microplastics Data (Available from 1972-04-01, but sparse in early years) ⚠️
+log_info "3/3 Downloading microplastics data for ${YEAR}..."
 ./scripts/update_all_data.sh -d microplastics -s "$START_DATE" -e "$END_DATE" --verbose
 if [ $? -eq 0 ]; then
     log_info "✅ Microplastics data download completed"
@@ -103,7 +94,7 @@ log_warn "❌ Ocean Currents (available from 2003-01-01)"
 echo ""
 
 log_info "Historical data download for ${YEAR} completed!"
-log_info "Available datasets: SST raw, Waves, Acidity (nutrients), Microplastics"
+log_info "Available datasets: SST raw, Acidity (nutrients), Microplastics"
 log_info "Data saved to: ../ocean-data/raw/"
 
 echo -e "${CYAN}=============================================${NC}"

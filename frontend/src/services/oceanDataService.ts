@@ -2,7 +2,7 @@
  * Ultra-Fast Ocean Data API Service
  * 
  * Service for fetching ocean data from the FastAPI backend with high-performance caching.
- * Handles all dataset queries including SST, currents, waves, acidity, and microplastics.
+ * Handles all dataset queries including SST, currents, acidity, and microplastics.
  * Features:
  * - Request deduplication to prevent duplicate API calls
  * - Intelligent caching with browser storage persistence
@@ -63,7 +63,7 @@ export async function fetchMultiPointData(
   lon: number,
   date?: string
 ): Promise<MultiDatasetResponse> {
-  const datasets = ['sst', 'acidity', 'currents', 'waves', 'microplastics'];
+  const datasets = ['sst', 'acidity', 'currents', 'microplastics'];
   const cacheKey = requestCache.createOceanDataKey(lat, lon, date || 'latest', datasets);
 
   return requestCache.get(
@@ -80,9 +80,9 @@ export async function fetchMultiPointData(
         params.append('date', date);
       }
 
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging - increased for large files
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds for large files
       
       try {
         console.log(`🌊 FETCHING OCEAN DATA: ${cacheKey}`);
@@ -109,19 +109,57 @@ export async function fetchMultiPointData(
           // Fallback to individual dataset requests for better reliability
           console.warn('Multi-dataset request timed out, falling back to individual requests');
           try {
-            // Use individual endpoints which are much more reliable
-            const sstParams = new URLSearchParams({
-              lat: lat.toString(),
-              lon: lon.toString()
+            // Fetch all datasets individually in parallel
+            const individualRequests = datasets.map(async (dataset) => {
+              try {
+                const params = new URLSearchParams({
+                  lat: lat.toString(),
+                  lon: lon.toString()
+                });
+                if (date) params.append('date', date);
+                
+                const response = await fetch(`${API_BASE_URL}/${dataset}/point?${params}`);
+                if (response.ok) {
+                  const result = await response.json();
+                  return { dataset, result };
+                } else {
+                  throw new Error(`${dataset} request failed: ${response.status}`);
+                }
+              } catch (err) {
+                console.warn(`Failed to fetch ${dataset}:`, err);
+                return { 
+                  dataset, 
+                  result: { 
+                    error: err instanceof Error ? err.message : 'Unknown error',
+                    dataset 
+                  }
+                };
+              }
             });
-            if (date) sstParams.append('date', date);
             
-            const fallbackResponse = await fetch(`${API_BASE_URL}/sst/point?${sstParams}`);
-            if (fallbackResponse.ok) {
-              return fallbackResponse.json();
-            }
+            // Wait for all individual requests to complete
+            const individualResults = await Promise.allSettled(individualRequests);
+            
+            // Build the multi-dataset response format
+            const fallbackData: any = {
+              location: { lat, lon },
+              date: date || 'latest',
+              datasets: {},
+              total_extraction_time_ms: Date.now() - startTime
+            };
+            
+            individualResults.forEach((result) => {
+              if (result.status === 'fulfilled' && result.value) {
+                const { dataset, result: dataResult } = result.value;
+                fallbackData.datasets[dataset] = dataResult;
+              }
+            });
+            
+            console.log(`✅ FALLBACK COMPLETED: fetched ${Object.keys(fallbackData.datasets).length} datasets individually`);
+            return fallbackData;
+            
           } catch (fallbackError) {
-            console.error('Fallback request also failed:', fallbackError);
+            console.error('Individual fallback requests also failed:', fallbackError);
           }
         }
         console.error('Ocean data request failed:', error);
@@ -136,7 +174,7 @@ export async function fetchMultiPointData(
  * Fetch data from a single dataset at a specific point
  */
 export async function fetchSingleDataset(
-  dataset: 'sst' | 'waves' | 'currents' | 'acidity_historical' | 'acidity_current' | 'acidity' | 'microplastics',
+  dataset: 'sst' | 'currents' | 'acidity_historical' | 'acidity_current' | 'acidity' | 'microplastics',
   lat: number,
   lon: number,
   date?: string
@@ -284,13 +322,6 @@ export function classifyMeasurement(parameter: string, value: number): {
       if (value < 8.0) return { classification: 'Low pH', severity: 'high', color: '#f59e0b' };
       if (value < 8.2) return { classification: 'Normal', severity: 'low', color: '#10b981' };
       return { classification: 'Basic', severity: 'medium', color: '#3b82f6' };
-      
-    case 'VHM0': // Wave height
-      if (value < 0.5) return { classification: 'Calm', severity: 'low', color: '#10b981' };
-      if (value < 1.5) return { classification: 'Slight', severity: 'low', color: '#06b6d4' };
-      if (value < 2.5) return { classification: 'Moderate', severity: 'medium', color: '#f59e0b' };
-      if (value < 4.0) return { classification: 'Rough', severity: 'high', color: '#ef4444' };
-      return { classification: 'Very Rough', severity: 'critical', color: '#991b1b' };
       
     case 'speed': // Current speed
       if (value < 0.1) return { classification: 'Slow', severity: 'low', color: '#10b981' };

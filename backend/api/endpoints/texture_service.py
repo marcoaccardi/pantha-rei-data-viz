@@ -110,7 +110,7 @@ class TextureService:
         Find the best available texture for given parameters with intelligent fallback.
         
         Args:
-            category: Data category (sst, acidity, currents, waves)
+            category: Data category (sst, acidity, currents)
             date: Preferred date in YYYY-MM-DD format
             resolution: Preferred resolution (preview, low, medium, high)
             

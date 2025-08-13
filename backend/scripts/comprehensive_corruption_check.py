@@ -215,7 +215,6 @@ class ComprehensiveCorruptionChecker:
         datasets_to_scan = [
             # Raw data
             ("raw/sst", self.raw_path / "sst"),
-            ("raw/waves", self.raw_path / "waves"),
             ("raw/currents", self.raw_path / "currents"),
             ("raw/acidity", self.raw_path / "acidity"),
             ("raw/acidity_historical", self.raw_path / "acidity_historical"),
@@ -225,7 +224,6 @@ class ComprehensiveCorruptionChecker:
             # Processed data
             ("processed/sst", self.processed_path / "sst_downsampled"),
             ("processed/unified_coords/sst", self.processed_path / "unified_coords" / "sst"),
-            ("processed/unified_coords/waves", self.processed_path / "unified_coords" / "waves"),
             ("processed/unified_coords/currents", self.processed_path / "unified_coords" / "currents"),
             ("processed/unified_coords/acidity", self.processed_path / "unified_coords" / "acidity"),
             ("processed/unified_coords/acidity_historical", self.processed_path / "unified_coords" / "acidity_historical"),

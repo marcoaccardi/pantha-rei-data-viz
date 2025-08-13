@@ -9,7 +9,6 @@
 # - Raw SST Data
 # - Ocean Acidity Data
 # - Ocean Currents Data  
-# - Wave Data
 # - Microplastics Data
 
 set -e  # Exit on any error
@@ -132,17 +131,9 @@ else
 fi
 ((TOTAL_TASKS++))
 
-# Wave Data
-echo -e "${BLUE}  2d. Wave Data${NC}"
-if run_download_task "Wave Data" "python scripts/update_waves_data.py --yesterday || echo 'Wave data script not found - skipping'"; then
-    ((SUCCESSFUL_TASKS++))
-else
-    ((FAILED_TASKS++))
-fi
-((TOTAL_TASKS++))
 
 # Microplastics Data
-echo -e "${BLUE}  2e. Microplastics Data${NC}"
+echo -e "${BLUE}  2d. Microplastics Data${NC}"
 if run_download_task "Microplastics Data" "python scripts/update_microplastics_data.py --yesterday || echo 'Microplastics data script not found - skipping'"; then
     ((SUCCESSFUL_TASKS++))
 else

@@ -19,7 +19,6 @@ export const TEMPORAL_COVERAGE = {
   SST_START: '1981-09-01',        // NOAA OISST historical coverage
   SALINITY_START: '2003-01-01',   // From ocean currents system
   CURRENTS_START: '2003-01-01',   // NASA OSCAR historical + CMEMS current
-  WAVES_START: '2022-11-01',      // CMEMS waves availability
   CHLOROPHYLL_START: '1993-01-01', // CMEMS biogeochemistry
   PH_START: '1993-01-01',         // CMEMS biogeochemistry historical
   BIODIVERSITY_START: '1972-01-01', // Research data

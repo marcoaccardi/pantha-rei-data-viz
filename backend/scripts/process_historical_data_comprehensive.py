@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from processors.acidity_processor import AcidityProcessor
 from processors.currents_processor import CurrentsProcessor
-from processors.waves_processor import WavesProcessor
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

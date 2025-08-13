@@ -45,13 +45,13 @@ panta-rhei-data-map/
 │   │       ├── currents/
 │   │       ├── microplastics/
 │   │       ├── sst/
-│   │       └── waves/
+│   │       └── /
 │   └── raw/               # Raw downloaded data
 │       ├── acidity/
 │       ├── currents/
 │       ├── microplastics/
 │       ├── sst/
-│       └── waves/
+│       └── /
 └── docs/                   # Project-level documentation
 ```
 

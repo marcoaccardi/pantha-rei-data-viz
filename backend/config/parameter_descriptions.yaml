@@ -107,58 +107,6 @@ parameters:
       accuracy: "High-precision measurements accurate to ±0.01 pH units"
       temporal_scale: "Point measurements from oceanographic cruises"
       
-  # Wave Height  
-  VHM0:
-    name: "Significant Wave Height"
-    short_description: "Average height of the highest one-third of waves"
-    scientific_context: "Key parameter for marine safety, coastal erosion, and energy generation"
-    unit_explanation: "Measured in meters (m) above mean sea level"
-    
-    value_ranges:
-      - min: 0.0
-        max: 0.5
-        classification: "Calm"
-        severity: "low"
-        description: "Very calm sea conditions"
-        environmental_impact: "Minimal coastal impact, excellent conditions for marine life"
-        context: "Safe for all marine activities, protected or enclosed waters"
-        
-      - min: 0.5
-        max: 1.5
-        classification: "Slight"
-        severity: "low"
-        description: "Slight sea conditions, small wavelets"
-        environmental_impact: "Normal wave action, minimal coastal erosion"
-        context: "Good conditions for most marine activities"
-        
-      - min: 1.5
-        max: 2.5
-        classification: "Moderate"
-        severity: "medium"
-        description: "Moderate sea conditions"
-        environmental_impact: "Moderate wave energy, normal coastal processes"
-        context: "Typical open ocean conditions, may affect small craft"
-        
-      - min: 2.5
-        max: 4.0
-        classification: "Rough"
-        severity: "high"
-        description: "Rough sea conditions"
-        environmental_impact: "Significant wave energy, increased coastal erosion potential"
-        context: "Challenging conditions for marine navigation, storm influence likely"
-        
-      - min: 4.0
-        max: 20.0
-        classification: "Very Rough"
-        severity: "critical"
-        description: "Very rough to extreme sea conditions"
-        environmental_impact: "High wave energy, severe coastal impact, dangerous for marine life"
-        context: "Storm or extreme weather conditions, major safety hazard"
-    
-    health_implications:
-      human: "Affects maritime safety, coastal infrastructure, and recreational activities"
-      ecosystem: "Influences sediment transport, coastal habitats, and marine animal behavior"
-      
   # Ocean Current Speed
   speed:
     name: "Ocean Current Speed"  

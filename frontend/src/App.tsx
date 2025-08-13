@@ -55,7 +55,7 @@ function App() {
 
   // Function to generate random ocean coordinates (strictly avoiding all land)
   const generateRandomOceanLocation = () => {
-    // PREMIUM LOCATIONS - Complete coverage for ALL 4 datasets (SST + Acidity + Currents + Waves)
+    // PREMIUM LOCATIONS - Complete coverage for ALL 3 datasets (SST + Acidity + Currents)
     // Tested and confirmed working (2025-01-26)
     const premiumDataPoints = [
       { name: "North Pacific", lat: 30.0, lng: -150.0 },

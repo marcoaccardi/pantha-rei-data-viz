@@ -20,7 +20,6 @@ from typing import Dict, List, Any
 BACKEND_DIR = Path(__file__).parent.parent
 sys.path.append(str(BACKEND_DIR))
 
-from downloaders.waves_downloader import WavesDownloader
 
 
 class DatasetValidityMonitor:
@@ -29,11 +28,7 @@ class DatasetValidityMonitor:
     def __init__(self):
         """Initialize the monitor."""
         self.monitored_datasets = {
-            "waves": {
-                "downloader_class": WavesDownloader,
-                "description": "CMEMS Global Ocean Waves Analysis and Forecast"
-            }
-            # Add other datasets here as they're implemented
+            # Add datasets here as they're implemented
         }
     
     def check_dataset_status(self, dataset_name: str) -> Dict[str, Any]:

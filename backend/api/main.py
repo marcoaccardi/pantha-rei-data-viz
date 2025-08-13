@@ -4,7 +4,6 @@ Ocean Data Management API
 
 FastAPI application providing access to ocean climate data including:
 - Sea Surface Temperature (SST)
-- Ocean Waves
 - Ocean Currents  
 - Ocean Acidity/Biogeochemistry
 
@@ -38,7 +37,7 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI(
     title="Ocean Data Management API",
-    description="Access to harmonized ocean climate data including SST, waves, currents, and biogeochemistry",
+    description="Access to harmonized ocean climate data including SST, currents, and biogeochemistry",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -94,7 +93,7 @@ async def health_check():
         return HealthResponse(
             status="healthy",
             message="Ocean Data API is operational",
-            datasets_available=["sst", "waves", "currents", "acidity", "microplastics"],
+            datasets_available=["sst", "currents", "acidity", "microplastics"],
             total_files=19  # Known file count
         )
     except Exception as e:
@@ -137,18 +136,6 @@ async def get_sst_point(
         logger.error(f"Error extracting SST data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/waves/point", response_model=PointDataResponse)
-async def get_waves_point(
-    lat: float = Query(..., ge=-90, le=90, description="Latitude in degrees"),
-    lon: float = Query(..., ge=-180, le=180, description="Longitude in degrees"),
-    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (latest if not specified)")
-):
-    """Extract wave data at a specific point."""
-    try:
-        return await data_extractor.extract_point_data("waves", lat, lon, date)
-    except Exception as e:
-        logger.error(f"Error extracting waves data: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/currents/point", response_model=PointDataResponse)
 async def get_currents_point(
@@ -232,7 +219,7 @@ async def get_microplastics_points(
 async def get_multi_point(
     lat: float = Query(..., ge=-90, le=90, description="Latitude in degrees"),
     lon: float = Query(..., ge=-180, le=180, description="Longitude in degrees"),
-    datasets: str = Query("sst,waves,currents,acidity,microplastics", description="Comma-separated list of datasets"),
+    datasets: str = Query("sst,currents,acidity,microplastics", description="Comma-separated list of datasets"),
     date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (latest if not specified)")
 ):
     """Extract data from multiple datasets at a specific point."""
@@ -250,10 +237,10 @@ async def get_multi_point(
         dataset_list = [d.strip() for d in datasets.split(",")]
         logger.info(f"🌊 Multi-point request for {dataset_list} at ({lat}, {lon}) on {date} (Active: {active_requests}/{MAX_CONCURRENT_REQUESTS})")
         
-        # Add overall timeout for the entire request - reduced to prevent memory exhaustion
+        # Add overall timeout for the entire request - increased for large files
         result = await asyncio.wait_for(
             data_extractor.extract_multi_point_data(dataset_list, lat, lon, date),
-            timeout=60.0  # 60 second total timeout (reduced to prevent memory exhaustion)
+            timeout=120.0  # 120 second total timeout (increased for large currents files)
         )
         
         logger.info(f"✅ Multi-point request completed successfully")

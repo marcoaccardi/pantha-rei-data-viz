@@ -349,7 +349,7 @@ def main():
     print("   Keep only harmonized files (178 KB each)")
     print("   Remove raw (1.5 MB) and downsampled (181 KB) files")
     print("   This achieves 90%+ storage reduction per dataset")
-    print("   Apply same strategy to future datasets (waves, currents, etc.)")
+    print("   Apply same strategy to future datasets (currents, etc.)")
     
     return 0
 

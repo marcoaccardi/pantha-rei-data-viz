@@ -96,7 +96,6 @@ class QuickCorruptionChecker:
         
         datasets = [
             ("raw/sst", self.raw_path / "sst", 100),
-            ("raw/waves", self.raw_path / "waves", 50),
             ("raw/currents", self.raw_path / "currents", 100),
             ("raw/acidity_historical", self.raw_path / "acidity_historical", 200),
             ("raw/acidity_current", self.raw_path / "acidity_current", 50),

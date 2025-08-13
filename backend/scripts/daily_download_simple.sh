@@ -33,8 +33,6 @@ python scripts/update_acidity_data.py --yesterday 2>/dev/null || echo "    (scri
 echo "  - Ocean Currents Data..."
 python scripts/update_currents_data.py --yesterday 2>/dev/null || echo "    (script not ready yet)"
 
-echo "  - Wave Data..."
-python scripts/update_waves_data.py --yesterday 2>/dev/null || echo "    (script not ready yet)"
 
 echo "  - Microplastics Data..."
 python scripts/update_microplastics_data.py --yesterday 2>/dev/null || echo "    (script not ready yet)"

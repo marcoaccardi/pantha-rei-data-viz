@@ -45,13 +45,6 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       'thetao': 'Sea water potential temperature',
       'so': 'Sea water salinity',
       
-      // Waves parameters
-      'VHM0': 'Wave height',
-      'VMDR': 'Mean wave direction',
-      'VTPK': 'Peak wave period',
-      'MWD': 'Mean wave direction',
-      'PP1D': 'Peak wave period',
-      'VTM10': 'Mean wave period',
       
       // Microplastics parameters
       'microplastics_concentration': 'Microplastics concentration',
@@ -165,7 +158,6 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       const sections: Record<string, { title: string; icon: string }> = {
         sst: { title: 'Temperature', icon: '🌡️' },
         currents: { title: 'Currents', icon: '🌀' },
-        waves: { title: 'Waves', icon: '≋' },
         acidity: { title: 'Ocean Chemistry', icon: '🧪' },
         microplastics: { title: 'Microplastics', icon: '🏭' }
       };
@@ -204,11 +196,6 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         title: 'Currents',
         icon: '🌀',
         variables: ['uo', 'vo', 'speed', 'direction', 'thetao', 'so']
-      },
-      waves: {
-        title: 'Waves',
-        icon: '≋',
-        variables: ['VHM0', 'VMDR', 'VTPK', 'MWD', 'PP1D', 'VTM10']
       },
       acidity: {
         title: 'Ocean Chemistry',

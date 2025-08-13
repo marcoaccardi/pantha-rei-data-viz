@@ -92,10 +92,6 @@ class CompleteDataAuditor:
             # SST files: sst_YYYYMMDD.nc -> YYYYMMDD
             if filename.startswith("sst_"):
                 return filename.replace("sst_", "")
-        elif dataset_type == "waves":
-            # Waves files: waves_YYYYMMDD.nc -> YYYYMMDD
-            if filename.startswith("waves_"):
-                return filename.replace("waves_", "")
         elif dataset_type == "acidity_historical":
             # Acidity historical: acidity_historical_YYYYMMDD.nc -> YYYYMMDD
             if filename.startswith("acidity_historical_"):
@@ -253,7 +249,6 @@ class CompleteDataAuditor:
         # Define datasets to audit
         datasets = [
             ("sst", self.raw_path / "sst"),
-            ("waves", self.raw_path / "waves"),
             ("currents", self.raw_path / "currents"),
             ("acidity_historical", self.raw_path / "acidity_historical"),
             ("acidity_current", self.raw_path / "acidity_current"),

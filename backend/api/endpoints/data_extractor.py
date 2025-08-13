@@ -2,7 +2,7 @@
 Data extraction engine for Ocean Data Management API.
 
 Handles reading NetCDF files and extracting point data with high performance.
-Supports all datasets: SST, waves, currents, and acidity.
+Supports all datasets: SST, currents, and acidity.
 """
 
 import xarray as xr
@@ -43,13 +43,6 @@ class DataExtractor:
                 "variables": ["sst", "anom", "err", "ice"],
                 "file_pattern": "sst_harmonized_*.nc",
                 "spatial_resolution": "1.0° (downsampled from 0.25°)"
-            },
-            "waves": {
-                "name": "Ocean Waves",
-                "description": "CMEMS Global Ocean Waves Analysis and Forecast",
-                "variables": ["VHM0", "VMDR", "VTPK", "MWD", "PP1D", "VTM10"],
-                "file_pattern": "waves_processed_*.nc", 
-                "spatial_resolution": "0.083° (1/12 degree)"
             },
             "currents": {
                 "name": "Ocean Currents",
@@ -253,7 +246,7 @@ class DataExtractor:
             # Format: sst_harmonized_20240115.nc -> 2024-01-15
             date_part = filename.split("_")[-1].split(".")[0]
         elif "processed_" in filename:
-            # Format: waves_processed_20240723.nc -> 2024-07-23
+            # Format: processed files -> YYYY-MM-DD
             date_part = filename.split("_")[-1].split(".")[0]
         else:
             return None
@@ -333,10 +326,27 @@ class DataExtractor:
             
             
             # OPTIMIZATION: Use smart file manager with coordinate grids
-            ds, coord_grid = await cache_manager.get_dataset_with_grid(file_path, dataset)
-            
-            # FAST SPATIAL LOOKUP: Use pre-loaded coordinate grid
-            lat_idx, lon_idx, actual_lat, actual_lon = coord_grid.find_nearest_indices(lat, lon)
+            try:
+                ds, coord_grid = await cache_manager.get_dataset_with_grid(file_path, dataset)
+                # FAST SPATIAL LOOKUP: Use pre-loaded coordinate grid
+                lat_idx, lon_idx, actual_lat, actual_lon = coord_grid.find_nearest_indices(lat, lon)
+            except RuntimeError as e:
+                if "Coordinate grid not available" in str(e):
+                    # Fallback for ultra-large files: open dataset directly and do direct coordinate lookup
+                    logger.info(f"⚡ Using direct coordinate lookup for large file: {dataset}")
+                    ds = await cache_manager.file_manager.get_dataset(file_path, dataset)
+                    
+                    # Direct coordinate lookup without grid
+                    lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
+                    lon_coord = 'longitude' if 'longitude' in ds.coords else 'lon'
+                    
+                    # Use sel method with nearest for chunked datasets (works with dask arrays)
+                    ds_sel = ds.sel({lat_coord: lat, lon_coord: lon}, method='nearest')
+                    actual_lat = float(ds_sel[lat_coord].values)
+                    actual_lon = float(ds_sel[lon_coord].values)
+                    lat_idx, lon_idx = None, None  # Not needed for direct selection
+                else:
+                    raise
             
             # Determine coordinate names
             lat_coord = 'latitude' if 'latitude' in ds.coords else 'lat'
@@ -348,8 +358,13 @@ class DataExtractor:
             
             for var_name in variables:
                 if var_name in ds.data_vars:
-                    # Direct indexing - much faster than searching
-                    var_data = ds[var_name].isel({lat_coord: lat_idx, lon_coord: lon_idx})
+                    # Choose extraction method based on whether we have indices or direct selection
+                    if lat_idx is not None and lon_idx is not None:
+                        # Direct indexing - much faster than searching
+                        var_data = ds[var_name].isel({lat_coord: lat_idx, lon_coord: lon_idx})
+                    else:
+                        # Direct coordinate selection for chunked datasets
+                        var_data = ds[var_name].sel({lat_coord: actual_lat, lon_coord: actual_lon}, method='nearest')
                     
                     # Handle time dimension if present
                     if 'time' in var_data.dims:
@@ -359,8 +374,11 @@ class DataExtractor:
                     if 'depth' in var_data.dims:
                         var_data = var_data.isel(depth=0)
                     
-                    # Extract scalar value
-                    value = float(var_data.values.item() if var_data.values.ndim == 0 else var_data.values.flatten()[0])
+                    # Extract scalar value - handle dask arrays properly
+                    if hasattr(var_data.values, 'compute'):  # Dask array
+                        value = float(var_data.values.compute().item())
+                    else:
+                        value = float(var_data.values.item() if var_data.values.ndim == 0 else var_data.values.flatten()[0])
                     
                     # Create enhanced DataValue with educational context
                     data[var_name] = self._create_enhanced_data_value(
@@ -1057,42 +1075,50 @@ class DataExtractor:
         if invalid_datasets:
             raise ValueError(f"Unknown datasets: {invalid_datasets}")
         
-        # Extract data from each dataset with timeout protection
-        tasks = []
-        for dataset in datasets:
-            logger.info(f"📊 Creating task for dataset: {dataset}")
-            task = asyncio.wait_for(
-                self.extract_point_data(dataset, lat, lon, date_str),
-                timeout=15.0  # 15 second timeout per dataset (reduced to prevent memory exhaustion)
-            )
-            tasks.append((dataset, task))
-        
-        # Wait for all extractions to complete with individual timeouts
-        results = []
-        for dataset, task in tasks:
+        # Create tasks for all datasets with adaptive timeouts
+        async def extract_with_timeout(dataset: str) -> Tuple[str, Any]:
+            """Extract data for a single dataset with timeout protection."""
             try:
-                result = await task
-                results.append((dataset, result))
+                # Adaptive timeout based on dataset (currents files are large)
+                timeout_seconds = 45.0 if dataset == 'currents' else 30.0
+                logger.info(f"📊 Extracting {dataset} with {timeout_seconds}s timeout")
+                
+                result = await asyncio.wait_for(
+                    self.extract_point_data(dataset, lat, lon, date_str),
+                    timeout=timeout_seconds
+                )
                 logger.info(f"✅ Successfully extracted data for {dataset}")
+                return (dataset, result)
             except asyncio.TimeoutError:
                 logger.warning(f"⏰ Timeout extracting data for {dataset}")
-                results.append((dataset, Exception(f"Timeout extracting {dataset} data")))
+                return (dataset, Exception(f"Timeout extracting {dataset} data"))
             except Exception as e:
                 logger.error(f"❌ Error extracting data for {dataset}: {e}")
-                results.append((dataset, e))
+                return (dataset, e)
         
-        # Process results
+        # Use asyncio.gather for proper parallel execution
+        logger.info(f"🚀 Starting parallel extraction for {len(datasets)} datasets")
+        tasks = [extract_with_timeout(dataset) for dataset in datasets]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Process results  
         dataset_data = {}
-        for dataset, result in results:
+        for result in results:
             if isinstance(result, Exception):
-                logger.error(f"Error extracting data for {dataset}: {result}")
+                # Handle top-level exceptions from asyncio.gather
+                logger.error(f"Top-level error in multi-dataset extraction: {result}")
+                continue
+                
+            dataset, data = result
+            if isinstance(data, Exception):
+                logger.error(f"Error extracting data for {dataset}: {data}")
                 # Create error response
                 dataset_data[dataset] = {
-                    "error": str(result),
+                    "error": str(data),
                     "dataset": dataset
                 }
             else:
-                dataset_data[dataset] = result
+                dataset_data[dataset] = data
         
         total_time = (time.time() - start_time) * 1000
         

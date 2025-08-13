@@ -83,25 +83,6 @@ datasets:
     credentials_required: false  # Public access via OPeNDAP
     priority: 2  # Backup option for data processing
     
-  waves:
-    name: "CMEMS Global Waves Analysis and Forecast"
-    description: "Global Ocean Waves Analysis and Forecast"
-    product_id: "GLOBAL_ANALYSISFORECAST_WAV_001_027"
-    dataset_id: "cmems_mod_glo_wav_anfc_0.083deg_PT3H-i"
-    base_url: "https://data.marine.copernicus.eu"
-    temporal_coverage:
-      start: "2022-11-01"  # CORRECTED: CMEMS waves only available from 2022-11-01
-      end: "present"
-      test_start: "2024-01-01"
-    spatial_resolution: 0.083  # 1/12 degrees
-    coordinate_system: "-180-180"
-    variables: ["VHM0", "VMDR", "VTPK"]  # significant height, direction, period (actual CMEMS names)
-    update_frequency: "daily"
-    file_size_mb: 25  # approximate size per file
-    processing:
-      harmonize_coords: false  # already in -180-180
-    credentials_required: true
-    
   # OSCAR CURRENTS - NASA Historical Data
   currents_oscar:
     name: "NASA OSCAR Currents"
