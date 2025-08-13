@@ -27,15 +27,11 @@ export function useGlobeCamera() {
 
       // Function to execute animation when controls are ready
       const executeAnimation = () => {
-        console.log('🔍 Checking controls ref:', orbitControlsRef.current);
         if (!orbitControlsRef.current || !orbitControlsRef.current.object) {
-          console.log('⏳ Controls not ready, retrying...');
           // If controls not ready, try again in a moment
           setTimeout(executeAnimation, 100);
           return;
         }
-
-        console.log('✅ Controls ready, starting animation');
         const controls = orbitControlsRef.current;
         const camera = controls.object;
         

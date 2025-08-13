@@ -88,8 +88,6 @@ export async function fetchMultiPointData(
       
       const startTime = Date.now();
       try {
-        console.log(`🌊 FETCHING OCEAN DATA: ${cacheKey} (timeout: ${timeoutMs/1000}s)`);
-        
         const response = await fetch(`${API_BASE_URL}/multi/point?${params}`, {
           signal: controller.signal
         });
@@ -102,7 +100,6 @@ export async function fetchMultiPointData(
         
         const data = await response.json();
         const requestTime = Date.now() - startTime;
-        console.log(`✅ OCEAN DATA FETCHED: ${cacheKey} in ${requestTime}ms`);
         
         return data;
       } catch (error) {

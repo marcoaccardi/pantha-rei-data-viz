@@ -55,7 +55,6 @@ export function useAnimationController(
 
   // Internal state setter that keeps ref in sync
   const setAnimationState = useCallback((newState: AnimationState) => {
-    console.log(`🎭 Animation State: ${stateRef.current} → ${newState}`);
     stateRef.current = newState;
     setState(newState);
     onStateChange?.(newState);
@@ -71,8 +70,6 @@ export function useAnimationController(
 
   // Execute the actual camera animation
   const executeAnimation = useCallback((request: AnimationRequest) => {
-    console.log(`🚀 Executing animation to: ${request.coordinates.lat.toFixed(4)}°, ${request.coordinates.lng.toFixed(4)}°`);
-    
     setAnimationState('ANIMATING');
     onAnimationStart?.(request.coordinates);
     
@@ -81,8 +78,6 @@ export function useAnimationController(
     
     // Set timeout to complete animation
     timeoutRef.current = setTimeout(() => {
-      console.log(`✅ Animation completed for: ${request.coordinates.lat.toFixed(4)}°, ${request.coordinates.lng.toFixed(4)}°`);
-      
       onAnimationComplete?.(request.coordinates);
       currentRequestRef.current = null;
       
@@ -108,7 +103,6 @@ export function useAnimationController(
     const nextRequest = queuedRequestRef.current;
     if (!nextRequest) return;
     
-    console.log(`📋 Processing queued request: ${nextRequest.id}`);
     queuedRequestRef.current = null;
     currentRequestRef.current = nextRequest;
     
@@ -156,7 +150,7 @@ export function useAnimationController(
       timestamp
     };
     
-    console.log(`📥 Animation request: ${requestId} (${priority}) to ${coordinates.lat.toFixed(4)}°, ${coordinates.lng.toFixed(4)}°`);
+    // Animation request submitted
 
     // Check for duplicate coordinates
     if (currentRequestRef.current) {
@@ -164,7 +158,6 @@ export function useAnimationController(
       const latDiff = Math.abs(current.coordinates.lat - coordinates.lat);
       const lngDiff = Math.abs(current.coordinates.lng - coordinates.lng);
       if (latDiff < 0.001 && lngDiff < 0.001) {
-        console.log(`🔄 Ignoring duplicate animation request to same coordinates`);
         return;
       }
     }
@@ -195,7 +188,6 @@ export function useAnimationController(
         // Replace queued/waiting request
         if (priority === 'HIGH' || !queuedRequestRef.current || priority >= queuedRequestRef.current.priority) {
           queuedRequestRef.current = newRequest;
-          console.log(`🔄 Replaced queued animation with: ${requestId}`);
         }
         break;
         
@@ -203,7 +195,6 @@ export function useAnimationController(
         // Queue new request to execute after current animation
         if (priority === 'HIGH' || !queuedRequestRef.current || priority >= queuedRequestRef.current.priority) {
           queuedRequestRef.current = newRequest;
-          console.log(`📋 Queued animation for after current: ${requestId}`);
         }
         break;
         
@@ -220,7 +211,6 @@ export function useAnimationController(
 
   // Handle texture loaded event
   const onTextureLoaded = useCallback(() => {
-    console.log(`🖼️ Texture loaded - checking for waiting animations`);
     isWaitingForTextureRef.current = false;
     
     if (textureLoadedCallbackRef.current) {
@@ -232,7 +222,6 @@ export function useAnimationController(
 
   // Reset animation system (for error recovery)
   const reset = useCallback(() => {
-    console.log(`🔄 Resetting animation controller`);
     clearAnimationTimeout();
     currentRequestRef.current = null;
     queuedRequestRef.current = null;

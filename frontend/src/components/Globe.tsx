@@ -164,19 +164,18 @@ const Globe: React.FC<GlobeProps> = ({
     animationDurationMs: 1200,
     cooldownMs: 100,
     onAnimationStart: (coords) => {
-      console.log(`🎬 Animation started to: ${coords.lat.toFixed(4)}°, ${coords.lng.toFixed(4)}°`);
+      // Animation started
     },
     onAnimationComplete: (coords) => {
-      console.log(`🎯 Animation completed to: ${coords.lat.toFixed(4)}°, ${coords.lng.toFixed(4)}°`);
+      // Animation completed
     },
     onStateChange: (state) => {
-      console.log(`🎭 Animation state changed to: ${state}`);
+      // Animation state changed
     }
   });
   
   // Handle SST texture loaded - notify animation controller
   const handleSstTextureLoaded = useCallback(() => {
-    console.log('✅ SST texture loaded');
     onTextureLoaded();
   }, [onTextureLoaded]);
   
@@ -194,8 +193,6 @@ const Globe: React.FC<GlobeProps> = ({
     const dateChanged = selectedDate !== prevDateRef.current;
     
     if (coordsChanged || dateChanged) {
-      console.log(`📍 Changes detected - Coords: ${coordsChanged}, Date: ${dateChanged}`);
-      
       // Update selected coordinates for display
       if (coordinates) {
         setSelectedCoordinates(coordinates);
@@ -230,7 +227,6 @@ const Globe: React.FC<GlobeProps> = ({
       <OrbitControls
         ref={(ref) => {
           if (ref) {
-            console.log('🎮 OrbitControls ref set:', ref);
             orbitControlsRef.current = ref;
           }
         }}

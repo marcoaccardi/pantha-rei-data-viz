@@ -470,8 +470,6 @@ function App() {
     
     try {
       // Fetch data from REST API
-      console.log(`📡 Fetching ocean data for: ${coords.lat.toFixed(4)}°N, ${coords.lng.toFixed(4)}°E on ${queryDate}`);
-      
       const response = await fetchMultiPointData(coords.lat, coords.lng, queryDate);
       
       startTransition(() => {
@@ -486,8 +484,7 @@ function App() {
         setApiError(null);
       });
       
-      console.log(`✅ Ocean data retrieved successfully in ${response.total_extraction_time_ms}ms`);
-      console.log(`📊 Datasets retrieved:`, Object.keys(response.datasets));
+      // Ocean data retrieved successfully
       
     } catch (error) {
       console.error('❌ Error fetching ocean data:', error);
