@@ -268,6 +268,87 @@ class DataExtractor:
             # Fallback to standard opening
             return xr.open_dataset(file_path)
 
+    def _calculate_derived_currents_variables(self, point_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Calculate derived variables for currents data (speed, direction).
+        Works with both OSCAR (u,v) and CMEMS (uo,vo) velocity components.
+        """
+        import math
+        
+        # Determine which velocity components are available
+        u_var = None
+        v_var = None
+        
+        # Check for CMEMS variables (uo, vo)
+        if 'uo' in point_data and 'vo' in point_data:
+            u_var = point_data['uo']
+            v_var = point_data['vo']
+            velocity_source = 'CMEMS'
+        # Check for OSCAR variables (u, v)
+        elif 'u' in point_data and 'v' in point_data:
+            u_var = point_data['u']
+            v_var = point_data['v']
+            velocity_source = 'OSCAR'
+        else:
+            logger.debug("No velocity components found for derived variable calculation")
+            return point_data
+        
+        # Only calculate if both components are valid
+        if (u_var and v_var and 
+            u_var.get('valid', False) and v_var.get('valid', False) and 
+            u_var.get('value') is not None and v_var.get('value') is not None):
+            
+            u_val = float(u_var['value'])
+            v_val = float(v_var['value'])
+            
+            # Calculate speed (magnitude)
+            speed = math.sqrt(u_val**2 + v_val**2)
+            
+            # Calculate direction (in meteorological convention: degrees from North, clockwise)
+            direction_rad = math.atan2(u_val, v_val)  # Note: u,v order for oceanographic convention
+            direction_deg = math.degrees(direction_rad)
+            
+            # Convert to 0-360 range
+            if direction_deg < 0:
+                direction_deg += 360
+            
+            # Add derived variables if they don't already exist
+            if 'speed' not in point_data:
+                point_data['speed'] = {
+                    'value': speed,
+                    'units': 'm s-1',
+                    'long_name': 'Current speed',
+                    'valid': True
+                }
+            
+            if 'current_speed' not in point_data:
+                point_data['current_speed'] = {
+                    'value': speed,
+                    'units': 'm s-1', 
+                    'long_name': 'Current speed',
+                    'valid': True
+                }
+            
+            if 'direction' not in point_data:
+                point_data['direction'] = {
+                    'value': direction_deg,
+                    'units': 'degrees',
+                    'long_name': 'Current direction',
+                    'valid': True
+                }
+            
+            if 'current_direction' not in point_data:
+                point_data['current_direction'] = {
+                    'value': direction_deg,
+                    'units': 'degrees',
+                    'long_name': 'Current direction', 
+                    'valid': True
+                }
+            
+            logger.debug(f"🧮 Calculated derived variables from {velocity_source} data: speed={speed:.3f} m/s, direction={direction_deg:.1f}°")
+        
+        return point_data
+
     def _find_nearest_point_optimized(self, ds: xr.Dataset, lat: float, lon: float) -> Tuple[float, float]:
         """
         Optimized spatial lookup for large datasets using numpy operations.
@@ -451,6 +532,10 @@ class DataExtractor:
                             }
                         except Exception as e:
                             logger.warning(f"Failed to extract {var_name}: {e}")
+                
+                # Calculate derived variables for currents data
+                if resolved_dataset == "currents":
+                    point_data = self._calculate_derived_currents_variables(point_data)
                 
                 extraction_time = (time.time() - start_time) * 1000
                 logger.info(f"✅ Extracted {dataset} data in {extraction_time:.1f}ms")
