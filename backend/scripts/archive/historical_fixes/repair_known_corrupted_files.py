@@ -11,8 +11,8 @@ from datetime import datetime, date
 import xarray as xr
 from typing import List
 
-# Add backend to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add backend to path for imports (script is in scripts/archive/historical_fixes/, need to go up three levels to reach backend/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from downloaders.acidity_historical_downloader import AcidityHistoricalDownloader
 

@@ -13,8 +13,8 @@ import xarray as xr
 import json
 from datetime import datetime
 
-# Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add backend to path (script is in scripts/maintenance/, need to go up two levels to reach backend/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

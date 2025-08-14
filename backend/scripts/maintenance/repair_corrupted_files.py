@@ -12,8 +12,8 @@ import re
 import xarray as xr
 from typing import List, Dict, Set
 
-# Add backend to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add backend to path for imports (script is in scripts/maintenance/, need to go up two levels to reach backend/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from downloaders.acidity_historical_downloader import AcidityHistoricalDownloader
 from downloaders.acidity_current_downloader import AcidityCurrentDownloader

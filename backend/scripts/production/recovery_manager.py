@@ -21,10 +21,10 @@ import xarray as xr
 from dataclasses import dataclass
 import traceback
 
-# Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add backend to path (now two levels up since we're in scripts/production/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from file_validator import FileValidator
+from scripts.production.file_validator import FileValidator
 from utils.status_manager import StatusManager
 from downloaders.sst_downloader import SSTDownloader
 from downloaders.sst_erddap_texture_downloader import SSTERDDAPTextureDownloader

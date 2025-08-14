@@ -22,8 +22,8 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Set
 import re
 
-# Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add backend to path (now two levels up since we're in scripts/production/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from utils.status_manager import StatusManager
 from downloaders.sst_downloader import SSTDownloader

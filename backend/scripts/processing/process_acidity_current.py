@@ -7,8 +7,8 @@ import sys
 import logging
 from pathlib import Path
 
-# Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add backend to path (script is in scripts/processing/, need to go up two levels to reach backend/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from processors.acidity_processor import AcidityProcessor
 

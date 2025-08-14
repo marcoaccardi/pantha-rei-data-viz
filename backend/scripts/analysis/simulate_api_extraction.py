@@ -12,8 +12,8 @@ from datetime import datetime, date
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
 
-# Add backend to path
-sys.path.append(str(Path(__file__).parent.parent))
+# Add backend to path (script is in scripts/analysis/, need to go up two levels to reach backend/)
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 import xarray as xr
 import numpy as np

@@ -14,8 +14,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import json
 
-# Add backend to path
-sys.path.append(str(Path(__file__).parent.parent))
+# Add backend to path (script is in scripts/production/, need to go up two levels to reach backend/)
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from downloaders.sst_erddap_texture_downloader import SSTERDDAPTextureDownloader
 
