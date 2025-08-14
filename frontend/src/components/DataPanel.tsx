@@ -584,15 +584,6 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         .map(([name, dataset]) => renderDataset(name, dataset)
       )}
       
-      <div style={{ 
-        marginTop: designSystem.spacing.lg, 
-        paddingTop: designSystem.spacing.lg, 
-        borderTop: `1px solid ${designSystem.colors.text.muted}40`,
-        fontSize: designSystem.typography.caption,
-        color: designSystem.colors.text.muted
-      }}>
-        <div style={{ color: designSystem.colors.text.secondary }}>⚡ Response time: {data.total_extraction_time_ms.toFixed(0)}ms</div>
-      </div>
     </div>
   );
 };

@@ -15,11 +15,22 @@ import {
 } from './utils/dateUtils';
 import { useConnectionStatus } from './services/connectionMonitor';
 import ConnectionStatusBar from './components/ConnectionStatusBar';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faCalendar, 
+  faLocationDot, 
+  faDice, 
+  faTemperatureHigh, 
+  faBottleWater, 
+  faWater 
+} from '@fortawesome/free-solid-svg-icons';
 
 // Design system constants for consistent styling
 const designSystem = {
   colors: {
-    primary: '#3b82f6',
+    primary: '#64748b',        // blue-gray-500 for buttons
+    primaryHover: '#475569',   // blue-gray-600 for hover
+    primaryActive: '#3b82f6',  // blue-500 for active state
     secondary: '#6366f1',
     success: '#10b981',
     warning: '#f59e0b',
@@ -74,7 +85,6 @@ function App() {
     metadata 
   } = useTextureLoader(undefined, selectedDate);
   const [dateValidation, setDateValidation] = useState(validateDate(new Date().toISOString().split('T')[0]));
-  const [showDatePicker, setShowDatePicker] = useState(false);
   
   // Connection status
   const { status: connectionStatus, details: connectionDetails, isConnected } = useConnectionStatus();
@@ -601,9 +611,13 @@ function App() {
                 fontSize: designSystem.typography.body, 
                 marginBottom: designSystem.spacing.xs, 
                 color: designSystem.colors.text.secondary,
-                fontWeight: '500'
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: designSystem.spacing.sm
               }}>
-                📅 Date Selection
+                <FontAwesomeIcon icon={faCalendar} />
+                Date Selection
               </div>
               <div style={{ 
                 display: 'flex', 
@@ -629,20 +643,6 @@ function App() {
                     flex: 1
                   }}
                 />
-                <button
-                  onClick={() => setShowDatePicker(!showDatePicker)}
-                  style={{
-                    backgroundColor: designSystem.colors.secondary,
-                    color: designSystem.colors.text.primary,
-                    border: 'none',
-                    padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
-                    borderRadius: designSystem.spacing.xs,
-                    cursor: 'pointer',
-                    fontSize: designSystem.typography.caption
-                  }}
-                >
-                  📊
-                </button>
               </div>
               
               {/* Date validation info */}
@@ -665,23 +665,6 @@ function App() {
                 </div>
               )}
               
-              {/* Date info panel */}
-              {showDatePicker && (
-                <div style={{ 
-                  fontSize: designSystem.typography.caption, 
-                  color: designSystem.colors.text.muted, 
-                  backgroundColor: designSystem.colors.backgrounds.secondary,
-                  padding: designSystem.spacing.xs,
-                  borderRadius: designSystem.spacing.xs,
-                  marginBottom: designSystem.spacing.xs
-                }}>
-                  <div>📊 {getDataAvailabilityDescription(selectedDate)}</div>
-                  <div style={{ marginTop: designSystem.spacing.xs }}>
-                    📅 Coverage: {TEMPORAL_COVERAGE.HISTORICAL_START} to {TEMPORAL_COVERAGE.GUARANTEED_END}
-                  </div>
-                </div>
-              )}
-              
             </div>
             
             {/* Auto Data Fetching Info */}
@@ -695,9 +678,13 @@ function App() {
                 fontSize: designSystem.typography.body, 
                 marginBottom: designSystem.spacing.xs, 
                 color: designSystem.colors.text.secondary,
-                fontWeight: '500'
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: designSystem.spacing.sm
               }}>
-                🌊 Ocean Data
+                <FontAwesomeIcon icon={faWater} />
+                Ocean Data
               </div>
               <div style={{ 
                 fontSize: designSystem.typography.caption, 
@@ -729,19 +716,26 @@ function App() {
                   handleLocationChange(randomCoords);
                 }}
                 aria-label="Generate random ocean location and fetch data"
+                title="Random Location"
                 style={{
-                  backgroundColor: designSystem.colors.success,
+                  backgroundColor: designSystem.colors.primary,
                   color: designSystem.colors.text.primary,
                   border: 'none',
-                  padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                  padding: `${designSystem.spacing.md} ${designSystem.spacing.lg}`,
                   borderRadius: designSystem.spacing.xs,  
                   cursor: 'pointer',
-                  fontSize: designSystem.typography.caption,
+                  fontSize: designSystem.typography.body,
                   flex: '1',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background-color 0.2s ease'
                 }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.primaryHover}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.primary}
               >
-                📍 Random Location
+                <FontAwesomeIcon icon={faLocationDot} />
               </button>
               <button 
                 onClick={() => {
@@ -750,19 +744,26 @@ function App() {
                   handleLocationChange(coordinates, randomDate);
                 }}
                 aria-label="Generate random date and fetch data"
+                title="Random Date"
                 style={{
-                  backgroundColor: designSystem.colors.secondary,
+                  backgroundColor: designSystem.colors.primary,
                   color: designSystem.colors.text.primary,
                   border: 'none',
-                  padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                  padding: `${designSystem.spacing.md} ${designSystem.spacing.lg}`,
                   borderRadius: designSystem.spacing.xs,  
                   cursor: 'pointer',
-                  fontSize: designSystem.typography.caption,
+                  fontSize: designSystem.typography.body,
                   flex: '1',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background-color 0.2s ease'
                 }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.primaryHover}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.primary}
               >
-                📅 Random Date
+                <FontAwesomeIcon icon={faCalendar} />
               </button>
               <button 
                 onClick={() => {
@@ -772,19 +773,26 @@ function App() {
                   handleLocationChange(randomCoords, randomDate);
                 }}
                 aria-label="Generate random date and ocean location combination"
+                title="Random Date & Location"
                 style={{
-                  backgroundColor: designSystem.colors.error,
+                  backgroundColor: designSystem.colors.primary,
                   color: designSystem.colors.text.primary,
                   border: 'none',
-                  padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                  padding: `${designSystem.spacing.md} ${designSystem.spacing.lg}`,
                   borderRadius: designSystem.spacing.xs,  
                   cursor: 'pointer',
-                  fontSize: designSystem.typography.caption,
+                  fontSize: designSystem.typography.body,
                   flex: '1',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background-color 0.2s ease'
                 }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.primaryHover}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = designSystem.colors.primary}
               >
-                🎲 Random
+                <FontAwesomeIcon icon={faDice} />
               </button>
             </div>
             
@@ -805,50 +813,33 @@ function App() {
                 <button
                   onClick={() => setShowDataOverlay(!showDataOverlay)}
                   style={{
-                    backgroundColor: showDataOverlay ? designSystem.colors.primary : designSystem.colors.text.muted,
+                    backgroundColor: designSystem.colors.primary,
                     color: designSystem.colors.text.primary,
-                    border: showDataOverlay ? `2px solid ${designSystem.colors.primary}` : `1px solid ${designSystem.colors.text.muted}`,
-                    padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                    border: 'none',
+                    padding: `${designSystem.spacing.md} ${designSystem.spacing.lg}`,
                     borderRadius: designSystem.spacing.xs,
                     cursor: 'pointer',
-                    fontSize: designSystem.typography.caption,
+                    fontSize: designSystem.typography.body,
                     transition: 'all 0.2s ease',
                     width: '100%',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: designSystem.spacing.sm
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = designSystem.colors.primaryHover;
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = designSystem.colors.primary;
                   }}
                 >
-                  {showDataOverlay ? '🌡️ Hide SST Texture' : '🌡️ Show SST Texture'}
+                  <FontAwesomeIcon icon={faTemperatureHigh} />
+                  {showDataOverlay ? 'Hide SST Texture' : 'Show SST Texture'}
                 </button>
-                {showDataOverlay && (
-                  <div style={{ 
-                    fontSize: designSystem.typography.small, 
-                    color: designSystem.colors.text.muted, 
-                    marginTop: designSystem.spacing.xs, 
-                    textAlign: 'center'
-                  }}>
-                    Showing {selectedCategory.toUpperCase()} data overlay
-                  </div>
-                )}
               </div>
               
-              {/* Texture info */}
-              {metadata && showDataOverlay && (
-                <div style={{ 
-                  fontSize: designSystem.typography.caption, 
-                  color: designSystem.colors.text.muted, 
-                  marginTop: designSystem.spacing.sm
-                }}>
-                  {selectedCategory && metadata.summary.categories[selectedCategory] ? (
-                    <div>
-                      Selected: {selectedCategory.toUpperCase()} | 
-                      {' '}{metadata.summary.categories[selectedCategory].texture_count} textures | 
-                      {' '}Latest: {metadata.summary.categories[selectedCategory].latest_date || 'N/A'}
-                    </div>
-                  ) : (
-                    <div>Loading texture metadata...</div>
-                  )}
-                </div>
-              )}
               
               {/* Microplastics overlay toggle */}
               <div style={{ 
@@ -859,29 +850,31 @@ function App() {
                 <button
                   onClick={() => setShowMicroplastics(!showMicroplastics)}
                   style={{
-                    backgroundColor: showMicroplastics ? designSystem.colors.secondary : designSystem.colors.text.muted,
+                    backgroundColor: designSystem.colors.primary,
                     color: designSystem.colors.text.primary,
-                    border: showMicroplastics ? `2px solid ${designSystem.colors.secondary}` : `1px solid ${designSystem.colors.text.muted}`,
-                    padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                    border: 'none',
+                    padding: `${designSystem.spacing.md} ${designSystem.spacing.lg}`,
                     borderRadius: designSystem.spacing.xs,
                     cursor: 'pointer',
-                    fontSize: designSystem.typography.caption,
+                    fontSize: designSystem.typography.body,
                     transition: 'all 0.2s ease',
                     width: '100%',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: designSystem.spacing.sm
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = designSystem.colors.primaryHover;
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = designSystem.colors.primary;
                   }}
                 >
-                  {showMicroplastics ? '🏭 Hide Microplastics' : '🏭 Show Microplastics'}
+                  <FontAwesomeIcon icon={faBottleWater} />
+                  {showMicroplastics ? 'Hide Microplastics' : 'Show Microplastics'}
                 </button>
-                {showMicroplastics && (
-                  <div style={{ 
-                    fontSize: designSystem.typography.small, 
-                    color: designSystem.colors.text.muted, 
-                    marginTop: designSystem.spacing.xs
-                  }}>
-                    14,487 measurement points (1993-2025)
-                  </div>
-                )}
                 
                 {/* Microplastics hover info in side panel */}
                 {showMicroplastics && hoveredMicroplastic && (

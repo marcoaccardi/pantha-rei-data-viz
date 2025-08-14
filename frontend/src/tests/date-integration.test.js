@@ -62,12 +62,7 @@ describe('Date Integration Tests', () => {
     expect(futureResult.isValid).toBe(false);
     expect(futureResult.errors).toContain('Date cannot be beyond August 2025.');
     
-    // Valid date with wave data warning
-    const dateWithoutWaves = '2020-01-01';
-    const waveWarningResult = validateDate(dateWithoutWaves);
-    
-    expect(waveWarningResult.isValid).toBe(true);
-    expect(waveWarningResult.warnings).toContain('Wave data not available before November 2022.');
+    // Note: Wave data test removed since wave functionality has been removed
   });
 
   test('getDataAvailabilityDescription should return correct descriptions', () => {
