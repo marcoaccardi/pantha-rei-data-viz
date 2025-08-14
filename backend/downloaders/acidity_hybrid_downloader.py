@@ -18,7 +18,17 @@ class AcidityHybridDownloader(BaseDataDownloader):
     
     def __init__(self, config_path: Optional[Path] = None):
         """Initialize Hybrid Acidity downloader."""
+        # Call parent constructor 
         super().__init__("acidity", config_path)
+        
+        # Remove the empty raw/acidity directory that was created by parent
+        if hasattr(self, 'raw_data_path') and self.raw_data_path.exists():
+            # Only remove if it's empty
+            try:
+                self.raw_data_path.rmdir()  # Only works if directory is empty
+            except OSError:
+                # Directory is not empty, leave it alone
+                pass
         
         # Initialize individual downloaders
         try:
