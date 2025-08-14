@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { MultiDatasetOceanResponse, OceanDataValue, OceanPointData } from '../utils/types';
 import { classifyMeasurement, formatDirection } from '../services/oceanDataService';
+import { analyzeSectionHealth } from '../utils/oceanHealthAnalyzer';
 import ParameterExplanation from './ParameterExplanation';
+import OceanHealthInfo from './OceanHealthInfo';
 
 interface DataPanelProps {
   data: MultiDatasetOceanResponse | null;
@@ -9,9 +13,45 @@ interface DataPanelProps {
   error: string | null;
 }
 
+// Design system constants
+const designSystem = {
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#6366f1', 
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    text: {
+      primary: '#f9fafb',
+      secondary: '#d1d5db',
+      muted: '#9ca3af'
+    },
+    backgrounds: {
+      primary: 'rgba(0, 0, 0, 0.9)',
+      secondary: 'rgba(255, 255, 255, 0.05)',
+      accent: 'rgba(59, 130, 246, 0.1)'
+    }
+  },
+  typography: {
+    title: '1.25rem',
+    heading: '1.1rem', 
+    body: '0.875rem',
+    caption: '0.75rem',
+    small: '0.6875rem'
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '20px',
+    xxl: '24px'
+  }
+};
+
 const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
-  const [showDetailedMode, setShowDetailedMode] = useState(false);
   const [expandedParameters, setExpandedParameters] = useState<string[]>([]);
+  const [activeHealthInfo, setActiveHealthInfo] = useState<'temperature' | 'chemistry' | 'currents' | null>(null);
   const getFormattedLabel = (parameter: string, longName?: string): string => {
     const labelMap: Record<string, string> = {
       // SST parameters
@@ -42,6 +82,8 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       'vo': 'Northward velocity',
       'speed': 'Current speed',
       'direction': 'Current direction',
+      'current_speed': 'Current speed',
+      'current_direction': 'Current direction',
       'thetao': 'Sea water potential temperature',
       'so': 'Sea water salinity'
     };
@@ -51,16 +93,20 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
 
   const renderValue = (value: OceanDataValue, parameter: string): JSX.Element => {
     if (!value.valid || value.value === null) {
-      return <span style={{ color: '#6b7280' }}>No data</span>;
+      return <span style={{ color: designSystem.colors.text.muted }}>No data</span>;
     }
 
     const numValue = typeof value.value === 'number' ? value.value : parseFloat(value.value as string);
     
     // Special formatting for different parameter types
-    if (parameter.includes('direction') || parameter === 'VMDR' || parameter === 'MWD') {
+    if (parameter.includes('direction') || parameter === 'VMDR' || parameter === 'MWD' || parameter === 'current_direction') {
       return (
-        <span>
-          {numValue.toFixed(1)}° ({formatDirection(numValue)})
+        <span style={{ 
+          color: designSystem.colors.text.secondary,
+          fontSize: designSystem.typography.body,
+          fontWeight: '500'
+        }}>
+          {numValue.toFixed(1)}° <span style={{ fontSize: designSystem.typography.small }}>({formatDirection(numValue)})</span>
         </span>
       );
     }
@@ -68,10 +114,14 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     // Special formatting for ice concentration (convert to percentage)
     if (parameter === 'ice') {
       if (numValue === 0 || isNaN(numValue)) {
-        return <span style={{ color: '#6b7280' }}>No data</span>;
+        return <span style={{ color: designSystem.colors.text.muted }}>No data</span>;
       }
       return (
-        <span>
+        <span style={{ 
+          color: designSystem.colors.text.secondary,
+          fontSize: designSystem.typography.body,
+          fontWeight: '500'
+        }}>
           {(numValue * 100).toFixed(1)}%
         </span>
       );
@@ -80,17 +130,23 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     // Special formatting for temperature (ensure Celsius)
     if (parameter === 'sst' || parameter === 'analysed_sst') {
       return (
-        <span style={{ color: classifyMeasurement(parameter, numValue).color }}>
+        <span style={{ 
+          color: designSystem.colors.text.secondary,
+          fontSize: designSystem.typography.body,
+          fontWeight: '500'
+        }}>
           {numValue.toFixed(2)} Celsius
         </span>
       );
     }
 
-    // Apply classification coloring for certain parameters
-    const classification = classifyMeasurement(parameter, numValue);
-    
+    // All other values - uniform styling
     return (
-      <span style={{ color: classification.color }}>
+      <span style={{ 
+        color: designSystem.colors.text.secondary,
+        fontSize: designSystem.typography.body,
+        fontWeight: '500'
+      }}>
         {typeof value.value === 'number' ? value.value.toFixed(2) : value.value} {value.units}
       </span>
     );
@@ -103,40 +159,41 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     }
 
     return (
-      <div style={{
-        marginBottom: '24px',
-        padding: '16px',
-        backgroundColor: 'rgba(124, 58, 237, 0.1)',
-        borderRadius: '8px',
-        border: '2px solid rgba(124, 58, 237, 0.3)'
-      }}>
+    <div style={{
+    marginBottom: designSystem.spacing.xxl,
+    padding: designSystem.spacing.lg,
+    backgroundColor: designSystem.colors.backgrounds.accent,
+    borderRadius: designSystem.spacing.sm,
+    border: `1px solid ${designSystem.colors.secondary}40`
+    }}>
         <h4 style={{
-          color: '#a78bfa',
-          marginBottom: '12px',
-          fontSize: '1.1em',
+          color: designSystem.colors.secondary,
+          marginBottom: designSystem.spacing.md,
+          fontSize: designSystem.typography.heading,
           fontWeight: '600',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px'
+          gap: designSystem.spacing.sm
         }}>
           🌊 Ecosystem Health Analysis
-          <span style={{ fontSize: '0.8em', fontWeight: 'normal', color: '#9ca3af' }}>
+          <span style={{ fontSize: designSystem.typography.caption, fontWeight: 'normal', color: designSystem.colors.text.muted }}>
             ({insights.measurement_count} parameters analyzed)
           </span>
         </h4>
         
-        <div style={{ fontSize: '0.9em' }}>
+        <div style={{ fontSize: designSystem.typography.body }}>
           {insights.insights.map((insight: string, index: number) => (
             <div 
-              key={index} 
-              style={{
-                marginBottom: '8px',
-                padding: '8px 12px',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '6px',
-                color: '#e5e7eb',
-                lineHeight: '1.4'
-              }}
+            key={index} 
+            style={{
+            marginBottom: designSystem.spacing.sm,
+            padding: `${designSystem.spacing.sm} ${designSystem.spacing.md}`,
+            backgroundColor: designSystem.colors.backgrounds.secondary,
+            borderRadius: designSystem.spacing.xs,
+            color: designSystem.colors.text.secondary,
+            lineHeight: '1.4',
+              fontSize: designSystem.typography.body
+                }}
             >
               {insight}
             </div>
@@ -157,17 +214,30 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       const section = sections[datasetName] || { title: datasetName.toUpperCase(), icon: '📊' };
       
       return (
-        <div key={datasetName} style={{ marginBottom: '20px' }}>
-          <h4 style={{ color: '#6b7280', marginBottom: '8px' }}>
+        <div key={datasetName} style={{ marginBottom: designSystem.spacing.xl }}>
+          <h4 style={{ 
+            color: designSystem.colors.text.muted, 
+            marginBottom: designSystem.spacing.sm,
+            fontSize: designSystem.typography.heading,
+            fontWeight: '600'
+          }}>
             {section.icon} {section.title}
           </h4>
-          <div style={{ color: '#9ca3af', fontSize: '0.9em', fontStyle: 'italic' }}>
+          <div style={{ 
+            color: designSystem.colors.text.muted, 
+            fontSize: designSystem.typography.body,
+            fontStyle: 'italic'
+          }}>
             {dataset.error.includes('timeout') ? 'Request timed out - server may be processing data' : 
              dataset.error.includes('not found') ? 'Data not available for this location/date' :
              'Data not available'}
           </div>
           {dataset.error.includes('timeout') && (
-            <div style={{ color: '#fbbf24', fontSize: '0.8em', marginTop: '4px' }}>
+            <div style={{ 
+              color: designSystem.colors.warning, 
+              fontSize: designSystem.typography.caption,
+              marginTop: designSystem.spacing.xs
+            }}>
               Try a different location or date, or wait and retry
             </div>
           )}
@@ -203,95 +273,118 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     const availableVars = section.variables.filter(v => v in data.data);
     if (availableVars.length === 0) {
       return (
-        <div key={datasetName} style={{ marginBottom: '20px' }}>
-          <h4 style={{ color: '#6b7280', marginBottom: '8px' }}>
+        <div key={datasetName} style={{ marginBottom: designSystem.spacing.xl }}>
+          <h4 style={{ 
+            color: designSystem.colors.text.muted, 
+            marginBottom: designSystem.spacing.sm,
+            fontSize: designSystem.typography.heading,
+            fontWeight: '600'
+          }}>
             {section.icon} {section.title}
           </h4>
-          <div style={{ color: '#9ca3af', fontSize: '0.9em' }}>
+          <div style={{ 
+            color: designSystem.colors.text.muted, 
+            fontSize: designSystem.typography.body
+          }}>
             No data available
           </div>
         </div>
       );
     }
 
+    // Analyze section health
+    const sectionType = datasetName === 'sst' ? 'temperature' : 
+                       datasetName === 'acidity' ? 'chemistry' : 'currents';
+    const healthAnalysis = analyzeSectionHealth(sectionType, data);
+
     return (
       <div key={datasetName} style={{ 
-        marginBottom: '24px',
-        padding: '16px',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '8px',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        marginBottom: designSystem.spacing.xxl,
+        padding: designSystem.spacing.lg,
+        backgroundColor: designSystem.colors.backgrounds.secondary,
+        borderRadius: designSystem.spacing.sm,
+        border: `1px solid ${healthAnalysis.overallColor}40`
       }}>
-        <h4 style={{ 
-          color: '#60a5fa', 
-          marginBottom: '12px',
-          fontSize: '1.1em',
-          fontWeight: '600'
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: designSystem.spacing.md
         }}>
-          {section.icon} {section.title}
-        </h4>
+          <h4 style={{ 
+            color: designSystem.colors.primary, 
+            fontSize: designSystem.typography.heading,
+            fontWeight: '600',
+            margin: 0
+          }}>
+            {section.icon} {section.title}
+          </h4>
+          
+          <button
+            onClick={() => setActiveHealthInfo(sectionType)}
+            style={{
+              backgroundColor: 'transparent',
+              border: `1px solid ${healthAnalysis.overallColor}`,
+              borderRadius: '50%',
+              padding: designSystem.spacing.xs,
+              color: healthAnalysis.overallColor,
+              cursor: 'pointer',
+              fontSize: designSystem.typography.body,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = `${healthAnalysis.overallColor}20`;
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            title={`View ocean health information for ${section.title.toLowerCase()}`}
+          >
+            <FontAwesomeIcon icon={faCircleInfo} />
+          </button>
+        </div>
         
         <div>
           {availableVars.map(varName => {
             const varData = data.data[varName];
             if (!varData) return null;
             
-            if (showDetailedMode) {
-              // Use enhanced parameter explanation for detailed mode
-              return (
-                <ParameterExplanation
-                  key={varName}
-                  parameterName={varName}
-                  data={varData}
-                  showExpanded={expandedParameters.includes(varName)}
-                />
-              );
-            } else {
-              // Simple display for compact mode
-              return (
-                <div key={varName} style={{ 
-                  marginBottom: '6px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  padding: '2px 0',
-                  gap: '8px'
+            // Simple display mode
+            return (
+              <div key={varName} style={{ 
+                marginBottom: designSystem.spacing.xs,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                padding: `${designSystem.spacing.xs} 0`,
+                gap: designSystem.spacing.sm
+              }}>
+                <span style={{ 
+                  color: designSystem.colors.text.secondary, 
+                  fontSize: designSystem.typography.body,
+                  lineHeight: '1.3',
+                  minWidth: '0',
+                  flexShrink: 0
                 }}>
-                  <span style={{ 
-                    color: '#d1d5db', 
-                    fontSize: '0.9em',
-                    lineHeight: '1.3',
-                    minWidth: '0',
-                    flexShrink: 0
-                  }}>
-                    {getFormattedLabel(varName, varData.long_name)}:
-                  </span>
-                  <span style={{ 
-                    fontWeight: '500', 
-                    textAlign: 'right',
-                    lineHeight: '1.3'
-                  }}>
-                    {renderValue(varData, varName)}
-                  </span>
-                </div>
-              );
-            }
+                  {getFormattedLabel(varName, varData.long_name)}:
+                </span>
+                <span style={{ 
+                  fontWeight: '500', 
+                  textAlign: 'right',
+                  lineHeight: '1.3',
+                  fontSize: designSystem.typography.body
+                }}>
+                  {renderValue(varData, varName)}
+                </span>
+              </div>
+            );
           })}
         </div>
-        
-        {/* Special visualizations for certain datasets */}
-        {datasetName === 'currents' && data.data.speed && data.data.direction && (
-          <div style={{ 
-            marginTop: '12px', 
-            padding: '8px',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            borderRadius: '4px'
-          }}>
-            <div style={{ fontSize: '0.8em', color: '#60a5fa' }}>
-              Current Vector: {data.data.speed.value} m/s @ {formatDirection(data.data.direction.value as number)}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
@@ -300,24 +393,39 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     return (
       <div style={{
         position: 'absolute',
-        top: '20px',
-        right: '20px',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        color: 'white',
-        padding: '20px',
-        borderRadius: '12px',
+        top: designSystem.spacing.xl,
+        right: designSystem.spacing.xl,
+        backgroundColor: designSystem.colors.backgrounds.primary,
+        color: designSystem.colors.text.primary,
+        padding: designSystem.spacing.xl,
+        borderRadius: designSystem.spacing.md,
         width: '400px',
         maxHeight: '80vh',
         overflowY: 'auto',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        border: `1px solid ${designSystem.colors.text.muted}40`
       }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '1.3em', color: '#60a5fa' }}>
+        <h3 style={{ 
+          margin: `0 0 ${designSystem.spacing.lg} 0`, 
+          fontSize: designSystem.typography.title, 
+          color: designSystem.colors.primary,
+          fontWeight: '600'
+        }}>
           🌊 Ocean Data
         </h3>
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#60a5fa' }}>
-          <div style={{ fontSize: '2em', marginBottom: '8px' }}>⏳</div>
-          <div>Loading ocean data...</div>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px 0', 
+          color: designSystem.colors.primary
+        }}>
+          <div style={{ 
+            fontSize: '2rem', 
+            marginBottom: designSystem.spacing.sm
+          }}>⏳</div>
+          <div style={{ 
+            fontSize: designSystem.typography.body,
+            color: designSystem.colors.text.secondary
+          }}>Loading ocean data...</div>
         </div>
       </div>
     );
@@ -327,20 +435,28 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     return (
       <div style={{
         position: 'absolute',
-        top: '20px',
-        right: '20px',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        color: 'white',
-        padding: '20px',
-        borderRadius: '12px',
+        top: designSystem.spacing.xl,
+        right: designSystem.spacing.xl,
+        backgroundColor: designSystem.colors.backgrounds.primary,
+        color: designSystem.colors.text.primary,
+        padding: designSystem.spacing.xl,
+        borderRadius: designSystem.spacing.md,
         width: '400px',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        border: `1px solid ${designSystem.colors.error}40`
       }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '1.3em', color: '#ef4444' }}>
+        <h3 style={{ 
+          margin: `0 0 ${designSystem.spacing.lg} 0`, 
+          fontSize: designSystem.typography.title, 
+          color: designSystem.colors.error,
+          fontWeight: '600'
+        }}>
           🌊 Ocean Data Error
         </h3>
-        <div style={{ color: '#f87171', fontSize: '0.9em' }}>
+        <div style={{ 
+          color: designSystem.colors.error, 
+          fontSize: designSystem.typography.body
+        }}>
           {error}
         </div>
       </div>
@@ -351,25 +467,69 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     return (
       <div style={{
         position: 'absolute',
-        top: '20px',
-        right: '20px',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        color: 'white',
-        padding: '20px',
-        borderRadius: '12px',
+        top: designSystem.spacing.xl,
+        right: designSystem.spacing.xl,
+        backgroundColor: designSystem.colors.backgrounds.primary,
+        color: designSystem.colors.text.primary,
+        padding: designSystem.spacing.xl,
+        borderRadius: designSystem.spacing.md,
         width: '400px',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        border: `1px solid ${designSystem.colors.text.muted}40`
       }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '1.3em', color: '#60a5fa' }}>
+        <h3 style={{ 
+          margin: `0 0 ${designSystem.spacing.lg} 0`, 
+          fontSize: designSystem.typography.title, 
+          color: designSystem.colors.primary,
+          fontWeight: '600'
+        }}>
           🌊 Ocean Data
         </h3>
-        <div style={{ color: '#9ca3af', fontSize: '0.9em', textAlign: 'center', padding: '20px 0' }}>
-          <div style={{ marginBottom: '12px' }}>Click on the globe to view ocean data</div>
-          <div style={{ fontSize: '0.8em', color: '#6b7280' }}>
-            Or use the <strong>🎲 Random Location</strong> button to explore available data
+        <div style={{ 
+          color: designSystem.colors.text.muted, 
+          fontSize: designSystem.typography.body,
+          textAlign: 'center', 
+          padding: `${designSystem.spacing.xl} 0`
+        }}>
+          <div style={{ 
+            marginBottom: designSystem.spacing.md,
+            color: designSystem.colors.text.secondary
+          }}>Click on the globe to view ocean data</div>
+          <div style={{ 
+            fontSize: designSystem.typography.caption, 
+            color: designSystem.colors.text.muted
+          }}>
+            Or use the <strong style={{ color: designSystem.colors.primary }}>🎲 Random Location</strong> button to explore available data
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show ocean health info overlay if active
+  if (activeHealthInfo && data) {
+    const dataset = activeHealthInfo === 'temperature' ? data.datasets.sst :
+                   activeHealthInfo === 'chemistry' ? data.datasets.acidity :
+                   data.datasets.currents;
+    
+    const healthAnalysis = analyzeSectionHealth(activeHealthInfo, dataset);
+    
+    return (
+      <div style={{
+        position: 'absolute',
+        top: designSystem.spacing.xl,
+        right: designSystem.spacing.xl,
+        width: '450px',
+        height: '90vh',
+        borderRadius: designSystem.spacing.md
+      }}>
+        <OceanHealthInfo
+          sectionName={activeHealthInfo}
+          analysis={healthAnalysis}
+          location={data.location}
+          date={data.date}
+          onClose={() => setActiveHealthInfo(null)}
+        />
       </div>
     );
   }
@@ -377,57 +537,39 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
   return (
     <div style={{
       position: 'absolute',
-      top: '20px',
-      right: '20px',
-      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-      color: 'white',
-      padding: '20px',
-      borderRadius: '12px',
+      top: designSystem.spacing.xl,
+      right: designSystem.spacing.xl,
+      backgroundColor: designSystem.colors.backgrounds.primary,
+      color: designSystem.colors.text.primary,
+      padding: designSystem.spacing.xl,
+      borderRadius: designSystem.spacing.md,
       width: '420px',
       maxHeight: '80vh',
       overflowY: 'auto',
       backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
+      border: `1px solid ${designSystem.colors.text.muted}40`,
       scrollbarWidth: 'thin',
-      scrollbarColor: '#4a5568 #1a202c'
+      scrollbarColor: `${designSystem.colors.text.muted} transparent`
     }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '16px',
-        paddingBottom: '8px',
-        borderBottom: '2px solid rgba(96, 165, 250, 0.3)'
+      <div style={{
+        marginBottom: designSystem.spacing.lg,
+        paddingBottom: designSystem.spacing.sm,
+        borderBottom: `2px solid ${designSystem.colors.primary}40`
       }}>
         <h3 style={{ 
           margin: 0, 
-          fontSize: '1.3em', 
-          color: '#60a5fa'
+          fontSize: designSystem.typography.title, 
+          color: designSystem.colors.primary,
+          fontWeight: '600'
         }}>
           🌊 Ocean Data Analysis
         </h3>
-        
-        <button
-          onClick={() => setShowDetailedMode(!showDetailedMode)}
-          style={{
-            backgroundColor: showDetailedMode ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)',
-            border: '1px solid #3b82f6',
-            borderRadius: '6px',
-            padding: '4px 8px',
-            color: showDetailedMode ? 'white' : '#60a5fa',
-            fontSize: '0.8em',
-            cursor: 'pointer',
-            fontWeight: '500'
-          }}
-        >
-          {showDetailedMode ? '📊 Simple' : '🎓 Detailed'}
-        </button>
       </div>
       
       <div style={{ 
-        marginBottom: '16px', 
-        fontSize: '0.85em', 
-        color: '#9ca3af',
+        marginBottom: designSystem.spacing.lg, 
+        fontSize: designSystem.typography.body, 
+        color: designSystem.colors.text.muted,
         display: 'flex',
         justifyContent: 'space-between'
       }}>
@@ -443,13 +585,13 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       )}
       
       <div style={{ 
-        marginTop: '16px', 
-        paddingTop: '16px', 
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        fontSize: '0.75em',
-        color: '#6b7280'
+        marginTop: designSystem.spacing.lg, 
+        paddingTop: designSystem.spacing.lg, 
+        borderTop: `1px solid ${designSystem.colors.text.muted}40`,
+        fontSize: designSystem.typography.caption,
+        color: designSystem.colors.text.muted
       }}>
-        <div>⚡ Response time: {data.total_extraction_time_ms.toFixed(0)}ms</div>
+        <div style={{ color: designSystem.colors.text.secondary }}>⚡ Response time: {data.total_extraction_time_ms.toFixed(0)}ms</div>
       </div>
     </div>
   );

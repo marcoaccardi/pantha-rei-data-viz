@@ -16,6 +16,40 @@ import {
 import { useConnectionStatus } from './services/connectionMonitor';
 import ConnectionStatusBar from './components/ConnectionStatusBar';
 
+// Design system constants for consistent styling
+const designSystem = {
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#6366f1',
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    text: {
+      primary: '#f9fafb',
+      secondary: '#e5e7eb',
+      muted: '#9ca3af'
+    },
+    backgrounds: {
+      primary: 'rgba(0, 0, 0, 0.85)',
+      secondary: 'rgba(255, 255, 255, 0.05)',
+      accent: 'rgba(59, 130, 246, 0.1)'
+    }
+  },
+  typography: {
+    title: '1.1rem',
+    body: '0.875rem',
+    caption: '0.75rem',
+    small: '0.6875rem'
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '20px'
+  }
+};
+
 function App() {
   const [coordinates, setCoordinates] = useState<Coordinates>({ lat: 0, lng: 0 });
   const [climateData, setClimateData] = useState<ClimateDataResponse[]>([]);
@@ -544,25 +578,39 @@ function App() {
         {/* Control Panel */}
         <div style={{
           position: 'absolute',
-          top: '20px',
-          left: '20px',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          color: 'white',
-          padding: '15px 20px',
-          borderRadius: '12px',
+          top: designSystem.spacing.xl,
+          left: designSystem.spacing.xl,
+          backgroundColor: designSystem.colors.backgrounds.primary,
+          color: designSystem.colors.text.primary,
+          padding: `${designSystem.spacing.lg} ${designSystem.spacing.xl}`,
+          borderRadius: designSystem.spacing.md,
           zIndex: 1000,
           backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: `1px solid ${designSystem.colors.text.muted}40`,
           minWidth: '320px'
         }}>
-          <div style={{ fontSize: '0.95em' }}>
+          <div style={{ fontSize: designSystem.typography.body }}>
             
             {/* Date Controls */}
-            <div style={{ padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
-              <div style={{ fontSize: '0.9em', marginBottom: '6px', color: '#cbd5e1' }}>
+            <div style={{ 
+              padding: designSystem.spacing.sm, 
+              backgroundColor: designSystem.colors.backgrounds.secondary, 
+              borderRadius: designSystem.spacing.xs
+            }}>
+              <div style={{ 
+                fontSize: designSystem.typography.body, 
+                marginBottom: designSystem.spacing.xs, 
+                color: designSystem.colors.text.secondary,
+                fontWeight: '500'
+              }}>
                 📅 Date Selection
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: designSystem.spacing.sm, 
+                marginBottom: designSystem.spacing.sm
+              }}>
                 <input
                   type="date"
                   value={selectedDate}
@@ -572,25 +620,25 @@ function App() {
                   aria-label="Select date for ocean data query"
                   aria-describedby="date-validation-info"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: 'white',
-                    border: `1px solid ${dateValidation.isValid ? 'rgba(255, 255, 255, 0.2)' : '#f87171'}`,
-                    borderRadius: '4px',
-                    padding: '4px 8px',
-                    fontSize: '0.8em',
+                    backgroundColor: designSystem.colors.backgrounds.secondary,
+                    color: designSystem.colors.text.primary,
+                    border: `1px solid ${dateValidation.isValid ? designSystem.colors.text.muted : designSystem.colors.error}`,
+                    borderRadius: designSystem.spacing.xs,
+                    padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                    fontSize: designSystem.typography.caption,
                     flex: 1
                   }}
                 />
                 <button
                   onClick={() => setShowDatePicker(!showDatePicker)}
                   style={{
-                    backgroundColor: '#4a5568',
-                    color: 'white',
+                    backgroundColor: designSystem.colors.secondary,
+                    color: designSystem.colors.text.primary,
                     border: 'none',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
+                    padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                    borderRadius: designSystem.spacing.xs,
                     cursor: 'pointer',
-                    fontSize: '0.8em'
+                    fontSize: designSystem.typography.caption
                   }}
                 >
                   📊
@@ -599,12 +647,20 @@ function App() {
               
               {/* Date validation info */}
               {!dateValidation.isValid && (
-                <div id="date-validation-info" style={{ fontSize: '0.75em', color: '#f87171', marginBottom: '6px' }} role="alert">
+                <div id="date-validation-info" style={{ 
+                  fontSize: designSystem.typography.caption, 
+                  color: designSystem.colors.error, 
+                  marginBottom: designSystem.spacing.xs
+                }} role="alert">
                   ⚠️ {dateValidation.errors[0]}
                 </div>
               )}
               {dateValidation.warnings.length > 0 && (
-                <div style={{ fontSize: '0.75em', color: '#fbbf24', marginBottom: '6px' }} role="status">
+                <div style={{ 
+                  fontSize: designSystem.typography.caption, 
+                  color: designSystem.colors.warning, 
+                  marginBottom: designSystem.spacing.xs
+                }} role="status">
                   ℹ️ {dateValidation.warnings[0]}
                 </div>
               )}
@@ -612,15 +668,15 @@ function App() {
               {/* Date info panel */}
               {showDatePicker && (
                 <div style={{ 
-                  fontSize: '0.75em', 
-                  color: '#94a3b8', 
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  padding: '6px',
-                  borderRadius: '4px',
-                  marginBottom: '6px'
+                  fontSize: designSystem.typography.caption, 
+                  color: designSystem.colors.text.muted, 
+                  backgroundColor: designSystem.colors.backgrounds.secondary,
+                  padding: designSystem.spacing.xs,
+                  borderRadius: designSystem.spacing.xs,
+                  marginBottom: designSystem.spacing.xs
                 }}>
                   <div>📊 {getDataAvailabilityDescription(selectedDate)}</div>
-                  <div style={{ marginTop: '4px' }}>
+                  <div style={{ marginTop: designSystem.spacing.xs }}>
                     📅 Coverage: {TEMPORAL_COVERAGE.HISTORICAL_START} to {TEMPORAL_COVERAGE.GUARANTEED_END}
                   </div>
                 </div>
@@ -629,22 +685,44 @@ function App() {
             </div>
             
             {/* Auto Data Fetching Info */}
-            <div style={{ marginTop: '16px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
-              <div style={{ fontSize: '0.9em', marginBottom: '6px', color: '#cbd5e1' }}>
+            <div style={{ 
+              marginTop: designSystem.spacing.lg, 
+              padding: designSystem.spacing.sm, 
+              backgroundColor: designSystem.colors.backgrounds.secondary, 
+              borderRadius: designSystem.spacing.xs
+            }}>
+              <div style={{ 
+                fontSize: designSystem.typography.body, 
+                marginBottom: designSystem.spacing.xs, 
+                color: designSystem.colors.text.secondary,
+                fontWeight: '500'
+              }}>
                 🌊 Ocean Data
               </div>
-              <div style={{ fontSize: '0.75em', color: '#94a3b8' }}>
+              <div style={{ 
+                fontSize: designSystem.typography.caption, 
+                color: designSystem.colors.text.muted
+              }}>
                 Data fetches automatically when you change location or date
               </div>
               {isLoading && (
-                <div style={{ fontSize: '0.75em', color: '#fbbf24', marginTop: '4px' }}>
+                <div style={{ 
+                  fontSize: designSystem.typography.caption, 
+                  color: designSystem.colors.warning, 
+                  marginTop: designSystem.spacing.xs
+                }}>
                   ⏳ Loading ocean data...
                 </div>
               )}
             </div>
             
             {/* Random Controls */}
-            <div style={{ marginTop: '12px', display: 'flex', gap: '6px', justifyContent: 'space-between' }}>
+            <div style={{ 
+              marginTop: designSystem.spacing.md, 
+              display: 'flex', 
+              gap: designSystem.spacing.xs, 
+              justifyContent: 'space-between'
+            }}>
               <button 
                 onClick={() => {
                   const randomCoords = generateRandomOceanLocation();
@@ -652,14 +730,15 @@ function App() {
                 }}
                 aria-label="Generate random ocean location and fetch data"
                 style={{
-                  backgroundColor: '#059669',
-                  color: 'white',
+                  backgroundColor: designSystem.colors.success,
+                  color: designSystem.colors.text.primary,
                   border: 'none',
-                  padding: '6px 8px',
-                  borderRadius: '4px',  
+                  padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                  borderRadius: designSystem.spacing.xs,  
                   cursor: 'pointer',
-                  fontSize: '0.75em',
-                  flex: '1'
+                  fontSize: designSystem.typography.caption,
+                  flex: '1',
+                  fontWeight: '500'
                 }}
               >
                 📍 Random Location
@@ -672,14 +751,15 @@ function App() {
                 }}
                 aria-label="Generate random date and fetch data"
                 style={{
-                  backgroundColor: '#7c3aed',
-                  color: 'white',
+                  backgroundColor: designSystem.colors.secondary,
+                  color: designSystem.colors.text.primary,
                   border: 'none',
-                  padding: '6px 8px',
-                  borderRadius: '4px',  
+                  padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                  borderRadius: designSystem.spacing.xs,  
                   cursor: 'pointer',
-                  fontSize: '0.75em',
-                  flex: '1'
+                  fontSize: designSystem.typography.caption,
+                  flex: '1',
+                  fontWeight: '500'
                 }}
               >
                 📅 Random Date
@@ -693,14 +773,15 @@ function App() {
                 }}
                 aria-label="Generate random date and ocean location combination"
                 style={{
-                  backgroundColor: '#dc2626',
-                  color: 'white',
+                  backgroundColor: designSystem.colors.error,
+                  color: designSystem.colors.text.primary,
                   border: 'none',
-                  padding: '6px 8px',
-                  borderRadius: '4px',  
+                  padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                  borderRadius: designSystem.spacing.xs,  
                   cursor: 'pointer',
-                  fontSize: '0.75em',
-                  flex: '1'
+                  fontSize: designSystem.typography.caption,
+                  flex: '1',
+                  fontWeight: '500'
                 }}
               >
                 🎲 Random
@@ -708,20 +789,29 @@ function App() {
             </div>
             
             {/* SST Texture Controls */}
-            <div style={{ marginTop: '16px', padding: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px' }}>
+            <div style={{ 
+              marginTop: designSystem.spacing.lg, 
+              padding: designSystem.spacing.sm, 
+              backgroundColor: designSystem.colors.backgrounds.secondary, 
+              borderRadius: designSystem.spacing.xs
+            }}>
               
               {/* SST Texture Show/Hide Toggle */}
-              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div style={{ 
+                marginTop: designSystem.spacing.md, 
+                paddingTop: designSystem.spacing.md, 
+                borderTop: `1px solid ${designSystem.colors.text.muted}40`
+              }}>
                 <button
                   onClick={() => setShowDataOverlay(!showDataOverlay)}
                   style={{
-                    backgroundColor: showDataOverlay ? '#4a90e2' : '#4b5563',
-                    color: 'white',
-                    border: showDataOverlay ? '2px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.1)',
-                    padding: '6px 8px',
-                    borderRadius: '4px',
+                    backgroundColor: showDataOverlay ? designSystem.colors.primary : designSystem.colors.text.muted,
+                    color: designSystem.colors.text.primary,
+                    border: showDataOverlay ? `2px solid ${designSystem.colors.primary}` : `1px solid ${designSystem.colors.text.muted}`,
+                    padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                    borderRadius: designSystem.spacing.xs,
                     cursor: 'pointer',
-                    fontSize: '0.75em',
+                    fontSize: designSystem.typography.caption,
                     transition: 'all 0.2s ease',
                     width: '100%',
                     fontWeight: '500'
@@ -730,7 +820,12 @@ function App() {
                   {showDataOverlay ? '🌡️ Hide SST Texture' : '🌡️ Show SST Texture'}
                 </button>
                 {showDataOverlay && (
-                  <div style={{ fontSize: '0.7em', color: '#94a3b8', marginTop: '4px', textAlign: 'center' }}>
+                  <div style={{ 
+                    fontSize: designSystem.typography.small, 
+                    color: designSystem.colors.text.muted, 
+                    marginTop: designSystem.spacing.xs, 
+                    textAlign: 'center'
+                  }}>
                     Showing {selectedCategory.toUpperCase()} data overlay
                   </div>
                 )}
@@ -738,7 +833,11 @@ function App() {
               
               {/* Texture info */}
               {metadata && showDataOverlay && (
-                <div style={{ fontSize: '0.75em', color: '#94a3b8', marginTop: '8px' }}>
+                <div style={{ 
+                  fontSize: designSystem.typography.caption, 
+                  color: designSystem.colors.text.muted, 
+                  marginTop: designSystem.spacing.sm
+                }}>
                   {selectedCategory && metadata.summary.categories[selectedCategory] ? (
                     <div>
                       Selected: {selectedCategory.toUpperCase()} | 
@@ -752,25 +851,34 @@ function App() {
               )}
               
               {/* Microplastics overlay toggle */}
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div style={{ 
+                marginTop: designSystem.spacing.lg, 
+                paddingTop: designSystem.spacing.lg, 
+                borderTop: `1px solid ${designSystem.colors.text.muted}40`
+              }}>
                 <button
                   onClick={() => setShowMicroplastics(!showMicroplastics)}
                   style={{
-                    backgroundColor: showMicroplastics ? '#7c3aed' : '#4b5563',
-                    color: 'white',
-                    border: showMicroplastics ? '2px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.1)',
-                    padding: '6px 8px',
-                    borderRadius: '4px',
+                    backgroundColor: showMicroplastics ? designSystem.colors.secondary : designSystem.colors.text.muted,
+                    color: designSystem.colors.text.primary,
+                    border: showMicroplastics ? `2px solid ${designSystem.colors.secondary}` : `1px solid ${designSystem.colors.text.muted}`,
+                    padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
+                    borderRadius: designSystem.spacing.xs,
                     cursor: 'pointer',
-                    fontSize: '0.75em',
+                    fontSize: designSystem.typography.caption,
                     transition: 'all 0.2s ease',
-                    width: '100%'
+                    width: '100%',
+                    fontWeight: '500'
                   }}
                 >
                   {showMicroplastics ? '🏭 Hide Microplastics' : '🏭 Show Microplastics'}
                 </button>
                 {showMicroplastics && (
-                  <div style={{ fontSize: '0.7em', color: '#94a3b8', marginTop: '4px' }}>
+                  <div style={{ 
+                    fontSize: designSystem.typography.small, 
+                    color: designSystem.colors.text.muted, 
+                    marginTop: designSystem.spacing.xs
+                  }}>
                     14,487 measurement points (1993-2025)
                   </div>
                 )}
@@ -778,20 +886,24 @@ function App() {
                 {/* Microplastics hover info in side panel */}
                 {showMicroplastics && hoveredMicroplastic && (
                   <div style={{
-                    marginTop: '8px',
-                    padding: '8px',
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    border: '1px solid rgba(124, 58, 237, 0.3)',
-                    borderRadius: '6px',
-                    fontSize: '0.75em'
+                    marginTop: designSystem.spacing.sm,
+                    padding: designSystem.spacing.sm,
+                    backgroundColor: designSystem.colors.backgrounds.accent,
+                    border: `1px solid ${designSystem.colors.secondary}40`,
+                    borderRadius: designSystem.spacing.xs,
+                    fontSize: designSystem.typography.caption
                   }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#a855f7' }}>
+                    <div style={{ 
+                      fontWeight: 'bold', 
+                      marginBottom: designSystem.spacing.xs, 
+                      color: designSystem.colors.secondary
+                    }}>
                       📍 Measurement Details
                     </div>
-                    <div style={{ marginBottom: '2px' }}>
+                    <div style={{ marginBottom: designSystem.spacing.xs }}>
                       <strong>Concentration:</strong> {hoveredMicroplastic.concentration.toFixed(3)} pieces/m³
                     </div>
-                    <div style={{ marginBottom: '2px' }}>
+                    <div style={{ marginBottom: designSystem.spacing.xs }}>
                       <strong>Class:</strong> <span style={{ 
                         color: hoveredMicroplastic.concentrationClass === 'Very High' ? '#ff4444' :
                                hoveredMicroplastic.concentrationClass === 'High' ? '#ff9944' :
@@ -799,13 +911,13 @@ function App() {
                                hoveredMicroplastic.concentrationClass === 'Low' ? '#9944ff' : '#bb88ff'
                       }}>{hoveredMicroplastic.concentrationClass}</span>
                     </div>
-                    <div style={{ marginBottom: '2px' }}>
+                    <div style={{ marginBottom: designSystem.spacing.xs }}>
                       <strong>Date:</strong> {hoveredMicroplastic.date}
                     </div>
-                    <div style={{ marginBottom: '2px' }}>
+                    <div style={{ marginBottom: designSystem.spacing.xs }}>
                       <strong>Source:</strong> {hoveredMicroplastic.dataSource === 'real' ? '✅ Real Data' : '⚠️ Synthetic'}
                     </div>
-                    <div style={{ marginBottom: '2px' }}>
+                    <div style={{ marginBottom: designSystem.spacing.xs }}>
                       <strong>Confidence:</strong> {(hoveredMicroplastic.confidence * 100).toFixed(0)}%
                     </div>
                     <div>
@@ -822,25 +934,29 @@ function App() {
         {errorMessage && (
           <div style={{
             position: 'absolute',
-            top: '20px',
+            top: designSystem.spacing.xl,
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(220, 38, 38, 0.95)',
-            color: 'white',
-            padding: '12px 20px',
-            borderRadius: '8px',
+            backgroundColor: `${designSystem.colors.error}f0`,
+            color: designSystem.colors.text.primary,
+            padding: `${designSystem.spacing.md} ${designSystem.spacing.xl}`,
+            borderRadius: designSystem.spacing.sm,
             zIndex: 1001,
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
+            border: `1px solid ${designSystem.colors.error}`,
             maxWidth: '400px',
             textAlign: 'center',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
             animation: 'slideDown 0.3s ease-out'
           }}>
-            <div style={{ fontSize: '0.9em', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ 
+              fontSize: designSystem.typography.body, 
+              fontWeight: 'bold', 
+              marginBottom: designSystem.spacing.xs
+            }}>
               🚫 Invalid Location
             </div>
-            <div style={{ fontSize: '0.85em' }}>
+            <div style={{ fontSize: designSystem.typography.body }}>
               {errorMessage}
             </div>
           </div>

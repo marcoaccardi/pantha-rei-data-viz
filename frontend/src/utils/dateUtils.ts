@@ -188,7 +188,6 @@ export function validateDate(date: string): DateValidationResult {
       'Sea Surface Temperature',
       'Ocean Currents (NASA OSCAR + CMEMS)', 
       'Ocean Chemistry (pH, Nutrients)',
-      'Wave Height & Period (2022+)',
       'Chlorophyll/Productivity',
       'pH/Ocean Acidification',
       'Dissolved Oxygen',
@@ -196,11 +195,7 @@ export function validateDate(date: string): DateValidationResult {
       'Microplastics (Real + Synthetic to 2025)'
     ];
     
-    // Add warnings for limited wave data before 2022
-    if (inputDate < new Date('2022-11-01')) {
-      result.coverageInfo!.unavailableDataTypes = ['Wave Height & Period'];
-      result.warnings.push('Wave data not available before November 2022.');
-    }
+    // Note: Wave data warnings removed as wave functionality has been removed
   } else if (inputDate >= extendedStart) {
     // This case shouldn't occur now since guaranteed and extended start are the same
     result.coverageInfo!.extendedCoverage = true;
@@ -212,10 +207,7 @@ export function validateDate(date: string): DateValidationResult {
       'pH/Ocean Acidification',
       'Microplastics'
     ];
-    result.coverageInfo!.unavailableDataTypes = [
-      'Wave Height & Period'
-    ];
-    result.warnings.push('Limited wave data coverage for this period.');
+    // Note: Wave data references removed as wave functionality has been removed
   } else if (inputDate >= historicalStart) {
     // Historical coverage - only research data available
     result.coverageInfo!.availableDataTypes = [
@@ -226,7 +218,6 @@ export function validateDate(date: string): DateValidationResult {
       'Sea Surface Temperature',
       'Ocean Currents',
       'Salinity',
-      'Wave Height & Period', 
       'Chlorophyll/Plankton',
       'pH/Ocean Acidification',
       'Water Quality Indicators',
