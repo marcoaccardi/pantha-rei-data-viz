@@ -190,7 +190,7 @@ const Globe: React.FC<GlobeProps & { onDoubleClick?: (coordinates: Coordinates) 
   onMicroplasticsPointClick,
   onDoubleClick
 }) => {
-  const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | undefined>(coordinates);
+  const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | undefined>(coordinates || undefined);
   const { animateToCoordinates, orbitControlsRef, resetView, zoomIn, zoomOut } = useGlobeCamera();
   
   // Animation controller - handles all animation logic with state machine

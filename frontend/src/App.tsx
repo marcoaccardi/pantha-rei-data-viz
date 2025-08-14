@@ -70,7 +70,7 @@ const designSystem = {
 
 function App() {
   const { t } = useTranslation();
-  const [coordinates, setCoordinates] = useState<Coordinates>({ lat: 0, lng: 0 });
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [climateData, setClimateData] = useState<ClimateDataResponse[]>([]);
   const [oceanData, setOceanData] = useState<MultiDatasetOceanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -366,14 +366,16 @@ function App() {
     });
     handleDateChange(guaranteedDate);
     // Trigger data fetch with current coordinates and new date
-    handleLocationChange(coordinates, guaranteedDate);
+    if (coordinates) {
+      handleLocationChange(coordinates, guaranteedDate);
+    }
   };
 
   // Transform new real data format to old format for compatibility
   const transformOceanDataToClimateData = (measurements: OceanMeasurement[]): ClimateDataResponse[] => {
     return measurements.map(measurement => ({
-      latitude: coordinates.lat,
-      longitude: coordinates.lng,
+      latitude: coordinates?.lat || 0,
+      longitude: coordinates?.lng || 0,
       date: new Date().toISOString().split('T')[0],
       data_source: measurement.source.replace('NOAA/ERDDAP/', '').replace('/', '_'),
       parameter: measurement.parameter,
@@ -454,8 +456,8 @@ function App() {
             // Transform the backend-api response to match our expected format
             const backendData = message.data.data?.data?.measurements || [];
             const transformedBackendData = backendData.map((item: any) => ({
-              latitude: message.coordinates?.lat || coordinates.lat,
-              longitude: (message.coordinates as any)?.lon || coordinates.lng,
+              latitude: message.coordinates?.lat || coordinates?.lat || 0,
+              longitude: (message.coordinates as any)?.lon || coordinates?.lng || 0,
               date: selectedDate,
               data_source: message.type.replace('_data', '').replace('_', ' '),
               parameter: item.parameter || message.type.replace('_data', ''),
@@ -725,7 +727,9 @@ function App() {
                 onClick={() => {
                   const randomDate = generateRandomDate({ preferRecent: true, guaranteedOnly: false });
                   handleDateChange(randomDate);
-                  handleLocationChange(coordinates, randomDate);
+                  if (coordinates) {
+                    handleLocationChange(coordinates, randomDate);
+                  }
                 }}
                 aria-label="Generate random date and fetch data"
                 title="Random Date"
