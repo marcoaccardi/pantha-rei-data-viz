@@ -6,11 +6,11 @@
 export const TEMPORAL_COVERAGE = {
   // Guaranteed availability window (comprehensive data coverage period)
   GUARANTEED_START: '2003-01-01', // Updated to reflect hybrid currents system start
-  GUARANTEED_END: '2025-07-31',   // Latest available texture date
+  GUARANTEED_END: '2025-12-31',   // Latest available texture date
   
   // Extended availability (some data types from later periods)
   EXTENDED_START: '2003-01-01',   // All datasets start from 2003 minimum
-  EXTENDED_END: '2025-07-31',
+  EXTENDED_END: '2025-12-31',
   
   // Maximum historical coverage (biodiversity and microplastics)
   HISTORICAL_START: '1972-01-01', // Microplastics historical data
@@ -35,6 +35,7 @@ export interface DateValidationResult {
   errors: string[];
   warnings: string[];
   suggestedDate?: string;
+  isFutureDate?: boolean;
   coverageInfo?: {
     guaranteedCoverage: boolean;
     extendedCoverage: boolean;
@@ -77,7 +78,7 @@ export function generateRandomDate(options: {
   }
 
   // Never generate dates beyond today or beyond available data
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCurrentDate();
   const maxAvailableDate = endDateStr < today ? endDateStr : today;
   
   const startDate = new Date(startDateStr);
@@ -86,8 +87,8 @@ export function generateRandomDate(options: {
   // Validate date range with recursion protection
   if (startDate >= endDate) {
     if (guaranteedOnly) {
-      // Prevent infinite recursion - use hardcoded fallback
-      return '2025-07-31';
+      // Prevent infinite recursion - use dynamic safe fallback
+      return getMaxSelectableDate();
     }
     return generateRandomDate({ guaranteedOnly: true });
   }
@@ -162,7 +163,7 @@ export function validateDate(date: string): DateValidationResult {
   }
 
   const inputDate = new Date(date);
-  const currentDate = new Date('2025-07-31'); // Latest available data date
+  const currentDate = new Date(getMaxSelectableDate()); // Latest available data date (never beyond today)
   
   // Check if date is valid
   if (isNaN(inputDate.getTime())) {
@@ -171,11 +172,12 @@ export function validateDate(date: string): DateValidationResult {
     return result;
   }
 
-  // Check if date is in the future (beyond August 2025)
+  // Check if date is in the future (beyond today or data coverage)
   if (inputDate > currentDate) {
     result.isValid = false;
+    result.isFutureDate = true;
     result.errors.push('Date cannot be in the future (beyond current available data).');
-    result.suggestedDate = '2025-07-31';
+    result.suggestedDate = getMaxSelectableDate();
     return result;
   }
 
@@ -251,16 +253,29 @@ export function getGuaranteedDateRange(): DateRange {
 }
 
 /**
+ * Get the current date in YYYY-MM-DD format
+ * @returns Current date string
+ */
+export function getCurrentDate(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Get the maximum selectable date (never beyond today)
+ * @returns Maximum date that can be selected in YYYY-MM-DD format
+ */
+export function getMaxSelectableDate(): string {
+  const today = getCurrentDate();
+  return today < TEMPORAL_COVERAGE.GUARANTEED_END ? today : TEMPORAL_COVERAGE.GUARANTEED_END;
+}
+
+/**
  * Get a safe initial date that's guaranteed to have data available
  * Never returns a future date beyond available data or today
  * @returns Safe date string in YYYY-MM-DD format
  */
 export function getSafeInitialDate(): string {
-  const today = new Date().toISOString().split('T')[0];
-  const maxAvailableDate = TEMPORAL_COVERAGE.GUARANTEED_END < today ? TEMPORAL_COVERAGE.GUARANTEED_END : today;
-  
-  // If today is before our data coverage ends, use today, otherwise use the latest available date
-  return maxAvailableDate;
+  return getMaxSelectableDate();
 }
 
 /**
