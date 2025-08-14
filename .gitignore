@@ -84,3 +84,4 @@ MANIFEST
 ocean-data
 **/credentials.env
 backend/config/status.json
+/backend/.venv-windows

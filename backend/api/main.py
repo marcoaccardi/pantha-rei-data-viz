@@ -92,8 +92,8 @@ async def health_check():
         # Fast health check - skip dataset scanning
         return HealthResponse(
             status="healthy",
-            message="Ocean Data API is operational (currents temporarily disabled)",
-            datasets_available=["sst", "acidity", "microplastics"],
+            message="Ocean Data API is operational - all datasets available",
+            datasets_available=["sst", "acidity", "microplastics", "currents"],
             total_files=19  # Known file count
         )
     except Exception as e:
@@ -219,7 +219,7 @@ async def get_microplastics_points(
 async def get_multi_point(
     lat: float = Query(..., ge=-90, le=90, description="Latitude in degrees"),
     lon: float = Query(..., ge=-180, le=180, description="Longitude in degrees"),
-    datasets: str = Query("sst,acidity,microplastics", description="Comma-separated list of datasets (currents temporarily disabled)"),
+    datasets: str = Query("sst,acidity,microplastics,currents", description="Comma-separated list of datasets"),
     date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (latest if not specified)")
 ):
     """Extract data from multiple datasets at a specific point."""
