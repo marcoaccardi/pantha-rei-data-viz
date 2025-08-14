@@ -64,7 +64,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
       bottom: '0',
       minHeight: '90vh',
       height: 'auto',
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       color: 'white',
       padding: '20px',
       borderRadius: '12px',

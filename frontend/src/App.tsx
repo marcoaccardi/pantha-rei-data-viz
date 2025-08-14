@@ -942,14 +942,18 @@ function App() {
         )}
 
         {/* Data Panel */}
-        {!(clickedMicroplastic && showMicroplastics) && (
+        <div style={{
+          opacity: (clickedMicroplastic && showMicroplastics) ? 0 : 1,
+          transition: 'opacity 0.3s ease-in-out',
+          pointerEvents: (clickedMicroplastic && showMicroplastics) ? 'none' : 'auto'
+        }}>
           <DataPanel 
             data={oceanData}
             isLoading={isLoading}
             error={apiError}
             hoveredMicroplastic={hoveredMicroplastic}
           />
-        )}
+        </div>
         
         {/* Help Button - Bottom Right */}
         <button

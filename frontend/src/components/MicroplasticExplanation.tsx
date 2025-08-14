@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faLocationDot, faCalendar, faBottleWater } from '@fortawesome/free-solid-svg-icons';
 
@@ -55,6 +55,24 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
   microplastic,
   onClose
 }) => {
+  const [isClosing, setIsClosing] = useState(false);
+  const [isOpening, setIsOpening] = useState(true);
+
+  // Handle fade-in animation on mount
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setIsOpening(false);
+    });
+  }, []);
+
+  // Handle close with fade-out animation
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300); // Match transition duration
+  };
+
   const getConcentrationColor = (concentrationClass: string): string => {
     switch (concentrationClass) {
       case 'Very Low':
@@ -124,7 +142,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
       bottom: '0',
       minHeight: '90vh',
       height: 'auto',
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       color: 'white',
       padding: '20px',
       borderRadius: '12px',
@@ -133,7 +151,10 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
       border: '1px solid rgba(156, 163, 175, 0.3)',
       zIndex: 10,
       scrollbarWidth: 'thin',
-      scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+      scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent',
+      opacity: isClosing ? 0 : (isOpening ? 0 : 1),
+      transition: 'opacity 0.3s ease-in-out',
+      pointerEvents: (isClosing || isOpening) ? 'none' : 'auto'
     }}>
       {/* Header with close button */}
       <div style={{
@@ -161,7 +182,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
         </div>
         
         <button
-          onClick={onClose}
+          onClick={handleClose}
           style={{
             backgroundColor: 'transparent',
             border: '1px solid rgba(156, 163, 175, 0.5)',
