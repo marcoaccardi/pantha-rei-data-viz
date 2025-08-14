@@ -90,11 +90,15 @@ class GapDetector:
     
     def _detect_raw_data_gaps(self, dataset: str) -> Tuple[Optional[date], List[date]]:
         """Detect gaps in raw data files."""
+        # Handle acidity hybrid system with separate current/historical directories
+        if dataset == "acidity":
+            return self._detect_acidity_hybrid_gaps()
+        
         dataset_path = self.raw_path / dataset
         if not dataset_path.exists():
             # No data exists, start from dataset start date
             start_dates = {
-                "sst": date(1981, 9, 1),
+                "sst": date(2003, 1, 1),  # Align with user requirement: 2003-present coverage
                 "currents": date(2003, 1, 1),
                 "acidity": date(1993, 1, 1),
                 "microplastics": date(1993, 1, 1)
@@ -142,10 +146,10 @@ class GapDetector:
         if not latest_date:
             # No valid files found, start from beginning
             start_dates = {
-                "sst": date(2024, 1, 1),  # Test start
-                "currents": date(2024, 1, 1),
-                "acidity": date(2024, 1, 1),
-                "microplastics": date(2024, 1, 1)
+                "sst": date(2003, 1, 1),  # User requirement: 2003-present coverage
+                "currents": date(2003, 1, 1),
+                "acidity": date(1993, 1, 1),
+                "microplastics": date(1993, 1, 1)
             }
             start_date = start_dates.get(dataset, date(2024, 1, 1))
             return None, self._generate_date_range(start_date, date.today() - timedelta(days=1))
@@ -157,6 +161,69 @@ class GapDetector:
         
         missing_dates = self._generate_date_range(latest_date + timedelta(days=1), yesterday)
         return latest_date, missing_dates
+    
+    def _detect_acidity_hybrid_gaps(self) -> Tuple[Optional[date], List[date]]:
+        """Detect gaps in acidity hybrid system (historical + current directories)."""
+        # Acidity system uses two directories:
+        # - acidity_historical: 1993-2022 (ends 2022-12-31)
+        # - acidity_current: 2021-present (overlaps with historical 2021-2022)
+        
+        historical_path = self.raw_path / "acidity_historical"
+        current_path = self.raw_path / "acidity_current"
+        
+        latest_historical = None
+        latest_current = None
+        
+        # Check historical data (1993-2022)
+        if historical_path.exists():
+            latest_historical = self._find_latest_date_in_path(historical_path, r"acidity_historical.*?(\d{8}).*\.nc")
+        
+        # Check current data (2021-present)
+        if current_path.exists():
+            latest_current = self._find_latest_date_in_path(current_path, r"acidity_current.*?(\d{8}).*\.nc")
+        
+        # Determine overall latest date (current takes priority)
+        if latest_current:
+            latest_date = latest_current
+        elif latest_historical:
+            latest_date = latest_historical
+        else:
+            # No data found, start from beginning
+            return None, self._generate_date_range(date(1993, 1, 1), date.today() - timedelta(days=1))
+        
+        # Generate missing dates from latest to yesterday
+        yesterday = date.today() - timedelta(days=1)
+        if latest_date >= yesterday:
+            return latest_date, []
+        
+        missing_dates = self._generate_date_range(latest_date + timedelta(days=1), yesterday)
+        return latest_date, missing_dates
+    
+    def _find_latest_date_in_path(self, path: Path, pattern_str: str) -> Optional[date]:
+        """Helper method to find latest date in a directory using given pattern."""
+        if not path.exists():
+            return None
+        
+        pattern = re.compile(pattern_str)
+        latest_date = None
+        
+        for year_dir in sorted(path.glob("*"), reverse=True):
+            if not year_dir.is_dir():
+                continue
+            for month_dir in sorted(year_dir.glob("*"), reverse=True):
+                if not month_dir.is_dir():
+                    continue
+                for data_file in sorted(month_dir.glob("*.nc"), reverse=True):
+                    match = pattern.search(data_file.name)
+                    if match:
+                        date_str = match.group(1)
+                        try:
+                            latest_date = datetime.strptime(date_str, "%Y%m%d").date()
+                            return latest_date  # Return first (latest) match found
+                        except ValueError:
+                            continue
+        
+        return latest_date
     
     def _generate_date_range(self, start_date: date, end_date: date) -> List[date]:
         """Generate list of dates between start and end (inclusive)."""
@@ -176,7 +243,7 @@ class OceanDataUpdater:
     
     def __init__(self, base_path: Optional[Path] = None, dry_run: bool = False):
         """Initialize the updater."""
-        self.base_path = base_path or Path(__file__).parent.parent.parent / "ocean-data"
+        self.base_path = base_path or Path(__file__).parent.parent.parent.parent / "ocean-data"
         self.dry_run = dry_run
         
         # Initialize components

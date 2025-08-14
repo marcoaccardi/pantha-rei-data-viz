@@ -19,8 +19,8 @@ These scripts provide individual dataset update functionality and are kept for s
 
 ### ✅ Superseded by Production Scripts
 The main production workflow now uses:
-- `scripts/production/update_ocean_data.sh` (preferred)
-- `scripts/production/update_ocean_data.py` (orchestrator)
+- `./update_ocean_data.sh` (preferred - moved to project root)
+- `backend/scripts/production/update_ocean_data.py` (orchestrator)
 
 ### 🔄 Compatibility Maintained
 These legacy scripts are maintained for:
@@ -63,7 +63,7 @@ python scripts/legacy_individual_updaters/update_microplastics_data.py --validat
 - **Emergency Recovery**: Fallback when main production scripts have issues
 
 ### ❌ Not Recommended For
-- **Production Operations**: Use `scripts/production/update_ocean_data.sh` instead
+- **Production Operations**: Use `./update_ocean_data.sh` instead
 - **Daily Updates**: Production scripts provide better orchestration
 - **New Development**: Build on the production pipeline foundation
 - **System Integration**: Production scripts have better error handling and logging
@@ -87,7 +87,7 @@ python scripts/legacy_individual_updaters/update_microplastics_data.py --validat
 If you're currently using these legacy scripts:
 
 1. **Evaluate**: Determine if production scripts meet your needs
-2. **Test**: Try `scripts/production/update_ocean_data.sh` with your use case
+2. **Test**: Try `./update_ocean_data.sh` with your use case
 3. **Migrate**: Update processes to use production scripts
 4. **Validate**: Ensure outputs match expectations
 5. **Maintain**: Keep legacy scripts as fallback only

@@ -81,8 +81,8 @@ These scripts are preserved rather than deleted because they:
 
 If you were using any of these archived scripts:
 
-1. **SST Downloads**: Use `scripts/production/update_ocean_data.sh --datasets sst`
-2. **Currents Downloads**: Use `scripts/production/update_ocean_data.sh --datasets currents`  
+1. **SST Downloads**: Use `./update_ocean_data.sh --datasets sst`
+2. **Currents Downloads**: Use `./update_ocean_data.sh --datasets currents`  
 3. **Historical Data**: Historical downloads are complete; use existing processed data
 4. **File Repairs**: Use `scripts/maintenance/repair_corrupted_files.py`
 5. **Organization**: Current pipeline handles file organization automatically
