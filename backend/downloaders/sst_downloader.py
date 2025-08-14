@@ -47,10 +47,20 @@ class SSTDownloader(BaseDataDownloader):
         return f"oisst-avhrr-v02r01.{target_date.strftime('%Y%m%d')}.nc"
     
     def _get_download_url(self, target_date: date) -> str:
-        """Get download URL for given date."""
+        """Get download URL for given date (final version)."""
         year_month = target_date.strftime("%Y%m")
         filename = self._get_filename_for_date(target_date)
         return f"{self.base_url}{year_month}/{filename}"
+    
+    def _get_preliminary_download_url(self, target_date: date) -> str:
+        """Get download URL for preliminary version."""
+        year_month = target_date.strftime("%Y%m")
+        filename = self._get_preliminary_filename_for_date(target_date)
+        return f"{self.base_url}{year_month}/{filename}"
+    
+    def _get_preliminary_filename_for_date(self, target_date: date) -> str:
+        """Get preliminary filename for NOAA OISST file for given date."""
+        return f"oisst-avhrr-v02r01.{target_date.strftime('%Y%m%d')}_preliminary.nc"
     
     def download_date(self, target_date: date) -> bool:
         """
@@ -62,14 +72,27 @@ class SSTDownloader(BaseDataDownloader):
         Returns:
             True if successful, False otherwise
         """
-        url = self._get_download_url(target_date)
+        # Try final version first, then preliminary version
+        final_url = self._get_download_url(target_date)
+        preliminary_url = self._get_preliminary_download_url(target_date)
         
+        # Try final version first
+        success = self._attempt_download(target_date, final_url, is_preliminary=False)
+        if success:
+            return True
+            
+        # If final version fails, try preliminary version
+        self.logger.info(f"Final version not available, trying preliminary version for {target_date}")
+        return self._attempt_download(target_date, preliminary_url, is_preliminary=True)
+    
+    def _attempt_download(self, target_date: date, url: str, is_preliminary: bool = False) -> bool:
+        """Attempt to download SST data from given URL."""
         # Create year/month directory structure
         year_month = target_date.strftime("%Y/%m")
         output_dir = self.raw_data_path / year_month
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Define file paths
+        # Define file paths (always save as final filename, regardless of source)
         filename = self._get_filename_for_date(target_date)
         raw_file_path = output_dir / filename
         
@@ -79,7 +102,8 @@ class SSTDownloader(BaseDataDownloader):
             return True
         
         try:
-            self.logger.info(f"Downloading from: {url}")
+            file_type = "preliminary" if is_preliminary else "final"
+            self.logger.info(f"Downloading {file_type} version from: {url}")
             
             # Download with streaming to handle large files
             response = self.session.get(
@@ -109,7 +133,8 @@ class SSTDownloader(BaseDataDownloader):
             
             # Get file size for logging
             file_size_mb = raw_file_path.stat().st_size / (1024 * 1024)
-            self.logger.info(f"Successfully downloaded {filename} ({file_size_mb:.1f} MB)")
+            version_note = " (preliminary version)" if is_preliminary else ""
+            self.logger.info(f"Successfully downloaded {filename}{version_note} ({file_size_mb:.1f} MB)")
             
             # Process the downloaded file
             success = self._process_downloaded_file(raw_file_path, target_date)
@@ -128,7 +153,10 @@ class SSTDownloader(BaseDataDownloader):
             return success
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Network error downloading {filename}: {e}")
+            if e.response and e.response.status_code == 404:
+                self.logger.debug(f"File not available: {url}")
+            else:
+                self.logger.error(f"Network error downloading {filename}: {e}")
             return False
         except Exception as e:
             self.logger.error(f"Unexpected error downloading {filename}: {e}")

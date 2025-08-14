@@ -206,17 +206,22 @@ class SSTERDDAPTextureDownloader:
             self.logger.error(f"Unexpected error downloading texture for {target_date}: {e}")
             return False
             
-    def download_date_range(self, start_date: date, end_date: date) -> dict:
+    def download_date_range(self, start_date: Union[str, date], end_date: Union[str, date]) -> dict:
         """
         Download SST textures for a date range.
         
         Args:
-            start_date: Start date (inclusive)
-            end_date: End date (inclusive)
+            start_date: Start date (inclusive) - string 'YYYY-MM-DD' or date object
+            end_date: End date (inclusive) - string 'YYYY-MM-DD' or date object
             
         Returns:
             Dictionary with download results
         """
+        # Handle both string and date inputs
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         results = {
             'total_requested': 0,
             'successful': 0,
