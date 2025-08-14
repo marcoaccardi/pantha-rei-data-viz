@@ -71,6 +71,28 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
   const { t } = useTranslation();
   const [expandedParameters, setExpandedParameters] = useState<string[]>([]);
   const [activeHealthInfo, setActiveHealthInfo] = useState<'temperature' | 'chemistry' | 'currents' | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  
+  const handleOpenHealthInfo = (sectionType: 'temperature' | 'chemistry' | 'currents') => {
+    if (activeHealthInfo === sectionType) return; // Already open
+    
+    setActiveHealthInfo(sectionType);
+    setIsOpening(true);
+    
+    // Trigger fade-in animation
+    requestAnimationFrame(() => {
+      setIsOpening(false);
+    });
+  };
+  
+  const handleCloseHealthInfo = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setActiveHealthInfo(null);
+      setIsClosing(false);
+    }, 300); // Match the transition duration
+  };
   
   const getConcentrationColor = (concentrationClass: string): string => {
     switch (concentrationClass) {
@@ -94,10 +116,11 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
       <div style={{
         marginTop: designSystem.spacing.lg,
         paddingTop: designSystem.spacing.lg,
-        borderTop: `1px solid ${designSystem.colors.text.muted}40`,
+        borderTop: `1px solid rgba(156, 163, 175, 0.3)`,
         padding: designSystem.spacing.lg,
-        backgroundColor: designSystem.colors.backgrounds.secondary,
-        borderRadius: designSystem.spacing.sm
+        backgroundColor: 'transparent',
+        borderRadius: designSystem.spacing.sm,
+        border: '1px solid rgba(156, 163, 175, 0.3)'
       }}>
         <h4 style={{
           color: designSystem.colors.primary,
@@ -273,7 +296,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
             style={{
             marginBottom: designSystem.spacing.sm,
             padding: `${designSystem.spacing.sm} ${designSystem.spacing.md}`,
-            backgroundColor: designSystem.colors.backgrounds.secondary,
+            backgroundColor: 'transparent',
             borderRadius: designSystem.spacing.xs,
             color: designSystem.colors.text.secondary,
             lineHeight: '1.4',
@@ -386,8 +409,9 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
       <div key={datasetName} style={{ 
         marginBottom: designSystem.spacing.xxl,
         padding: designSystem.spacing.lg,
-        backgroundColor: designSystem.colors.backgrounds.secondary,
-        borderRadius: designSystem.spacing.sm
+        backgroundColor: 'transparent',
+        borderRadius: designSystem.spacing.sm,
+        border: '1px solid rgba(156, 163, 175, 0.3)'
       }}>
         <div style={{
           display: 'flex',
@@ -405,7 +429,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           </h4>
           
           <button
-            onClick={() => setActiveHealthInfo(sectionType)}
+            onClick={() => handleOpenHealthInfo(sectionType)}
             style={{
               backgroundColor: 'transparent',
               border: `1px solid ${healthAnalysis.overallColor}`,
@@ -419,13 +443,22 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
               justifyContent: 'center',
               width: '32px',
               height: '32px',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.3s ease',
+              transform: 'scale(1)'
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = `${healthAnalysis.overallColor}20`;
+              e.currentTarget.style.transform = 'scale(1.05)';
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
             }}
             title={t('dataPanel.healthInfo.viewHealthInfo', { section: section.title.toLowerCase() })}
           >
@@ -591,49 +624,36 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
     );
   }
 
-  // Show ocean health info overlay if active
-  if (activeHealthInfo && data) {
-    const dataset = activeHealthInfo === 'temperature' ? data.datasets.sst :
-                   activeHealthInfo === 'chemistry' ? data.datasets.acidity :
-                   data.datasets.currents;
-    
-    const healthAnalysis = analyzeSectionHealth(activeHealthInfo, dataset, t);
-    
-    return (
-      <div style={{
-        position: 'absolute',
-        top: designSystem.spacing.xl,
-        right: designSystem.spacing.xl,
-        width: '450px',
-        height: '90vh',
-        borderRadius: designSystem.spacing.md
-      }}>
-        <OceanHealthInfo
-          sectionName={activeHealthInfo}
-          analysis={healthAnalysis}
-          location={data.location}
-          date={data.date}
-          onClose={() => setActiveHealthInfo(null)}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="elegant-scrollbar" style={{
+    <div style={{
       position: 'absolute',
       top: designSystem.spacing.xl,
       right: designSystem.spacing.xl,
-      backgroundColor: designSystem.colors.backgrounds.primary,
-      color: designSystem.colors.text.primary,
-      padding: designSystem.spacing.xl,
-      borderRadius: designSystem.spacing.md,
       width: '480px',
-      maxHeight: '80vh',
-      overflowY: 'auto',
-      backdropFilter: 'blur(10px)',
-      border: `1px solid ${designSystem.colors.text.muted}40`
+      height: '90vh',
+      borderRadius: designSystem.spacing.md
     }}>
+      {/* Main Data Panel */}
+      <div 
+        className="elegant-scrollbar" 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          color: designSystem.colors.text.primary,
+          padding: designSystem.spacing.xl,
+          borderRadius: designSystem.spacing.md,
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          backdropFilter: 'blur(10px)',
+          border: 'none',
+          opacity: activeHealthInfo && !isClosing ? 0 : 1,
+          transition: 'opacity 0.3s ease-in-out',
+          pointerEvents: activeHealthInfo && !isClosing ? 'none' : 'auto'
+        }}>
       <div style={{
         marginBottom: designSystem.spacing.lg,
         paddingBottom: designSystem.spacing.sm,
@@ -678,6 +698,36 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
       )}
       
       {renderMicroplasticHover()}
+      
+      </div>
+      
+      {/* Health Info Overlay */}
+      {activeHealthInfo && data && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: isClosing ? 0 : (isOpening ? 0 : 1),
+          transition: 'opacity 0.3s ease-in-out',
+          pointerEvents: (isClosing || isOpening) ? 'none' : 'auto'
+        }}>
+          <OceanHealthInfo
+            sectionName={activeHealthInfo}
+            analysis={analyzeSectionHealth(
+              activeHealthInfo, 
+              activeHealthInfo === 'temperature' ? data.datasets.sst :
+              activeHealthInfo === 'chemistry' ? data.datasets.acidity :
+              data.datasets.currents, 
+              t
+            )}
+            location={data.location}
+            date={data.date}
+            onClose={handleCloseHealthInfo}
+          />
+        </div>
+      )}
       
     </div>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faXmark, 
@@ -21,18 +21,34 @@ interface AppHelpOverlayProps {
 }
 
 const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
+  const [isClosing, setIsClosing] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  
+  // Trigger fade-in animation on mount
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 10);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 300); // Match the transition duration
+  };
   
   // Handle escape key to close overlay
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        handleClose();
       }
     };
     
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   return (
     <div 
@@ -48,9 +64,12 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '40px'
+        padding: '40px',
+        opacity: isClosing ? 0 : (isVisible ? 1 : 0),
+        transition: 'opacity 0.3s ease-in-out',
+        pointerEvents: isClosing ? 'none' : 'auto'
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div 
         className="elegant-scrollbar"
@@ -104,7 +123,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
           </div>
           
           <button
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               backgroundColor: 'transparent',
               border: '1px solid rgba(156, 163, 175, 0.5)',
