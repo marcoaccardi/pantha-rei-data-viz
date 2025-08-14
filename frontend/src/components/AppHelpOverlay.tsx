@@ -81,10 +81,10 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
         }}>
           <div>
             <h1 style={{
-              margin: '0 0 8px 0',
-              fontSize: '1.75rem',
+              margin: '0 0 12px 0',
+              fontSize: '2rem',
               color: '#3b82f6',
-              fontWeight: '600',
+              fontWeight: '700',
               display: 'flex',
               alignItems: 'center',
               gap: '12px'
@@ -93,10 +93,10 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               How to Use Ocean Data Explorer
             </h1>
             <p style={{
-              fontSize: '1rem',
+              fontSize: '1.1rem',
               color: '#9ca3af',
               margin: 0,
-              lineHeight: '1.4'
+              lineHeight: '1.5'
             }}>
               Your guide to exploring real-time ocean data and understanding marine ecosystems
             </p>
@@ -111,12 +111,12 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               padding: '12px',
               color: '#9ca3af',
               cursor: 'pointer',
-              fontSize: '1.2em',
+              fontSize: '1.3em',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '40px',
-              height: '40px',
+              width: '44px',
+              height: '44px',
               transition: 'all 0.2s ease'
             }}
             onMouseOver={(e) => {
@@ -138,13 +138,13 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
         {/* App Overview */}
         <section style={{ marginBottom: '48px' }}>
           <h2 style={{
-            fontSize: '1.25rem',
+            fontSize: '1.4rem',
             color: '#e5e7eb',
-            marginBottom: '16px',
+            marginBottom: '20px',
             fontWeight: '600',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '10px'
           }}>
             <FontAwesomeIcon icon={faCircleInfo} />
             What is Ocean Data Explorer?
@@ -157,24 +157,30 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             border: '1px solid rgba(59, 130, 246, 0.2)'
           }}>
             <p style={{
-              fontSize: '1rem',
+              fontSize: '1.05rem',
               color: '#e5e7eb',
               lineHeight: '1.6',
-              margin: '0 0 12px 0'
+              margin: '0 0 16px 0'
             }}>
               This interactive globe allows you to explore real-time ocean data from scientific sources including 
               NOAA, Copernicus Marine Service, and other oceanographic institutions.
             </p>
-            <p style={{
-              fontSize: '0.95rem',
+            <div style={{
+              fontSize: '1rem',
               color: '#d1d5db',
-              lineHeight: '1.5',
+              lineHeight: '1.6',
               margin: 0
             }}>
-              <strong>Visualize:</strong> Sea surface temperature, ocean chemistry, currents, and microplastic pollution • 
-              <strong>Analyze:</strong> Ocean health indicators and ecosystem conditions • 
-              <strong>Explore:</strong> Historical and real-time oceanographic data worldwide
-            </p>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Visualize:</strong> Sea surface temperature, ocean chemistry, currents, and microplastic pollution
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Analyze:</strong> Ocean health indicators and ecosystem conditions
+              </div>
+              <div>
+                <strong>Explore:</strong> Historical and real-time oceanographic data worldwide
+              </div>
+            </div>
           </div>
         </section>
 
@@ -208,9 +214,9 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             </div>
             
             <div style={{
-              padding: '16px',
+              padding: '20px',
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px'
+              borderRadius: '12px'
             }}>
               <h3 style={{ color: '#10b981', fontSize: '1rem', marginBottom: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FontAwesomeIcon icon={faMousePointer} /> Double-Click
@@ -221,9 +227,9 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             </div>
             
             <div style={{
-              padding: '16px',
+              padding: '20px',
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px'
+              borderRadius: '12px'
             }}>
               <h3 style={{ color: '#10b981', fontSize: '1rem', marginBottom: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FontAwesomeIcon icon={faHandPointer} /> Drag & Rotate
@@ -234,9 +240,9 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             </div>
             
             <div style={{
-              padding: '16px',
+              padding: '20px',
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px'
+              borderRadius: '12px'
             }}>
               <h3 style={{ color: '#10b981', fontSize: '1rem', marginBottom: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FontAwesomeIcon icon={faHandPointer} /> Touch Support
@@ -249,7 +255,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
         </section>
 
         {/* Control Panel Guide */}
-        <section style={{ marginBottom: '32px' }}>
+        <section style={{ marginBottom: '48px' }}>
           <h2 style={{
             fontSize: '1.25rem',
             color: '#e5e7eb',
@@ -263,7 +269,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             Control Panel (Top Left)
           </h2>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{
               padding: '16px',
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -282,16 +288,16 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
                 Date Selection
               </h3>
               <p style={{ color: '#d1d5db', fontSize: '0.9rem', lineHeight: '1.4', margin: 0 }}>
-                Choose any date from 1993 to present. Recent dates (2020-2024) have the best data coverage. 
+                Choose any date from 2003 to present. Recent dates (2020-2025) have the best data coverage. 
                 Data automatically updates when you change dates.
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
               <div style={{
-                padding: '12px',
+                padding: '16px',
                 backgroundColor: 'rgba(100, 116, 139, 0.2)',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>
@@ -340,7 +346,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div style={{
                 padding: '12px',
                 backgroundColor: 'rgba(100, 116, 139, 0.2)',
@@ -393,7 +399,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
         </section>
 
         {/* Data Panel Guide */}
-        <section style={{ marginBottom: '32px' }}>
+        <section style={{ marginBottom: '48px' }}>
           <h2 style={{
             fontSize: '1.25rem',
             color: '#e5e7eb',
@@ -407,7 +413,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             Data Panel (Right Side)
           </h2>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{
               padding: '16px',
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -478,9 +484,9 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             </div>
 
             <div style={{
-              padding: '16px',
+              padding: '20px',
               backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              borderRadius: '8px',
+              borderRadius: '12px',
               border: '1px solid rgba(99, 102, 241, 0.2)'
             }}>
               <h3 style={{
@@ -508,7 +514,8 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
         {/* Footer */}
         <div style={{
           borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          paddingTop: '20px',
+          paddingTop: '32px',
+          marginTop: '20px',
           textAlign: 'center'
         }}>
           <p style={{

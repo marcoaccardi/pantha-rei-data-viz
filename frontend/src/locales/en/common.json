@@ -1,0 +1,352 @@
+{
+  "app": {
+    "title": "Ocean Data Explorer",
+    "loading": "Loading ocean data...",
+    "error": {
+      "invalidLocation": "Invalid Location",
+      "cannotFetchData": "Cannot fetch ocean data - backend server is disconnected. Please wait for reconnection.",
+      "networkError": "Network error occurred. Please check your connection and try again.",
+      "timeout": "Request timed out. The server is taking too long to respond. Please try again.",
+      "unexpectedError": "An unexpected error occurred. Please try again.",
+      "invalidDate": "Invalid date: {{error}}"
+    }
+  },
+  "controls": {
+    "dateSelection": "Date Selection",
+    "randomLocation": "Generate random ocean location and fetch data",
+    "randomDate": "Generate random date and fetch data",
+    "randomBoth": "Generate random date and ocean location combination",
+    "showSSTTexture": "Show SST Texture",
+    "hideSSTTexture": "Hide SST Texture",
+    "showMicroplastics": "Show Microplastics",
+    "hideMicroplastics": "Hide Microplastics",
+    "helpButton": "App Help & Instructions",
+    "helpButtonAria": "Open application help and usage instructions"
+  },
+  "dataPanel": {
+    "title": "Ocean Data Analysis",
+    "loading": "Loading ocean data...",
+    "error": "Ocean Data Error",
+    "noData": "Ocean Data",
+    "clickToView": "Click on the globe to view ocean data",
+    "useRandomButton": "Or use the 🎲 Random Location button to explore available data",
+    "sections": {
+      "temperature": "Temperature",
+      "chemistry": "Ocean Chemistry",
+      "currents": "Currents"
+    },
+    "parameters": {
+      "sst": "Sea Surface Temperature",
+      "analysed_sst": "Sea Surface Temperature",
+      "ice": "Sea ice concentration",
+      "anom": "Temperature anomaly",
+      "err": "Analysis error",
+      "ph": "pH",
+      "ph_insitu": "pH (in situ)",
+      "ph_insitu_total": "pH (total scale)",
+      "dissic": "Dissolved inorganic carbon concentration",
+      "dic": "Dissolved inorganic carbon",
+      "talk": "Total alkalinity",
+      "pco2": "Partial pressure CO₂",
+      "revelle": "Revelle factor",
+      "o2": "Dissolved oxygen",
+      "no3": "Nitrate concentration",
+      "po4": "Phosphate concentration",
+      "si": "Silicate concentration",
+      "chl": "Chlorophyll-a",
+      "nppv": "Net primary production",
+      "uo": "Eastward velocity",
+      "vo": "Northward velocity",
+      "speed": "Current speed",
+      "direction": "Current direction",
+      "current_speed": "Current speed",
+      "current_direction": "Current direction",
+      "thetao": "Sea water potential temperature",
+      "so": "Sea water salinity",
+      "u": "Zonal velocity component",
+      "v": "Meridional velocity component",
+      "ug": "Zonal geostrophic surface current",
+      "vg": "Meridional geostrophic surface current"
+    },
+    "classifications": {
+      "healthyPH": "Healthy pH",
+      "slightlyAcidic": "Slightly Acidic",
+      "oceanAcidification": "Ocean Acidification",
+      "coolWater": "Cool Water",
+      "moderateTemperature": "Moderate Temperature",
+      "warmWater": "Warm Water",
+      "veryWarm": "Very Warm",
+      "verySlowCurrents": "Very Slow Currents",
+      "moderateCurrents": "Moderate Currents",
+      "strongCurrents": "Strong Currents",
+      "veryStrongCurrents": "Very Strong Currents",
+      "highOxygen": "High Oxygen",
+      "goodOxygen": "Good Oxygen",
+      "lowOxygen": "Low Oxygen",
+      "lowNitrate": "Low Nitrate",
+      "elevatedNitrate": "Elevated Nitrate",
+      "normalPhosphate": "Normal Phosphate",
+      "normalSilicate": "Normal Silicate",
+      "lowChlorophyll": "Low Chlorophyll",
+      "moderateChlorophyll": "Moderate Chlorophyll",
+      "activePrimaryProduction": "Active Primary Production",
+      "currentDirection": "Current Direction",
+      "oceanVelocity": "Ocean Velocity",
+      "normalRange": "Normal Range"
+    },
+    "environmentalImpacts": {
+      "optimalConditions": "Optimal conditions for marine calcification and coral growth",
+      "someStress": "Some stress on shell-forming organisms",
+      "significantThreat": "Significant threat to marine calcification processes",
+      "supportsColdWater": "Supports cold-water marine species and ecosystems",
+      "optimalRange": "Optimal range for diverse marine life",
+      "mayStress": "May stress some marine organisms if sustained",
+      "highStress": "High stress on marine ecosystems, coral bleaching risk",
+      "limitedTransport": "Limited nutrient transport and mixing",
+      "goodTransport": "Good for nutrient transport and marine ecosystem health",
+      "excellentMixing": "Excellent nutrient mixing and transport",
+      "challengingConditions": "May create challenging conditions for some marine life",
+      "excellentRespiration": "Excellent conditions for marine respiration",
+      "adequateOxygen": "Adequate oxygen for most marine organisms",
+      "potentialHypoxia": "Stress on marine organisms, potential hypoxia",
+      "nutrientPoor": "Indicates nutrient-poor surface waters typical of open ocean",
+      "supportsPhytoplankton": "Higher nitrate supports phytoplankton growth",
+      "supportsProductivity": "Phosphate levels support marine primary productivity",
+      "supportsDiatoms": "Silicate supports diatom growth and marine food webs",
+      "oligotrophic": "Indicates oligotrophic (nutrient-poor) ocean conditions",
+      "activePhytoplankton": "Indicates active phytoplankton productivity",
+      "healthyProductivity": "Indicates healthy phytoplankton productivity and carbon fixation",
+      "affectsTransport": "Current direction affects regional water mass transport",
+      "contributes": "Contributes to regional circulation and mixing patterns",
+      "withinExpected": "Parameter within expected range for ocean health"
+    },
+    "contexts": {
+      "normalOceanic": "Normal oceanic pH supports healthy marine ecosystems",
+      "lowerThanOptimal": "pH is lower than optimal but within acceptable range",
+      "concerningAcidification": "pH indicates concerning ocean acidification levels",
+      "typicalHigherLatitude": "Typical of higher latitude or deeper water masses",
+      "healthyTemperature": "Healthy temperature range for most marine ecosystems",
+      "warmTropical": "Warm but within normal tropical range",
+      "marineHeatwave": "Unusually warm temperatures indicate potential marine heatwave",
+      "stagnantWater": "Low current speeds may indicate stagnant water conditions",
+      "healthyCurrents": "Healthy current speeds support marine productivity",
+      "enhancesProductivity": "Strong currents enhance marine productivity",
+      "affectsOrganism": "Very strong currents can affect marine organism behavior",
+      "supportsDiverse": "High oxygen levels support diverse marine life",
+      "healthyOxygen": "Healthy oxygen levels for marine ecosystems",
+      "threatensLife": "Low oxygen conditions threaten marine life",
+      "limitedUpwelling": "Low nitrate levels suggest limited recent upwelling or mixing",
+      "suggestsUpwelling": "Elevated nitrate suggests upwelling or riverine input",
+      "essentialNutrient": "Phosphate is essential nutrient for marine phytoplankton",
+      "importantNutrient": "Important nutrient for siliceous marine organisms",
+      "clearOcean": "Typical of clear, deep ocean waters with low productivity",
+      "healthyPrimary": "Shows healthy primary production in marine ecosystem",
+      "formsBase": "Primary production forms base of marine food web",
+      "influencesNutrient": "Flow direction influences nutrient and heat distribution",
+      "affectingTransport": "Component of total current flow affecting marine transport",
+      "stableConditions": "Measurement indicates stable marine conditions"
+    },
+    "status": {
+      "noData": "No data",
+      "noDataAvailable": "No data available",
+      "dataNotAvailable": "Data not available for this location/date",
+      "requestTimedOut": "Request timed out - server may be processing data",
+      "tryDifferent": "Try a different location or date, or wait and retry"
+    },
+    "microplastics": {
+      "title": "Microplastic Data",
+      "class": "Class:",
+      "concentration": "Concentration:",
+      "hoverPrompt": "Hover over point",
+      "noData": "No data",
+      "notAvailable": "N/A",
+      "units": "pieces/m³"
+    },
+    "healthAnalysis": {
+      "showingHealthyConditions": "are showing healthy conditions",
+      "showingModerateStress": "are showing moderate environmental stress", 
+      "showingSignificantStress": "experiencing significant stress",
+      "inCriticalCondition": "in critical condition requiring immediate attention",
+      "parametersAnalyzed": "{{count}} measured",
+      "goodOceanHealth": "Good ocean health",
+      "excellentOceanHealth": "Excellent ocean health",
+      "moderateOceanHealth": "Moderate ocean health",
+      "poorOceanHealth": "Poor ocean health",
+      "keyFindings": "Key Findings at This Location",
+      "detailedAnalysis": "Detailed Parameter Analysis",
+      "currentValue": "Current Value:",
+      "classification": "Classification:",
+      "environmentalImpact": "Environmental Impact:",
+      "whyMatters": "Why This Matters for Ocean Health"
+    },
+    "ecosystem": {
+      "title": "Ecosystem Health Analysis",
+      "parametersAnalyzed": "{{count}} parameters analyzed"
+    },
+    "healthInfo": {
+      "viewHealthInfo": "View ocean health information for {{section}}"
+    }
+  },
+  "help": {
+    "title": "How to Use Ocean Data Explorer",
+    "subtitle": "Your guide to exploring real-time ocean data and understanding marine ecosystems",
+    "close": "Close help overlay (Press Esc)",
+    "sections": {
+      "overview": {
+        "title": "What is Ocean Data Explorer?",
+        "description": "This interactive globe allows you to explore real-time ocean data from scientific sources including NOAA, Copernicus Marine Service, and other oceanographic institutions.",
+        "visualize": "Visualize: Sea surface temperature, ocean chemistry, currents, and microplastic pollution",
+        "analyze": "Analyze: Ocean health indicators and ecosystem conditions",
+        "explore": "Explore: Historical and real-time oceanographic data worldwide"
+      },
+      "navigation": {
+        "title": "How to Navigate",
+        "clickGlobe": "Click Globe",
+        "clickGlobeDesc": "Single-click anywhere on the globe to fetch ocean data for that location and display comprehensive analysis.",
+        "doubleClick": "Double-Click",
+        "doubleClickDesc": "Double-click to quickly zoom to a location and automatically fetch its ocean data.",
+        "dragRotate": "Drag & Rotate",
+        "dragRotateDesc": "Drag to rotate the globe freely. Use mouse wheel or pinch gestures to zoom in and out.",
+        "touchSupport": "Touch Support",
+        "touchSupportDesc": "Full touch support for mobile devices - tap, drag, and pinch to explore."
+      },
+      "controls": {
+        "title": "Control Panel (Top Left)",
+        "dateSelectionTitle": "Date Selection",
+        "dateSelectionDesc": "Choose any date from 2003 to present. Recent dates (2020-2025) have the best data coverage. Data automatically updates when you change dates.",
+        "randomLocationDesc": "Jump to verified ocean locations with guaranteed data coverage",
+        "randomDateDesc": "Select a random date with good data availability",
+        "randomBothDesc": "Generate random date and location combination",
+        "sstTextureDesc": "Toggle sea surface temperature overlay on the globe",
+        "microplasticsDesc": "Show microplastic pollution data points as 3D spheres"
+      },
+      "dataPanel": {
+        "title": "Data Panel (Right Side)",
+        "temperatureTitle": "Temperature Data",
+        "temperatureDesc": "Sea surface temperature, ice concentration, and temperature anomalies. Includes ocean health analysis and climate impact indicators.",
+        "chemistryTitle": "Ocean Chemistry",
+        "chemistryDesc": "pH levels, dissolved oxygen, nutrients (nitrate, phosphate), and carbon chemistry. Critical for understanding ocean acidification and marine ecosystem health.",
+        "currentsTitle": "Ocean Currents",
+        "currentsDesc": "Current speed and direction, water temperature at depth, and salinity. Essential for understanding ocean circulation and marine habitat connectivity.",
+        "healthAnalysisTitle": "Health Analysis",
+        "healthAnalysisDesc": "Click the info icons next to each section to view detailed ocean health analysis, environmental impacts, and scientific context for the measurements."
+      },
+      "footer": {
+        "appName": "Ocean Data Explorer • Real-time oceanographic data visualization",
+        "dataSources": "Data sources: NOAA, Copernicus Marine Service, and scientific research institutions"
+      }
+    }
+  },
+  "microplastics": {
+    "title": "Microplastic Pollution Analysis",
+    "close": "Close microplastic information panel",
+    "status": {
+      "pollutionLevel": "Pollution Level Status",
+      "concentration": "Concentration:",
+      "class": "Class:",
+      "classes": {
+        "veryLow": "Very Low",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "veryHigh": "Very High"
+      },
+      "levels": {
+        "minimalConcern": "Minimal Concern",
+        "lowConcern": "Low Concern",
+        "moderateConcern": "Moderate Concern",
+        "highConcern": "High Concern",
+        "criticalConcern": "Critical Concern"
+      },
+      "descriptions": {
+        "veryLow": "Low concentrations with limited ecological impact",
+        "low": "Detectable but manageable pollution levels",
+        "medium": "Notable pollution requiring monitoring",
+        "high": "Significant pollution impacting marine life",
+        "veryHigh": "Severe pollution requiring immediate attention"
+      }
+    },
+    "sections": {
+      "whatAre": {
+        "title": "What Are Microplastics?",
+        "description": "Microplastics are tiny plastic particles smaller than 5mm that result from the breakdown of larger plastic waste, synthetic clothing fibers, and industrial processes. They persist in marine environments for decades and accumulate in the food chain.",
+        "sources": "Sources: Plastic bottles, bags, fishing nets, synthetic textiles, tire wear.",
+        "persistence": "Persistence: Can persist in marine environments for 100+ years."
+      },
+      "environmental": {
+        "title": "Environmental Impact",
+        "description": "Microplastics affect marine ecosystems through multiple pathways, causing significant environmental damage.",
+        "marineLife": "Marine Life: Ingestion by fish, seabirds, and marine mammals can cause intestinal blockage and malnutrition",
+        "foodChain": "Food Chain: Bioaccumulation through the food web from plankton to top predators",
+        "oceanChemistry": "Ocean Chemistry: Can transport harmful chemicals and affect marine chemical processes"
+      },
+      "health": {
+        "title": "Human Health Implications",
+        "description": "Microplastics enter human systems primarily through seafood consumption and can have various health effects.",
+        "physicalEffects": "Physical Effects: Inflammation, cellular damage, potential immune system disruption",
+        "chemicalTransport": "Chemical Transport: Can carry toxic chemicals and additives into human tissues"
+      },
+      "measurement": {
+        "title": "Measurement Information",
+        "units": "pieces/m³",
+        "method": "Marine sampling",
+        "analysis": "Microscopy & spectroscopy",
+        "classification": "Environmental impact studies",
+        "description": "Microplastic concentrations are measured through water sampling and laboratory analysis using microscopy and spectroscopy techniques."
+      }
+    },
+    "footer": "Microplastic analysis based on real-time data from multiple scientific sources."
+  },
+  "oceanHealth": {
+    "title": {
+      "temperature": "Ocean Temperature & Health",
+      "chemistry": "Ocean Chemistry & Health",
+      "currents": "Ocean Currents & Health"
+    },
+    "description": {
+      "temperature": "Sea surface temperature is a critical indicator of ocean health, affecting marine ecosystems, coral reefs, and global climate patterns.",
+      "chemistry": "Ocean chemistry parameters like pH, dissolved oxygen, and nutrients determine the health of marine ecosystems and their ability to support life.",
+      "currents": "Ocean currents transport nutrients, heat, and marine life, playing a crucial role in maintaining healthy marine ecosystems."
+    },
+    "importance": {
+      "temperature": "Temperature changes impact species distribution, coral bleaching, marine food webs, and ocean circulation patterns that regulate global climate.",
+      "chemistry": "Chemical changes affect marine organism survival, coral calcification, shell formation, and the entire marine food web structure.",
+      "currents": "Current patterns affect nutrient distribution, marine biodiversity, climate regulation, and the connectivity of marine habitats."
+    },
+    "close": "Close ocean health information panel",
+    "status": "Ocean Health Status",
+    "healthScore": "Health Score:",
+    "whyMatters": "Why This Matters for Ocean Health",
+    "impact": "Impact:",
+    "noDataAvailable": "No Data Available",
+    "noDataMessage": "{{section}} data is not available for this location and date.",
+    "tryDifferent": "Try selecting a different location or date to view {{section}} data.",
+    "keyFindings": "Key Findings at This Location",
+    "detailedAnalysis": "Detailed Parameter Analysis",
+    "currentValue": "Current Value:",
+    "classification": "Classification:",
+    "environmentalImpact": "Environmental Impact:",
+    "footer": "Ocean health analysis based on real-time data from multiple scientific sources. Data reflects current conditions and may change with new measurements.",
+    "severity": {
+      "low": "LOW",
+      "medium": "MEDIUM", 
+      "high": "HIGH",
+      "critical": "CRITICAL"
+    }
+  },
+  "connection": {
+    "disconnected": "Backend server disconnected",
+    "reconnecting": "Reconnecting to backend...",
+    "error": "Connection error"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "noData": "No data",
+    "location": "Location",
+    "date": "Date",
+    "close": "Close",
+    "viewMore": "View More",
+    "learnMore": "Learn More"
+  }
+}

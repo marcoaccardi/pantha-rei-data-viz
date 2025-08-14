@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCircleInfo,
@@ -67,6 +68,7 @@ const designSystem = {
 };
 
 const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMicroplastic }) => {
+  const { t } = useTranslation();
   const [expandedParameters, setExpandedParameters] = useState<string[]>([]);
   const [activeHealthInfo, setActiveHealthInfo] = useState<'temperature' | 'chemistry' | 'currents' | null>(null);
   
@@ -107,7 +109,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           alignItems: 'center',
           gap: designSystem.spacing.sm
         }}>
-          <FontAwesomeIcon icon={faBottleWater} /> Microplastic Data
+          <FontAwesomeIcon icon={faBottleWater} /> {t('dataPanel.microplastics.title')}
         </h4>
         
         {/* Location and Date on same line */}
@@ -122,12 +124,12 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
             <FontAwesomeIcon icon={faLocationDot} />
             {hoveredMicroplastic ? 
               `${hoveredMicroplastic.coordinates[1].toFixed(4)}°, ${hoveredMicroplastic.coordinates[0].toFixed(4)}°` : 
-              'Hover over point'
+              t('dataPanel.microplastics.hoverPrompt')
             }
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: designSystem.spacing.xs }}>
             <FontAwesomeIcon icon={faCalendar} />
-            {hoveredMicroplastic ? hoveredMicroplastic.date : 'No data'}
+            {hoveredMicroplastic ? hoveredMicroplastic.date : t('dataPanel.microplastics.noData')}
           </span>
         </div>
         
@@ -139,21 +141,21 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           fontSize: designSystem.typography.body
         }}>
           <div>
-            <span style={{ color: designSystem.colors.text.secondary, marginRight: designSystem.spacing.xs }}>Class:</span>
+            <span style={{ color: designSystem.colors.text.secondary, marginRight: designSystem.spacing.xs }}>{t('dataPanel.microplastics.class')}</span>
             <span style={{
               color: hoveredMicroplastic ? getConcentrationColor(hoveredMicroplastic.concentrationClass) : designSystem.colors.text.muted,
               fontWeight: '600'
             }}>
-              {hoveredMicroplastic ? hoveredMicroplastic.concentrationClass : 'N/A'}
+              {hoveredMicroplastic ? hoveredMicroplastic.concentrationClass : t('dataPanel.microplastics.notAvailable')}
             </span>
           </div>
           <div>
-            <span style={{ color: designSystem.colors.text.secondary, marginRight: designSystem.spacing.xs }}>Concentration:</span>
+            <span style={{ color: designSystem.colors.text.secondary, marginRight: designSystem.spacing.xs }}>{t('dataPanel.microplastics.concentration')}</span>
             <span style={{
               color: hoveredMicroplastic ? designSystem.colors.text.primary : designSystem.colors.text.muted,
               fontWeight: '500'
             }}>
-              {hoveredMicroplastic ? `${hoveredMicroplastic.concentration.toFixed(3)} pieces/m³` : 'N/A'}
+              {hoveredMicroplastic ? `${hoveredMicroplastic.concentration.toFixed(3)} ${t('dataPanel.microplastics.units')}` : t('dataPanel.microplastics.notAvailable')}
             </span>
           </div>
         </div>
@@ -161,47 +163,22 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
     );
   };
   const getFormattedLabel = (parameter: string, longName?: string): string => {
-    const labelMap: Record<string, string> = {
-      // SST parameters
-      'sst': 'Sea Surface Temperature',
-      'analysed_sst': 'Sea Surface Temperature',
-      'ice': 'Sea ice concentration',
-      'anom': 'Temperature anomaly',
-      'err': 'Analysis error',
-      
-      // Acidity parameters  
-      'ph': 'pH',
-      'ph_insitu': 'pH (in situ)',
-      'ph_insitu_total': 'pH (total scale)',
-      'dissic': 'Dissolved inorganic carbon concentration',
-      'dic': 'Dissolved inorganic carbon',  
-      'talk': 'Total alkalinity',
-      'pco2': 'Partial pressure CO₂',
-      'revelle': 'Revelle factor',
-      'o2': 'Dissolved oxygen',
-      'no3': 'Nitrate concentration',
-      'po4': 'Phosphate concentration', 
-      'si': 'Silicate concentration',
-      'chl': 'Chlorophyll-a',
-      'nppv': 'Net primary production',
-      
-      // Currents parameters
-      'uo': 'Eastward velocity',
-      'vo': 'Northward velocity',
-      'speed': 'Current speed',
-      'direction': 'Current direction',
-      'current_speed': 'Current speed',
-      'current_direction': 'Current direction',
-      'thetao': 'Sea water potential temperature',
-      'so': 'Sea water salinity'
-    };
+    // Use translation keys for parameter names
+    const translationKey = `dataPanel.parameters.${parameter}`;
+    const translatedLabel = t(translationKey);
     
-    return labelMap[parameter] || longName || parameter;
+    // If translation exists (not just the key), use it
+    if (translatedLabel !== translationKey) {
+      return translatedLabel;
+    }
+    
+    // Fallback to longName or parameter name
+    return longName || parameter;
   };
 
   const renderValue = (value: OceanDataValue, parameter: string): JSX.Element => {
     if (!value.valid || value.value === null) {
-      return <span style={{ color: designSystem.colors.text.muted }}>No data</span>;
+      return <span style={{ color: designSystem.colors.text.muted }}>{t('dataPanel.status.noData')}</span>;
     }
 
     const numValue = typeof value.value === 'number' ? value.value : parseFloat(value.value as string);
@@ -222,7 +199,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
     // Special formatting for ice concentration (convert to percentage)
     if (parameter === 'ice') {
       if (numValue === 0 || isNaN(numValue)) {
-        return <span style={{ color: designSystem.colors.text.muted }}>No data</span>;
+        return <span style={{ color: designSystem.colors.text.muted }}>{t('dataPanel.status.noData')}</span>;
       }
       return (
         <span style={{ 
@@ -314,9 +291,9 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
   const renderDataset = (datasetName: string, dataset: OceanPointData | { error: string }) => {
     if ('error' in dataset) {
       const sections: Record<string, { title: string; icon: JSX.Element }> = {
-        sst: { title: 'Temperature', icon: <FontAwesomeIcon icon={faTemperatureHigh} /> },
-        currents: { title: 'Currents', icon: <FontAwesomeIcon icon={faWater} /> },
-        acidity: { title: 'Ocean Chemistry', icon: <FontAwesomeIcon icon={faFlask} /> }
+        sst: { title: t('dataPanel.sections.temperature'), icon: <FontAwesomeIcon icon={faTemperatureHigh} /> },
+        currents: { title: t('dataPanel.sections.currents'), icon: <FontAwesomeIcon icon={faWater} /> },
+        acidity: { title: t('dataPanel.sections.chemistry'), icon: <FontAwesomeIcon icon={faFlask} /> }
       };
       
       const section = sections[datasetName] || { title: datasetName.toUpperCase(), icon: <FontAwesomeIcon icon={faWater} /> };
@@ -336,9 +313,9 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
             fontSize: designSystem.typography.body,
             fontStyle: 'italic'
           }}>
-            {dataset.error.includes('timeout') ? 'Request timed out - server may be processing data' : 
-             dataset.error.includes('not found') ? 'Data not available for this location/date' :
-             'Data not available'}
+            {dataset.error.includes('timeout') ? t('dataPanel.status.requestTimedOut') : 
+             dataset.error.includes('not found') ? t('dataPanel.status.dataNotAvailable') :
+             t('dataPanel.status.noDataAvailable')}
           </div>
           {dataset.error.includes('timeout') && (
             <div style={{ 
@@ -346,7 +323,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
               fontSize: designSystem.typography.caption,
               marginTop: designSystem.spacing.xs
             }}>
-              Try a different location or date, or wait and retry
+              {t('dataPanel.status.tryDifferent')}
             </div>
           )}
         </div>
@@ -358,17 +335,17 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
     // Define sections and their variables with improved organization
     const sections: Record<string, { title: string; icon: JSX.Element; variables: string[] }> = {
       sst: {
-        title: 'Temperature',
+        title: t('dataPanel.sections.temperature'),
         icon: <FontAwesomeIcon icon={faTemperatureHigh} />,
         variables: ['sst', 'ice']
       },
       currents: {
-        title: 'Currents',
+        title: t('dataPanel.sections.currents'),
         icon: <FontAwesomeIcon icon={faWater} />,
         variables: ['uo', 'vo', 'u', 'v', 'ug', 'vg', 'current_speed', 'current_direction', 'thetao', 'so']
       },
       acidity: {
-        title: 'Ocean Chemistry',
+        title: t('dataPanel.sections.chemistry'),
         icon: <FontAwesomeIcon icon={faFlask} />,
         variables: ['ph', 'ph_insitu', 'ph_insitu_total', 'dissic', 'dic', 'talk', 'pco2', 'revelle', 'o2', 'no3', 'po4', 'si', 'chl', 'nppv']
       }
@@ -394,7 +371,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
             color: designSystem.colors.text.muted, 
             fontSize: designSystem.typography.body
           }}>
-            No data available
+            {t('dataPanel.status.noDataAvailable')}
           </div>
         </div>
       );
@@ -403,7 +380,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
     // Analyze section health
     const sectionType = datasetName === 'sst' ? 'temperature' : 
                        datasetName === 'acidity' ? 'chemistry' : 'currents';
-    const healthAnalysis = analyzeSectionHealth(sectionType, data);
+    const healthAnalysis = analyzeSectionHealth(sectionType, data, t);
 
     return (
       <div key={datasetName} style={{ 
@@ -450,7 +427,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
             onMouseOut={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
-            title={`View ocean health information for ${section.title.toLowerCase()}`}
+            title={t('dataPanel.healthInfo.viewHealthInfo', { section: section.title.toLowerCase() })}
           >
             <FontAwesomeIcon icon={faCircleInfo} />
           </button>
@@ -519,7 +496,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           color: designSystem.colors.primary,
           fontWeight: '600'
         }}>
-          🌊 Ocean Data
+          🌊 {t('dataPanel.title')}
         </h3>
         <div style={{ 
           textAlign: 'center', 
@@ -533,7 +510,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           <div style={{ 
             fontSize: designSystem.typography.body,
             color: designSystem.colors.text.secondary
-          }}>Loading ocean data...</div>
+          }}>{t('dataPanel.loading')}</div>
         </div>
       </div>
     );
@@ -559,7 +536,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           color: designSystem.colors.error,
           fontWeight: '600'
         }}>
-          🌊 Ocean Data Error
+          🌊 {t('dataPanel.title')} Error
         </h3>
         <div style={{ 
           color: designSystem.colors.error, 
@@ -591,7 +568,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           color: designSystem.colors.primary,
           fontWeight: '600'
         }}>
-          🌊 Ocean Data
+          🌊 {t('dataPanel.title')}
         </h3>
         <div style={{ 
           color: designSystem.colors.text.muted, 
@@ -602,12 +579,12 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           <div style={{ 
             marginBottom: designSystem.spacing.md,
             color: designSystem.colors.text.secondary
-          }}>Click on the globe to view ocean data</div>
+          }}>{t('dataPanel.clickToView')}</div>
           <div style={{ 
             fontSize: designSystem.typography.caption, 
             color: designSystem.colors.text.muted
           }}>
-            Or use the <strong style={{ color: designSystem.colors.primary }}>🎲 Random Location</strong> button to explore available data
+            {t('dataPanel.useRandomButton')}
           </div>
         </div>
       </div>
@@ -620,7 +597,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
                    activeHealthInfo === 'chemistry' ? data.datasets.acidity :
                    data.datasets.currents;
     
-    const healthAnalysis = analyzeSectionHealth(activeHealthInfo, dataset);
+    const healthAnalysis = analyzeSectionHealth(activeHealthInfo, dataset, t);
     
     return (
       <div style={{
@@ -672,7 +649,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           gap: designSystem.spacing.sm
         }}>
           <FontAwesomeIcon icon={faWater} />
-          Ocean Data Analysis
+          {t('dataPanel.title')}
         </h3>
       </div>
       

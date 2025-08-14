@@ -1,0 +1,354 @@
+{
+  "app": {
+    "title": "Explorador de Dades Oceàniques",
+    "loading": "Carregant dades oceàniques...",
+    "error": {
+      "invalidLocation": "Ubicació Invàlida",
+      "cannotFetchData": "No es poden obtenir dades oceàniques - el servidor està desconnectat. Si us plau, espereu la reconnexió.",
+      "networkError": "S'ha produït un error de xarxa. Comproveu la vostra connexió i torneu-ho a intentar.",
+      "timeout": "Temps d'espera esgotat. El servidor està tardant massa a respondre. Torneu-ho a intentar.",
+      "unexpectedError": "S'ha produït un error inesperat. Torneu-ho a intentar.",
+      "invalidDate": "Data invàlida: {{error}}"
+    }
+  },
+  "controls": {
+    "dateSelection": "Selecció de Data",
+    "oceanData": "Dades Oceàniques",
+    "autoFetchInfo": "Les dades s'obtenen automàticament quan canvieu la ubicació o la data",
+    "randomLocation": "Generar ubicació oceànica aleatòria i obtenir dades",
+    "randomDate": "Generar data aleatòria i obtenir dades",
+    "randomBoth": "Generar combinació de data i ubicació oceànica aleatòria",
+    "showSSTTexture": "Mostrar Textura SST",
+    "hideSSTTexture": "Ocultar Textura SST",
+    "showMicroplastics": "Mostrar Microplàstics",
+    "hideMicroplastics": "Ocultar Microplàstics",
+    "helpButton": "Ajuda i Instruccions de l'Aplicació",
+    "helpButtonAria": "Obrir ajuda i instruccions d'ús de l'aplicació"
+  },
+  "dataPanel": {
+    "title": "Anàlisi de Dades Oceàniques",
+    "loading": "Carregant dades oceàniques...",
+    "error": "Error de Dades Oceàniques",
+    "noData": "Dades Oceàniques",
+    "clickToView": "Feu clic al globus per veure les dades oceàniques",
+    "useRandomButton": "O utilitzeu el botó 🎲 Ubicació Aleatòria per explorar les dades disponibles",
+    "sections": {
+      "temperature": "Temperatura",
+      "chemistry": "Química Oceànica",
+      "currents": "Corrents"
+    },
+    "parameters": {
+      "sst": "Temperatura de la Superfície del Mar",
+      "analysed_sst": "Temperatura de la Superfície del Mar",
+      "ice": "Concentració de gel marí",
+      "anom": "Anomalia de temperatura",
+      "err": "Error d'anàlisi",
+      "ph": "pH",
+      "ph_insitu": "pH (in situ)",
+      "ph_insitu_total": "pH (escala total)",
+      "dissic": "Concentració de carboni inorgànic dissolt",
+      "dic": "Carboni inorgànic dissolt",
+      "talk": "Alcalinitat total",
+      "pco2": "Pressió parcial CO₂",
+      "revelle": "Factor de Revelle",
+      "o2": "Oxigen dissolt",
+      "no3": "Concentració de nitrat",
+      "po4": "Concentració de fosfat",
+      "si": "Concentració de silicat",
+      "chl": "Clorofil·la-a",
+      "nppv": "Producció primària neta",
+      "uo": "Velocitat cap a l'est",
+      "vo": "Velocitat cap al nord",
+      "speed": "Velocitat del corrent",
+      "direction": "Direcció del corrent",
+      "current_speed": "Velocitat del corrent",
+      "current_direction": "Direcció del corrent",
+      "thetao": "Temperatura potencial de l'aigua marina",
+      "so": "Salinitat de l'aigua marina",
+      "u": "Component de velocitat zonal",
+      "v": "Component de velocitat meridional",
+      "ug": "Corrent superficial geostròfic zonal",
+      "vg": "Corrent superficial geostròfic meridional"
+    },
+    "classifications": {
+      "healthyPH": "pH Saludable",
+      "slightlyAcidic": "Lleugerament Àcid",
+      "oceanAcidification": "Acidificació Oceànica",
+      "coolWater": "Aigua Freda",
+      "moderateTemperature": "Temperatura Moderada",
+      "warmWater": "Aigua Càlida",
+      "veryWarm": "Molt Càlid",
+      "verySlowCurrents": "Corrents Molt Lents",
+      "moderateCurrents": "Corrents Moderats",
+      "strongCurrents": "Corrents Forts",
+      "veryStrongCurrents": "Corrents Molt Forts",
+      "highOxygen": "Oxigen Alt",
+      "goodOxygen": "Bon Oxigen",
+      "lowOxygen": "Oxigen Baix",
+      "lowNitrate": "Nitrat Baix",
+      "elevatedNitrate": "Nitrat Elevat",
+      "normalPhosphate": "Fosfat Normal",
+      "normalSilicate": "Silicat Normal",
+      "lowChlorophyll": "Clorofil·la Baixa",
+      "moderateChlorophyll": "Clorofil·la Moderada",
+      "activePrimaryProduction": "Producció Primària Activa",
+      "currentDirection": "Direcció del Corrent",
+      "oceanVelocity": "Velocitat Oceànica",
+      "normalRange": "Rang Normal"
+    },
+    "environmentalImpacts": {
+      "optimalConditions": "Condicions òptimes per a la calcificació marina i el creixement dels coralls",
+      "someStress": "Cert estrès en els organismes formadors de closques",
+      "significantThreat": "Amenaça significativa per als processos de calcificació marina",
+      "supportsColdWater": "Dóna suport a espècies marines i ecosistemes d'aigua freda",
+      "optimalRange": "Rang òptim per a una vida marina diversa",
+      "mayStress": "Pot estresar alguns organismes marins si es manté",
+      "highStress": "Alt estrès en els ecosistemes marins, risc de blanquejament de coralls",
+      "limitedTransport": "Transport i barreja de nutrients limitats",
+      "goodTransport": "Bo per al transport de nutrients i la salut de l'ecosistema marí",
+      "excellentMixing": "Excel·lent barreja i transport de nutrients",
+      "challengingConditions": "Pot crear condicions difícils per a alguna vida marina",
+      "excellentRespiration": "Excel·lents condicions per a la respiració marina",
+      "adequateOxygen": "Oxigen adequat per a la majoria d'organismes marins",
+      "potentialHypoxia": "Estrès en organismes marins, possible hipòxia",
+      "nutrientPoor": "Indica aigües superficials pobres en nutrients típiques de l'oceà obert",
+      "supportsPhytoplankton": "El nitrat més alt dóna suport al creixement del fitoplàncton",
+      "supportsProductivity": "Els nivells de fosfat donen suport a la productivitat primària marina",
+      "supportsDiatoms": "El silicat dóna suport al creixement de diatomees i xarxes alimentàries marines",
+      "oligotrophic": "Indica condicions oceàniques oligotròfiques (pobres en nutrients)",
+      "activePhytoplankton": "Indica productivitat activa del fitoplàncton",
+      "healthyProductivity": "Indica productivitat saludable del fitoplàncton i fixació de carboni",
+      "affectsTransport": "La direcció del corrent afecta el transport de masses d'aigua regionals",
+      "contributes": "Contribueix a la circulació regional i patrons de barreja",
+      "withinExpected": "Paràmetre dins del rang esperat per a la salut oceànica"
+    },
+    "contexts": {
+      "normalOceanic": "El pH oceànic normal dóna suport a ecosistemes marins saludables",
+      "lowerThanOptimal": "El pH és més baix de l'òptim però dins del rang acceptable",
+      "concerningAcidification": "El pH indica nivells preocupants d'acidificació oceànica",
+      "typicalHigherLatitude": "Típic de latituds més altes o masses d'aigua més profundes",
+      "healthyTemperature": "Rang de temperatura saludable per a la majoria d'ecosistemes marins",
+      "warmTropical": "Càlid però dins del rang tropical normal",
+      "marineHeatwave": "Temperatures inusualment càlides indiquen una possible onada de calor marina",
+      "stagnantWater": "Velocitats baixes del corrent poden indicar condicions d'aigua estagnant",
+      "healthyCurrents": "Velocitats saludables del corrent donen suport a la productivitat marina",
+      "enhancesProductivity": "Els corrents forts milloren la productivitat marina",
+      "affectsOrganism": "Els corrents molt forts poden afectar el comportament dels organismes marins",
+      "supportsDiverse": "Els nivells alts d'oxigen donen suport a una vida marina diversa",
+      "healthyOxygen": "Nivells saludables d'oxigen per als ecosistemes marins",
+      "threatensLife": "Les condicions d'oxigen baix amenacen la vida marina",
+      "limitedUpwelling": "Els nivells baixos de nitrat suggereixen aflorament o barreja recents limitats",
+      "suggestsUpwelling": "El nitrat elevat suggereix aflorament o entrada fluvial",
+      "essentialNutrient": "El fosfat és un nutrient essencial per al fitoplàncton marí",
+      "importantNutrient": "Nutrient important per als organismes marins silicis",
+      "clearOcean": "Típic d'aigües oceàniques clares amb baixa productivitat",
+      "healthyPrimary": "Mostra producció primària saludable en l'ecosistema marí",
+      "formsBase": "La producció primària forma la base de la xarxa alimentària marina",
+      "influencesNutrient": "La direcció del flux influeix en la distribució de nutrients i calor",
+      "affectingTransport": "Component del flux total del corrent que afecta el transport marí",
+      "stableConditions": "La mesura indica condicions marines estables"
+    },
+    "status": {
+      "noData": "Sense dades",
+      "noDataAvailable": "No hi ha dades disponibles",
+      "dataNotAvailable": "Dades no disponibles per a aquesta ubicació/data",
+      "requestTimedOut": "Sol·licitud exhaurida - el servidor pot estar processant dades",
+      "tryDifferent": "Proveu una ubicació o data diferent, o espereu i torneu-ho a intentar"
+    },
+    "microplastics": {
+      "title": "Dades de Microplàstics",
+      "class": "Classe:",
+      "concentration": "Concentració:",
+      "hoverPrompt": "Passeu el cursor sobre el punt",
+      "noData": "Sense dades",
+      "notAvailable": "N/D",
+      "units": "peces/m³"
+    },
+    "healthAnalysis": {
+      "showingHealthyConditions": "mostren condicions saludables",
+      "showingModerateStress": "mostren estrès ambiental moderat",
+      "showingSignificantStress": "experimenten estrès significatiu",
+      "inCriticalCondition": "en condició crítica que requereix atenció immediata",
+      "parametersAnalyzed": "{{count}} mesurats",
+      "goodOceanHealth": "Bona salut oceànica",
+      "excellentOceanHealth": "Excel·lent salut oceànica",
+      "moderateOceanHealth": "Salut oceànica moderada",
+      "poorOceanHealth": "Pobra salut oceànica",
+      "keyFindings": "Resultats Clau en Aquesta Ubicació",
+      "detailedAnalysis": "Anàlisi Detallada de Paràmetres",
+      "currentValue": "Valor Actual:",
+      "classification": "Classificació:",
+      "environmentalImpact": "Impacte Ambiental:",
+      "whyMatters": "Per què Això Importa per a la Salut Oceànica"
+    },
+    "ecosystem": {
+      "title": "Anàlisi de Salut de l'Ecosistema",
+      "parametersAnalyzed": "{{count}} paràmetres analitzats"
+    },
+    "healthInfo": {
+      "viewHealthInfo": "Veure informació de salut oceànica per {{section}}"
+    }
+  },
+  "help": {
+    "title": "Com Utilitzar l'Explorador de Dades Oceàniques",
+    "subtitle": "La vostra guia per explorar dades oceàniques en temps real i comprendre els ecosistemes marins",
+    "close": "Tancar superposició d'ajuda (Premeu Esc)",
+    "sections": {
+      "overview": {
+        "title": "Què és l'Explorador de Dades Oceàniques?",
+        "description": "Aquest globus interactiu us permet explorar dades oceàniques en temps real de fonts científiques com NOAA, Copernicus Marine Service i altres institucions oceanogràfiques.",
+        "visualize": "Visualitzar: Temperatura de la superfície del mar, química oceànica, corrents i contaminació per microplàstics",
+        "analyze": "Analitzar: Indicadors de salut oceànica i condicions de l'ecosistema",
+        "explore": "Explorar: Dades oceanogràfiques històriques i en temps real arreu del món"
+      },
+      "navigation": {
+        "title": "Com Navegar",
+        "clickGlobe": "Clic al Globus",
+        "clickGlobeDesc": "Feu un sol clic a qualsevol lloc del globus per obtenir dades oceàniques d'aquella ubicació i mostrar una anàlisi completa.",
+        "doubleClick": "Doble Clic",
+        "doubleClickDesc": "Feu doble clic per fer zoom ràpidament a una ubicació i obtenir automàticament les seves dades oceàniques.",
+        "dragRotate": "Arrossegar i Rotar",
+        "dragRotateDesc": "Arrossegueu per rotar el globus lliurement. Utilitzeu la roda del ratolí o gestos de pessic per fer zoom.",
+        "touchSupport": "Suport Tàctil",
+        "touchSupportDesc": "Suport tàctil complet per a dispositius mòbils - toqueu, arrossegueu i pessigueu per explorar."
+      },
+      "controls": {
+        "title": "Panell de Control (Superior Esquerre)",
+        "dateSelectionTitle": "Selecció de Data",
+        "dateSelectionDesc": "Trieu qualsevol data del 2003 fins al present. Les dates recents (2020-2025) tenen la millor cobertura de dades. Les dades s'actualitzen automàticament quan canvieu les dates.",
+        "randomLocationDesc": "Salteu a ubicacions oceàniques verificades amb cobertura de dades garantida",
+        "randomDateDesc": "Seleccioneu una data aleatòria amb bona disponibilitat de dades",
+        "randomBothDesc": "Genereu una combinació de data i ubicació aleatòria",
+        "sstTextureDesc": "Alterneu la superposició de temperatura de la superfície del mar al globus",
+        "microplasticsDesc": "Mostreu punts de dades de contaminació per microplàstics com a esferes 3D"
+      },
+      "dataPanel": {
+        "title": "Panell de Dades (Costat Dret)",
+        "temperatureTitle": "Dades de Temperatura",
+        "temperatureDesc": "Temperatura de la superfície del mar, concentració de gel i anomalies de temperatura. Inclou anàlisi de salut oceànica i indicadors d'impacte climàtic.",
+        "chemistryTitle": "Química Oceànica",
+        "chemistryDesc": "Nivells de pH, oxigen dissolt, nutrients (nitrat, fosfat) i química del carboni. Crític per comprendre l'acidificació oceànica i la salut de l'ecosistema marí.",
+        "currentsTitle": "Corrents Oceànics",
+        "currentsDesc": "Velocitat i direcció del corrent, temperatura de l'aigua en profunditat i salinitat. Essencial per comprendre la circulació oceànica i la connectivitat de l'hàbitat marí.",
+        "healthAnalysisTitle": "Anàlisi de Salut",
+        "healthAnalysisDesc": "Feu clic a les icones d'informació al costat de cada secció per veure una anàlisi detallada de la salut oceànica, impactes ambientals i context científic per a les mesures."
+      },
+      "footer": {
+        "appName": "Explorador de Dades Oceàniques • Visualització de dades oceanogràfiques en temps real",
+        "dataSources": "Fonts de dades: NOAA, Copernicus Marine Service i institucions de recerca científica"
+      }
+    }
+  },
+  "microplastics": {
+    "title": "Anàlisi de Contaminació per Microplàstics",
+    "close": "Tancar panell d'informació de microplàstics",
+    "status": {
+      "pollutionLevel": "Estat del Nivell de Contaminació",
+      "concentration": "Concentració:",
+      "class": "Classe:",
+      "classes": {
+        "veryLow": "Molt Baixa",
+        "low": "Baixa",
+        "medium": "Mitjana",
+        "high": "Alta",
+        "veryHigh": "Molt Alta"
+      },
+      "levels": {
+        "minimalConcern": "Preocupació Mínima",
+        "lowConcern": "Preocupació Baixa",
+        "moderateConcern": "Preocupació Moderada",
+        "highConcern": "Preocupació Alta",
+        "criticalConcern": "Preocupació Crítica"
+      },
+      "descriptions": {
+        "veryLow": "Concentracions baixes amb impacte ecològic limitat",
+        "low": "Nivells de contaminació detectables però manejables",
+        "medium": "Contaminació notable que requereix monitorització",
+        "high": "Contaminació significativa que impacta la vida marina",
+        "veryHigh": "Contaminació severa que requereix atenció immediata"
+      }
+    },
+    "sections": {
+      "whatAre": {
+        "title": "Què són els Microplàstics?",
+        "description": "Els microplàstics són petites partícules de plàstic menors de 5mm que resulten de la descomposició de residus plàstics més grans, fibres de roba sintètica i processos industrials. Persisteixen en entorns marins durant dècades i s'acumulen a la cadena alimentària.",
+        "sources": "Fonts: Ampolles de plàstic, bosses, xarxes de pesca, tèxtils sintètics, desgast de pneumàtics.",
+        "persistence": "Persistència: Poden persistir en entorns marins durant més de 100 anys."
+      },
+      "environmental": {
+        "title": "Impacte Ambiental",
+        "description": "Els microplàstics afecten els ecosistemes marins a través de múltiples vies, causant danys ambientals significatius.",
+        "marineLife": "Vida Marina: La ingestió per peixos, aus marines i mamífers marins pot causar bloqueig intestinal i desnutrició",
+        "foodChain": "Cadena Alimentària: Bioacumulació a través de la xarxa alimentària des del plàncton fins als depredadors superiors",
+        "oceanChemistry": "Química Oceànica: Poden transportar químics nocius i afectar els processos químics marins"
+      },
+      "health": {
+        "title": "Implicacions per a la Salut Humana",
+        "description": "Els microplàstics entren als sistemes humans principalment a través del consum de marisc i poden tenir diversos efectes sobre la salut.",
+        "physicalEffects": "Efectes Físics: Inflamació, dany cel·lular, possible disrupció del sistema immunitari",
+        "chemicalTransport": "Transport Químic: Poden transportar químics tòxics i additius als teixits humans"
+      },
+      "measurement": {
+        "title": "Informació de Mesura",
+        "units": "peces/m³",
+        "method": "Mostreig marí",
+        "analysis": "Microscòpia i espectroscòpia",
+        "classification": "Estudis d'impacte ambiental",
+        "description": "Les concentracions de microplàstics es mesuren mitjançant mostreig d'aigua i anàlisi de laboratori utilitzant tècniques de microscòpia i espectroscòpia."
+      }
+    },
+    "footer": "Anàlisi de microplàstics basat en dades en temps real de múltiples fonts científiques."
+  },
+  "oceanHealth": {
+    "title": {
+      "temperature": "Temperatura i Salut Oceànica",
+      "chemistry": "Química i Salut Oceànica",
+      "currents": "Corrents i Salut Oceànica"
+    },
+    "description": {
+      "temperature": "La temperatura de la superfície del mar és un indicador crític de la salut oceànica, afectant els ecosistemes marins, els esculls de corall i els patrons climàtics globals.",
+      "chemistry": "Els paràmetres de química oceànica com el pH, l'oxigen dissolt i els nutrients determinen la salut dels ecosistemes marins i la seva capacitat per sustentar la vida.",
+      "currents": "Els corrents oceànics transporten nutrients, calor i vida marina, jugant un paper crucial en el manteniment d'ecosistemes marins saludables."
+    },
+    "importance": {
+      "temperature": "Els canvis de temperatura impacten la distribució d'espècies, el blanquejament de coralls, les xarxes alimentàries marines i els patrons de circulació oceànica que regulen el clima global.",
+      "chemistry": "Els canvis químics afecten la supervivència dels organismes marins, la calcificació dels coralls, la formació de closques i tota l'estructura de la xarxa alimentària marina.",
+      "currents": "Els patrons de corrents afecten la distribució de nutrients, la biodiversitat marina, la regulació climàtica i la connectivitat dels hàbitats marins."
+    },
+    "close": "Tancar panell d'informació de salut oceànica",
+    "status": "Estat de Salut Oceànica",
+    "healthScore": "Puntuació de Salut:",
+    "whyMatters": "Per què Això Importa per a la Salut Oceànica",
+    "impact": "Impacte:",
+    "noDataAvailable": "No Hi Ha Dades Disponibles",
+    "noDataMessage": "Les dades de {{section}} no estan disponibles per a aquesta ubicació i data.",
+    "tryDifferent": "Proveu seleccionar una ubicació o data diferent per veure les dades de {{section}}.",
+    "keyFindings": "Resultats Clau en Aquesta Ubicació",
+    "detailedAnalysis": "Anàlisi Detallada de Paràmetres",
+    "currentValue": "Valor Actual:",
+    "classification": "Classificació:",
+    "environmentalImpact": "Impacte Ambiental:",
+    "footer": "Anàlisi de salut oceànica basat en dades en temps real de múltiples fonts científiques. Les dades reflecteixen condicions actuals i poden canviar amb noves mesures.",
+    "severity": {
+      "low": "BAIX",
+      "medium": "MITJÀ",
+      "high": "ALT",
+      "critical": "CRÍTIC"
+    }
+  },
+  "connection": {
+    "disconnected": "Servidor backend desconnectat",
+    "reconnecting": "Reconnectant al backend...",
+    "error": "Error de connexió"
+  },
+  "common": {
+    "loading": "Carregant...",
+    "error": "Error",
+    "noData": "Sense dades",
+    "location": "Ubicació",
+    "date": "Data",
+    "close": "Tancar",
+    "viewMore": "Veure Més",
+    "learnMore": "Aprendre Més"
+  }
+}

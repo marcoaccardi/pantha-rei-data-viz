@@ -1,4 +1,5 @@
 import { OceanPointData, OceanDataValue, ParameterClassification } from './types';
+import { TFunction } from 'react-i18next';
 
 export interface SectionHealthAnalysis {
   overallSeverity: 'low' | 'medium' | 'high' | 'critical';
@@ -43,7 +44,8 @@ const SEVERITY_SCORES = {
 
 export function analyzeSectionHealth(
   sectionName: 'temperature' | 'chemistry' | 'currents',
-  dataset: OceanPointData | { error: string }
+  dataset: OceanPointData | { error: string },
+  t?: TFunction
 ): SectionHealthAnalysis {
   
   if ('error' in dataset) {
@@ -115,7 +117,7 @@ export function analyzeSectionHealth(
   else if (severityCounts.medium > 0) overallSeverity = 'medium';
 
   // Generate summary and recommendations
-  const summary = generateSectionSummary(sectionName, impacts, overallSeverity);
+  const summary = generateSectionSummary(sectionName, impacts, overallSeverity, t);
   const recommendations = generateRecommendations(sectionName, impacts, overallSeverity);
   const keyFindings = generateKeyFindings(sectionName, impacts);
 
@@ -133,27 +135,28 @@ export function analyzeSectionHealth(
 function generateSectionSummary(
   sectionName: string, 
   impacts: ParameterImpact[], 
-  severity: 'low' | 'medium' | 'high' | 'critical'
+  severity: 'low' | 'medium' | 'high' | 'critical',
+  t?: TFunction
 ): string {
   const location = sectionName.charAt(0).toUpperCase() + sectionName.slice(1);
   const paramCount = impacts.length;
   
   const severityDescriptions: Record<'low' | 'medium' | 'high' | 'critical', string> = {
-    low: 'showing healthy conditions',
-    medium: 'showing moderate environmental stress',
-    high: 'experiencing significant stress',
-    critical: 'in critical condition requiring immediate attention'
+    low: t ? t('dataPanel.healthAnalysis.showingHealthyConditions') : 'showing healthy conditions',
+    medium: t ? t('dataPanel.healthAnalysis.showingModerateStress') : 'showing moderate environmental stress',
+    high: t ? t('dataPanel.healthAnalysis.showingSignificantStress') : 'experiencing significant stress',
+    critical: t ? t('dataPanel.healthAnalysis.inCriticalCondition') : 'in critical condition requiring immediate attention'
   };
 
   const criticalParams = impacts.filter(i => i.severity === 'critical');
   const highParams = impacts.filter(i => i.severity === 'high');
 
   if (criticalParams.length > 0) {
-    return `${location} parameters (${paramCount} measured) are ${severityDescriptions[severity]}. Critical concerns: ${criticalParams.map(p => p.displayName).join(', ')}.`;
+    return `${location} parameters (${t ? t('dataPanel.healthAnalysis.parametersAnalyzed', { count: paramCount }) : `${paramCount} measured`}) ${severityDescriptions[severity]}. Critical concerns: ${criticalParams.map(p => p.displayName).join(', ')}.`;
   } else if (highParams.length > 0) {
-    return `${location} parameters (${paramCount} measured) are ${severityDescriptions[severity]}. High stress indicators: ${highParams.map(p => p.displayName).join(', ')}.`;
+    return `${location} parameters (${t ? t('dataPanel.healthAnalysis.parametersAnalyzed', { count: paramCount }) : `${paramCount} measured`}) ${severityDescriptions[severity]}. High stress indicators: ${highParams.map(p => p.displayName).join(', ')}.`;
   } else {
-    return `${location} parameters (${paramCount} measured) are ${severityDescriptions[severity]}.`;
+    return `${location} parameters (${t ? t('dataPanel.healthAnalysis.parametersAnalyzed', { count: paramCount }) : `${paramCount} measured`}) ${severityDescriptions[severity]}.`;
   }
 }
 
@@ -253,12 +256,12 @@ export function formatValueWithUnits(value: number | string | null, units: strin
   return `${value} ${units}`;
 }
 
-export function getHealthScoreDescription(score: number): string {
-  if (score >= 0.8) return 'Excellent ocean health';
-  if (score >= 0.6) return 'Good ocean health';
-  if (score >= 0.4) return 'Moderate ocean health';
-  if (score >= 0.2) return 'Poor ocean health';
-  return 'Critical ocean health';
+export function getHealthScoreDescription(score: number, t?: TFunction): string {
+  if (score >= 0.8) return t ? t('dataPanel.healthAnalysis.excellentOceanHealth') : 'Excellent ocean health';
+  if (score >= 0.6) return t ? t('dataPanel.healthAnalysis.goodOceanHealth') : 'Good ocean health';
+  if (score >= 0.4) return t ? t('dataPanel.healthAnalysis.moderateOceanHealth') : 'Moderate ocean health';
+  if (score >= 0.2) return t ? t('dataPanel.healthAnalysis.poorOceanHealth') : 'Poor ocean health';
+  return t ? t('dataPanel.healthAnalysis.poorOceanHealth') : 'Critical ocean health';
 }
 
 function getParameterDisplayName(paramName: string): string {

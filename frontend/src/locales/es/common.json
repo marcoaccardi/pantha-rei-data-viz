@@ -1,0 +1,354 @@
+{
+  "app": {
+    "title": "Explorador de Datos Oceánicos",
+    "loading": "Cargando datos oceánicos...",
+    "error": {
+      "invalidLocation": "Ubicación Inválida",
+      "cannotFetchData": "No se pueden obtener datos oceánicos - el servidor está desconectado. Por favor, espere la reconexión.",
+      "networkError": "Se ha producido un error de red. Compruebe su conexión e inténtelo de nuevo.",
+      "timeout": "Tiempo de espera agotado. El servidor está tardando demasiado en responder. Inténtelo de nuevo.",
+      "unexpectedError": "Se ha producido un error inesperado. Inténtelo de nuevo.",
+      "invalidDate": "Fecha inválida: {{error}}"
+    }
+  },
+  "controls": {
+    "dateSelection": "Selección de Fecha",
+    "oceanData": "Datos Oceánicos",
+    "autoFetchInfo": "Los datos se obtienen automáticamente cuando cambias la ubicación o la fecha",
+    "randomLocation": "Generar ubicación oceánica aleatoria y obtener datos",
+    "randomDate": "Generar fecha aleatoria y obtener datos",
+    "randomBoth": "Generar combinación de fecha y ubicación oceánica aleatoria",
+    "showSSTTexture": "Mostrar Textura SST",
+    "hideSSTTexture": "Ocultar Textura SST",
+    "showMicroplastics": "Mostrar Microplásticos",
+    "hideMicroplastics": "Ocultar Microplásticos",
+    "helpButton": "Ayuda e Instrucciones de la Aplicación",
+    "helpButtonAria": "Abrir ayuda e instrucciones de uso de la aplicación"
+  },
+  "dataPanel": {
+    "title": "Análisis de Datos Oceánicos",
+    "loading": "Cargando datos oceánicos...",
+    "error": "Error de Datos Oceánicos",
+    "noData": "Datos Oceánicos",
+    "clickToView": "Haga clic en el globo para ver los datos oceánicos",
+    "useRandomButton": "O utilice el botón 🎲 Ubicación Aleatoria para explorar los datos disponibles",
+    "sections": {
+      "temperature": "Temperatura",
+      "chemistry": "Química Oceánica",
+      "currents": "Corrientes"
+    },
+    "parameters": {
+      "sst": "Temperatura de la Superficie del Mar",
+      "analysed_sst": "Temperatura de la Superficie del Mar",
+      "ice": "Concentración de hielo marino",
+      "anom": "Anomalía de temperatura",
+      "err": "Error de análisis",
+      "ph": "pH",
+      "ph_insitu": "pH (in situ)",
+      "ph_insitu_total": "pH (escala total)",
+      "dissic": "Concentración de carbono inorgánico disuelto",
+      "dic": "Carbono inorgánico disuelto",
+      "talk": "Alcalinidad total",
+      "pco2": "Presión parcial CO₂",
+      "revelle": "Factor de Revelle",
+      "o2": "Oxígeno disuelto",
+      "no3": "Concentración de nitrato",
+      "po4": "Concentración de fosfato",
+      "si": "Concentración de silicato",
+      "chl": "Clorofila-a",
+      "nppv": "Producción primaria neta",
+      "uo": "Velocidad hacia el este",
+      "vo": "Velocidad hacia el norte",
+      "speed": "Velocidad de la corriente",
+      "direction": "Dirección de la corriente",
+      "current_speed": "Velocidad de la corriente",
+      "current_direction": "Dirección de la corriente",
+      "thetao": "Temperatura potencial del agua marina",
+      "so": "Salinidad del agua marina",
+      "u": "Componente de velocidad zonal",
+      "v": "Componente de velocidad meridional",
+      "ug": "Corriente superficial geostrófica zonal",
+      "vg": "Corriente superficial geostrófica meridional"
+    },
+    "classifications": {
+      "healthyPH": "pH Saludable",
+      "slightlyAcidic": "Ligeramente Ácido",
+      "oceanAcidification": "Acidificación Oceánica",
+      "coolWater": "Agua Fría",
+      "moderateTemperature": "Temperatura Moderada",
+      "warmWater": "Agua Cálida",
+      "veryWarm": "Muy Cálido",
+      "verySlowCurrents": "Corrientes Muy Lentas",
+      "moderateCurrents": "Corrientes Moderadas",
+      "strongCurrents": "Corrientes Fuertes",
+      "veryStrongCurrents": "Corrientes Muy Fuertes",
+      "highOxygen": "Oxígeno Alto",
+      "goodOxygen": "Buen Oxígeno",
+      "lowOxygen": "Oxígeno Bajo",
+      "lowNitrate": "Nitrato Bajo",
+      "elevatedNitrate": "Nitrato Elevado",
+      "normalPhosphate": "Fosfato Normal",
+      "normalSilicate": "Silicato Normal",
+      "lowChlorophyll": "Clorofila Baja",
+      "moderateChlorophyll": "Clorofila Moderada",
+      "activePrimaryProduction": "Producción Primaria Activa",
+      "currentDirection": "Dirección de la Corriente",
+      "oceanVelocity": "Velocidad Oceánica",
+      "normalRange": "Rango Normal"
+    },
+    "environmentalImpacts": {
+      "optimalConditions": "Condiciones óptimas para la calcificación marina y el crecimiento de corales",
+      "someStress": "Cierto estrés en los organismos formadores de conchas",
+      "significantThreat": "Amenaza significativa para los procesos de calcificación marina",
+      "supportsColdWater": "Apoya especies marinas y ecosistemas de agua fría",
+      "optimalRange": "Rango óptimo para una vida marina diversa",
+      "mayStress": "Puede estresar algunos organismos marinos si se mantiene",
+      "highStress": "Alto estrés en los ecosistemas marinos, riesgo de blanqueamiento de corales",
+      "limitedTransport": "Transporte y mezcla de nutrientes limitados",
+      "goodTransport": "Bueno para el transporte de nutrientes y la salud del ecosistema marino",
+      "excellentMixing": "Excelente mezcla y transporte de nutrientes",
+      "challengingConditions": "Puede crear condiciones difíciles para alguna vida marina",
+      "excellentRespiration": "Excelentes condiciones para la respiración marina",
+      "adequateOxygen": "Oxígeno adecuado para la mayoría de organismos marinos",
+      "potentialHypoxia": "Estrés en organismos marinos, posible hipoxia",
+      "nutrientPoor": "Indica aguas superficiales pobres en nutrientes típicas del océano abierto",
+      "supportsPhytoplankton": "El nitrato más alto apoya el crecimiento del fitoplancton",
+      "supportsProductivity": "Los niveles de fosfato apoyan la productividad primaria marina",
+      "supportsDiatoms": "El silicato apoya el crecimiento de diatomeas y redes alimentarias marinas",
+      "oligotrophic": "Indica condiciones oceánicas oligotróficas (pobres en nutrientes)",
+      "activePhytoplankton": "Indica productividad activa del fitoplancton",
+      "healthyProductivity": "Indica productividad saludable del fitoplancton y fijación de carbono",
+      "affectsTransport": "La dirección de la corriente afecta el transporte de masas de agua regionales",
+      "contributes": "Contribuye a la circulación regional y patrones de mezcla",
+      "withinExpected": "Parámetro dentro del rango esperado para la salud oceánica"
+    },
+    "contexts": {
+      "normalOceanic": "El pH oceánico normal apoya ecosistemas marinos saludables",
+      "lowerThanOptimal": "El pH es más bajo del óptimo pero dentro del rango aceptable",
+      "concerningAcidification": "El pH indica niveles preocupantes de acidificación oceánica",
+      "typicalHigherLatitude": "Típico de latitudes más altas o masas de agua más profundas",
+      "healthyTemperature": "Rango de temperatura saludable para la mayoría de ecosistemas marinos",
+      "warmTropical": "Cálido pero dentro del rango tropical normal",
+      "marineHeatwave": "Temperaturas inusualmente cálidas indican una posible ola de calor marina",
+      "stagnantWater": "Velocidades bajas de corriente pueden indicar condiciones de agua estancada",
+      "healthyCurrents": "Velocidades saludables de corriente apoyan la productividad marina",
+      "enhancesProductivity": "Las corrientes fuertes mejoran la productividad marina",
+      "affectsOrganism": "Las corrientes muy fuertes pueden afectar el comportamiento de organismos marinos",
+      "supportsDiverse": "Los niveles altos de oxígeno apoyan una vida marina diversa",
+      "healthyOxygen": "Niveles saludables de oxígeno para los ecosistemas marinos",
+      "threatensLife": "Las condiciones de oxígeno bajo amenazan la vida marina",
+      "limitedUpwelling": "Los niveles bajos de nitrato sugieren afloramiento o mezcla recientes limitados",
+      "suggestsUpwelling": "El nitrato elevado sugiere afloramiento o entrada fluvial",
+      "essentialNutrient": "El fosfato es un nutriente esencial para el fitoplancton marino",
+      "importantNutrient": "Nutriente importante para los organismos marinos silíceos",
+      "clearOcean": "Típico de aguas oceánicas claras con baja productividad",
+      "healthyPrimary": "Muestra producción primaria saludable en el ecosistema marino",
+      "formsBase": "La producción primaria forma la base de la red alimentaria marina",
+      "influencesNutrient": "La dirección del flujo influye en la distribución de nutrientes y calor",
+      "affectingTransport": "Componente del flujo total de corriente que afecta el transporte marino",
+      "stableConditions": "La medición indica condiciones marinas estables"
+    },
+    "status": {
+      "noData": "Sin datos",
+      "noDataAvailable": "No hay datos disponibles",
+      "dataNotAvailable": "Datos no disponibles para esta ubicación/fecha",
+      "requestTimedOut": "Solicitud agotada - el servidor puede estar procesando datos",
+      "tryDifferent": "Pruebe una ubicación o fecha diferente, o espere e inténtelo de nuevo"
+    },
+    "microplastics": {
+      "title": "Datos de Microplásticos",
+      "class": "Clase:",
+      "concentration": "Concentración:",
+      "hoverPrompt": "Pase el cursor sobre el punto",
+      "noData": "Sin datos",
+      "notAvailable": "N/D",
+      "units": "piezas/m³"
+    },
+    "healthAnalysis": {
+      "showingHealthyConditions": "muestran condiciones saludables",
+      "showingModerateStress": "muestran estrés ambiental moderado",
+      "showingSignificantStress": "experimentan estrés significativo",
+      "inCriticalCondition": "en condición crítica que requiere atención inmediata",
+      "parametersAnalyzed": "{{count}} medidos",
+      "goodOceanHealth": "Buena salud oceánica",
+      "excellentOceanHealth": "Excelente salud oceánica",
+      "moderateOceanHealth": "Salud oceánica moderada",
+      "poorOceanHealth": "Pobre salud oceánica",
+      "keyFindings": "Resultados Clave en Esta Ubicación",
+      "detailedAnalysis": "Análisis Detallado de Parámetros",
+      "currentValue": "Valor Actual:",
+      "classification": "Clasificación:",
+      "environmentalImpact": "Impacto Ambiental:",
+      "whyMatters": "Por qué Esto Importa para la Salud Oceánica"
+    },
+    "ecosystem": {
+      "title": "Análisis de Salud del Ecosistema",
+      "parametersAnalyzed": "{{count}} parámetros analizados"
+    },
+    "healthInfo": {
+      "viewHealthInfo": "Ver información de salud oceánica para {{section}}"
+    }
+  },
+  "help": {
+    "title": "Cómo Usar el Explorador de Datos Oceánicos",
+    "subtitle": "Su guía para explorar datos oceánicos en tiempo real y comprender los ecosistemas marinos",
+    "close": "Cerrar superposición de ayuda (Presione Esc)",
+    "sections": {
+      "overview": {
+        "title": "¿Qué es el Explorador de Datos Oceánicos?",
+        "description": "Este globo interactivo le permite explorar datos oceánicos en tiempo real de fuentes científicas como NOAA, Copernicus Marine Service y otras instituciones oceanográficas.",
+        "visualize": "Visualizar: Temperatura de la superficie del mar, química oceánica, corrientes y contaminación por microplásticos",
+        "analyze": "Analizar: Indicadores de salud oceánica y condiciones del ecosistema",
+        "explore": "Explorar: Datos oceanográficos históricos y en tiempo real en todo el mundo"
+      },
+      "navigation": {
+        "title": "Cómo Navegar",
+        "clickGlobe": "Clic en el Globo",
+        "clickGlobeDesc": "Haga un solo clic en cualquier lugar del globo para obtener datos oceánicos de esa ubicación y mostrar un análisis completo.",
+        "doubleClick": "Doble Clic",
+        "doubleClickDesc": "Haga doble clic para hacer zoom rápidamente a una ubicación y obtener automáticamente sus datos oceánicos.",
+        "dragRotate": "Arrastrar y Rotar",
+        "dragRotateDesc": "Arrastre para rotar el globo libremente. Use la rueda del ratón o gestos de pellizco para hacer zoom.",
+        "touchSupport": "Soporte Táctil",
+        "touchSupportDesc": "Soporte táctil completo para dispositivos móviles - toque, arrastre y pellizque para explorar."
+      },
+      "controls": {
+        "title": "Panel de Control (Superior Izquierdo)",
+        "dateSelectionTitle": "Selección de Fecha",
+        "dateSelectionDesc": "Elija cualquier fecha del 2003 hasta el presente. Las fechas recientes (2020-2025) tienen la mejor cobertura de datos. Los datos se actualizan automáticamente cuando cambia las fechas.",
+        "randomLocationDesc": "Salte a ubicaciones oceánicas verificadas con cobertura de datos garantizada",
+        "randomDateDesc": "Seleccione una fecha aleatoria con buena disponibilidad de datos",
+        "randomBothDesc": "Genere una combinación de fecha y ubicación aleatoria",
+        "sstTextureDesc": "Alternar la superposición de temperatura de la superficie del mar en el globo",
+        "microplasticsDesc": "Mostrar puntos de datos de contaminación por microplásticos como esferas 3D"
+      },
+      "dataPanel": {
+        "title": "Panel de Datos (Lado Derecho)",
+        "temperatureTitle": "Datos de Temperatura",
+        "temperatureDesc": "Temperatura de la superficie del mar, concentración de hielo y anomalías de temperatura. Incluye análisis de salud oceánica e indicadores de impacto climático.",
+        "chemistryTitle": "Química Oceánica",
+        "chemistryDesc": "Niveles de pH, oxígeno disuelto, nutrientes (nitrato, fosfato) y química del carbono. Crítico para comprender la acidificación oceánica y la salud del ecosistema marino.",
+        "currentsTitle": "Corrientes Oceánicas",
+        "currentsDesc": "Velocidad y dirección de la corriente, temperatura del agua en profundidad y salinidad. Esencial para comprender la circulación oceánica y la conectividad del hábitat marino.",
+        "healthAnalysisTitle": "Análisis de Salud",
+        "healthAnalysisDesc": "Haga clic en los iconos de información al lado de cada sección para ver un análisis detallado de la salud oceánica, impactos ambientales y contexto científico para las medidas."
+      },
+      "footer": {
+        "appName": "Explorador de Datos Oceánicos • Visualización de datos oceanográficos en tiempo real",
+        "dataSources": "Fuentes de datos: NOAA, Copernicus Marine Service e instituciones de investigación científica"
+      }
+    }
+  },
+  "microplastics": {
+    "title": "Análisis de Contaminación por Microplásticos",
+    "close": "Cerrar panel de información de microplásticos",
+    "status": {
+      "pollutionLevel": "Estado del Nivel de Contaminación",
+      "concentration": "Concentración:",
+      "class": "Clase:",
+      "classes": {
+        "veryLow": "Muy Baja",
+        "low": "Baja",
+        "medium": "Media",
+        "high": "Alta",
+        "veryHigh": "Muy Alta"
+      },
+      "levels": {
+        "minimalConcern": "Preocupación Mínima",
+        "lowConcern": "Preocupación Baja",
+        "moderateConcern": "Preocupación Moderada",
+        "highConcern": "Preocupación Alta",
+        "criticalConcern": "Preocupación Crítica"
+      },
+      "descriptions": {
+        "veryLow": "Concentraciones bajas con impacto ecológico limitado",
+        "low": "Niveles de contaminación detectables pero manejables",
+        "medium": "Contaminación notable que requiere monitoreo",
+        "high": "Contaminación significativa que impacta la vida marina",
+        "veryHigh": "Contaminación severa que requiere atención inmediata"
+      }
+    },
+    "sections": {
+      "whatAre": {
+        "title": "¿Qué son los Microplásticos?",
+        "description": "Los microplásticos son pequeñas partículas de plástico menores de 5mm que resultan de la descomposición de residuos plásticos más grandes, fibras de ropa sintética y procesos industriales. Persisten en entornos marinos durante décadas y se acumulan en la cadena alimentaria.",
+        "sources": "Fuentes: Botellas de plástico, bolsas, redes de pesca, textiles sintéticos, desgaste de neumáticos.",
+        "persistence": "Persistencia: Pueden persistir en entornos marinos durante más de 100 años."
+      },
+      "environmental": {
+        "title": "Impacto Ambiental",
+        "description": "Los microplásticos afectan los ecosistemas marinos a través de múltiples vías, causando daños ambientales significativos.",
+        "marineLife": "Vida Marina: La ingestión por peces, aves marinas y mamíferos marinos puede causar bloqueo intestinal y desnutrición",
+        "foodChain": "Cadena Alimentaria: Bioacumulación a través de la red alimentaria desde el plancton hasta los depredadores superiores",
+        "oceanChemistry": "Química Oceánica: Pueden transportar químicos nocivos y afectar los procesos químicos marinos"
+      },
+      "health": {
+        "title": "Implicaciones para la Salud Humana",
+        "description": "Los microplásticos entran a los sistemas humanos principalmente a través del consumo de mariscos y pueden tener varios efectos sobre la salud.",
+        "physicalEffects": "Efectos Físicos: Inflamación, daño celular, posible disrupción del sistema inmunitario",
+        "chemicalTransport": "Transporte Químico: Pueden transportar químicos tóxicos y aditivos a los tejidos humanos"
+      },
+      "measurement": {
+        "title": "Información de Medición",
+        "units": "piezas/m³",
+        "method": "Muestreo marino",
+        "analysis": "Microscopía y espectroscopía",
+        "classification": "Estudios de impacto ambiental",
+        "description": "Las concentraciones de microplásticos se miden mediante muestreo de agua y análisis de laboratorio utilizando técnicas de microscopía y espectroscopía."
+      }
+    },
+    "footer": "Análisis de microplásticos basado en datos en tiempo real de múltiples fuentes científicas."
+  },
+  "oceanHealth": {
+    "title": {
+      "temperature": "Temperatura y Salud Oceánica",
+      "chemistry": "Química y Salud Oceánica",
+      "currents": "Corrientes y Salud Oceánica"
+    },
+    "description": {
+      "temperature": "La temperatura de la superficie del mar es un indicador crítico de la salud oceánica, afectando los ecosistemas marinos, los arrecifes de coral y los patrones climáticos globales.",
+      "chemistry": "Los parámetros de química oceánica como el pH, el oxígeno disuelto y los nutrientes determinan la salud de los ecosistemas marinos y su capacidad para sustentar la vida.",
+      "currents": "Las corrientes oceánicas transportan nutrientes, calor y vida marina, jugando un papel crucial en el mantenimiento de ecosistemas marinos saludables."
+    },
+    "importance": {
+      "temperature": "Los cambios de temperatura impactan la distribución de especies, el blanqueamiento de corales, las redes alimentarias marinas y los patrones de circulación oceánica que regulan el clima global.",
+      "chemistry": "Los cambios químicos afectan la supervivencia de los organismos marinos, la calcificación de los corales, la formación de conchas y toda la estructura de la red alimentaria marina.",
+      "currents": "Los patrones de corrientes afectan la distribución de nutrientes, la biodiversidad marina, la regulación climática y la conectividad de los hábitats marinos."
+    },
+    "close": "Cerrar panel de información de salud oceánica",
+    "status": "Estado de Salud Oceánica",
+    "healthScore": "Puntuación de Salud:",
+    "whyMatters": "Por qué Esto Importa para la Salud Oceánica",
+    "impact": "Impacto:",
+    "noDataAvailable": "No Hay Datos Disponibles",
+    "noDataMessage": "Los datos de {{section}} no están disponibles para esta ubicación y fecha.",
+    "tryDifferent": "Pruebe seleccionar una ubicación o fecha diferente para ver los datos de {{section}}.",
+    "keyFindings": "Resultados Clave en Esta Ubicación",
+    "detailedAnalysis": "Análisis Detallado de Parámetros",
+    "currentValue": "Valor Actual:",
+    "classification": "Clasificación:",
+    "environmentalImpact": "Impacto Ambiental:",
+    "footer": "Análisis de salud oceánica basado en datos en tiempo real de múltiples fuentes científicas. Los datos reflejan condiciones actuales y pueden cambiar con nuevas medidas.",
+    "severity": {
+      "low": "BAJO",
+      "medium": "MEDIO",
+      "high": "ALTO",
+      "critical": "CRÍTICO"
+    }
+  },
+  "connection": {
+    "disconnected": "Servidor backend desconectado",
+    "reconnecting": "Reconectando al backend...",
+    "error": "Error de conexión"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "noData": "Sin datos",
+    "location": "Ubicación",
+    "date": "Fecha",
+    "close": "Cerrar",
+    "viewMore": "Ver Más",
+    "learnMore": "Aprender Más"
+  }
+}

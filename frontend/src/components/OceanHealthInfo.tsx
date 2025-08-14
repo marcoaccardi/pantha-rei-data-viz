@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faLocationDot, faCalendar, faTemperatureHigh, faFlask, faWater } from '@fortawesome/free-solid-svg-icons';
 import { SectionHealthAnalysis, formatValueWithUnits, getHealthScoreDescription } from '../utils/oceanHealthAnalyzer';
@@ -18,26 +19,27 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
   date, 
   onClose 
 }) => {
+  const { t } = useTranslation();
   
   const getSectionInfo = () => {
     switch (sectionName) {
       case 'temperature':
         return {
-          title: <><FontAwesomeIcon icon={faTemperatureHigh} /> Ocean Temperature & Health</>,
-          description: 'Sea surface temperature is a critical indicator of ocean health, affecting marine ecosystems, coral reefs, and global climate patterns.',
-          importance: 'Temperature changes impact species distribution, coral bleaching, marine food webs, and ocean circulation patterns that regulate global climate.'
+          title: <><FontAwesomeIcon icon={faTemperatureHigh} /> {t('oceanHealth.title.temperature')}</>,
+          description: t('oceanHealth.description.temperature'),
+          importance: t('oceanHealth.importance.temperature')
         };
       case 'chemistry':
         return {
-          title: <><FontAwesomeIcon icon={faFlask} /> Ocean Chemistry & Health</>,
-          description: 'Ocean chemistry parameters like pH, dissolved oxygen, and nutrients determine the health of marine ecosystems and their ability to support life.',
-          importance: 'Chemical changes affect marine organism survival, coral calcification, shell formation, and the entire marine food web structure.'
+          title: <><FontAwesomeIcon icon={faFlask} /> {t('oceanHealth.title.chemistry')}</>,
+          description: t('oceanHealth.description.chemistry'),
+          importance: t('oceanHealth.importance.chemistry')
         };
       case 'currents':
         return {
-          title: <><FontAwesomeIcon icon={faWater} /> Ocean Currents & Health</>,
-          description: 'Ocean currents transport nutrients, heat, and marine life, playing a crucial role in maintaining healthy marine ecosystems.',
-          importance: 'Current patterns affect nutrient distribution, marine biodiversity, climate regulation, and the connectivity of marine habitats.'
+          title: <><FontAwesomeIcon icon={faWater} /> {t('oceanHealth.title.currents')}</>,
+          description: t('oceanHealth.description.currents'),
+          importance: t('oceanHealth.importance.currents')
         };
     }
   };
@@ -127,7 +129,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.5)';
             e.currentTarget.style.color = '#9ca3af';
           }}
-          title="Close ocean health information panel"
+          title={t('oceanHealth.close')}
         >
           <FontAwesomeIcon icon={faXmark} />
         </button>
@@ -151,7 +153,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             fontWeight: '600',
             color: healthScoreColor
           }}>
-            Ocean Health Status
+            {t('oceanHealth.status')}
           </div>
           <div style={{
             backgroundColor: healthScoreColor,
@@ -181,7 +183,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
           gap: '8px',
           fontSize: '0.9em'
         }}>
-          <span style={{ color: '#9ca3af' }}>Health Score:</span>
+          <span style={{ color: '#9ca3af' }}>{t('oceanHealth.healthScore')}</span>
           <div style={{
             backgroundColor: healthScoreColor,
             color: 'white',
@@ -192,7 +194,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             {(analysis.healthScore * 100).toFixed(0)}%
           </div>
           <span style={{ color: '#d1d5db' }}>
-            ({getHealthScoreDescription(analysis.healthScore)})
+            ({getHealthScoreDescription(analysis.healthScore, t)})
           </span>
         </div>
       </div>
@@ -204,7 +206,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
           marginBottom: '12px',
           fontSize: '1.1em'
         }}>
-          Why This Matters for Ocean Health
+          {t('oceanHealth.whyMatters')}
         </h3>
         
         <div style={{
@@ -229,7 +231,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             margin: 0,
             fontStyle: 'italic'
           }}>
-            <strong>Impact:</strong> {sectionInfo.importance}
+            <strong>{t('oceanHealth.impact')}</strong> {sectionInfo.importance}
           </p>
         </div>
       </div>
@@ -248,7 +250,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
               marginBottom: '12px',
               fontSize: '1.1em'
             }}>
-              No Data Available
+              {t('oceanHealth.noDataAvailable')}
             </h3>
             <p style={{
               color: '#d1d5db',
@@ -256,7 +258,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
               lineHeight: '1.4',
               margin: '0 0 12px 0'
             }}>
-              {sectionName.charAt(0).toUpperCase() + sectionName.slice(1)} data is not available for this location and date.
+              {t('oceanHealth.noDataMessage', { section: sectionName.charAt(0).toUpperCase() + sectionName.slice(1) })}
             </p>
             <p style={{
               color: '#9ca3af',
@@ -264,7 +266,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
               margin: 0,
               fontStyle: 'italic'
             }}>
-              Try selecting a different location or date to view {sectionName} data.
+              {t('oceanHealth.tryDifferent', { section: sectionName })}
             </p>
           </div>
         </div>
@@ -276,7 +278,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
               marginBottom: '12px',
               fontSize: '1.1em'
             }}>
-              Key Findings at This Location
+              {t('oceanHealth.keyFindings')}
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -308,7 +310,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             marginBottom: '12px',
             fontSize: '1.1em'
           }}>
-            Detailed Parameter Analysis
+            {t('oceanHealth.detailedAnalysis')}
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -356,7 +358,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
                   fontWeight: '600',
                   marginBottom: '4px'
                 }}>
-                  Current Value: {formatValueWithUnits(impact.currentValue, impact.units)}
+                  {t('oceanHealth.currentValue')} {formatValueWithUnits(impact.currentValue, impact.units)}
                 </div>
                 
                 <div style={{
@@ -364,7 +366,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
                   fontSize: '0.85em',
                   marginBottom: '8px'
                 }}>
-                  Classification: {impact.classification}
+                  {t('oceanHealth.classification')} {impact.classification}
                 </div>
                 
                 <div style={{
@@ -373,7 +375,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
                   lineHeight: '1.4',
                   marginBottom: '6px'
                 }}>
-                  <strong>Environmental Impact:</strong> {impact.impact}
+                  <strong>{t('oceanHealth.environmentalImpact')}</strong> {impact.impact}
                 </div>
                 
                 <div style={{
@@ -399,9 +401,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
         color: '#6b7280',
         textAlign: 'center'
       }}>
-        Ocean health analysis based on real-time data from multiple scientific sources.
-        <br />
-        Data reflects current conditions and may change with new measurements.
+        {t('oceanHealth.footer')}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ConnectionStatus } from '../services/connectionMonitor';
 
 interface ConnectionStatusBarProps {
@@ -7,6 +8,8 @@ interface ConnectionStatusBarProps {
 }
 
 const ConnectionStatusBar: React.FC<ConnectionStatusBarProps> = ({ status, details }) => {
+  const { t } = useTranslation();
+  
   if (status === 'connected') {
     return null; // Don't show bar when connected
   }
@@ -27,11 +30,11 @@ const ConnectionStatusBar: React.FC<ConnectionStatusBarProps> = ({ status, detai
   const getStatusText = () => {
     switch (status) {
       case 'disconnected':
-        return 'Backend server disconnected';
+        return t('connection.disconnected');
       case 'reconnecting':
-        return details || 'Reconnecting to backend...';
+        return details || t('connection.reconnecting');
       case 'error':
-        return details || 'Connection error';
+        return details || t('connection.error');
       default:
         return 'Unknown status';
     }
