@@ -17,6 +17,7 @@ import {
   formatDateWithCoverage,
   getDataAvailabilityDescription,
   getSafeInitialDate,
+  getMaxSelectableDate,
   TEMPORAL_COVERAGE
 } from './utils/dateUtils';
 import { useConnectionStatus } from './services/connectionMonitor';
@@ -338,10 +339,56 @@ function App() {
       // Development logging
       console.log(`📅 Date changed to: ${newDate} - ${getDataAvailabilityDescription(newDate)}`);
       setErrorMessage(null);
+      
+      // If we have coordinates and the date is valid, fetch data for the new date
+      if (coordinates) {
+        console.log(`🌊 Fetching data for existing location (${coordinates.lat}, ${coordinates.lng}) with new date: ${newDate}`);
+        // Call handleLocationChange directly with the current coordinates and new date
+        // This avoids the circular dependency by not including handleLocationChange in dependencies
+        setIsLoading(true);
+        setApiError(null);
+        
+        fetchMultiPointData(coordinates.lat, coordinates.lng, newDate)
+          .then(response => {
+            setOceanData(response);
+            const legacyData = transformToLegacyFormat(response, coordinates);
+            setClimateData(legacyData);
+            setIsLoading(false);
+            setErrorMessage(null);
+            setApiError(null);
+          })
+          .catch(error => {
+            console.error('❌ Error fetching ocean data:', error);
+            setIsLoading(false);
+            
+            if (!isConnected) {
+              setApiError('Cannot fetch ocean data - backend server is disconnected. Please wait for reconnection.');
+            } else if (error instanceof Error) {
+              const message = error.message.toLowerCase();
+              if (message.includes('timeout')) {
+                setApiError('Request timed out. The server is taking too long to respond. Please try again.');
+              } else if (message.includes('network') || message.includes('fetch')) {
+                setApiError('Network error occurred. Please check your connection and try again.');
+              } else {
+                setApiError('Failed to fetch ocean data. Please try again later.');
+              }
+            } else {
+              setApiError('An unexpected error occurred. Please try again.');
+            }
+            
+            setOceanData({
+              location: { lat: coordinates.lat, lon: coordinates.lng },
+              date: newDate,
+              datasets: {},
+              total_extraction_time_ms: 0
+            });
+            setClimateData([]);
+          });
+      }
     } else {
       setErrorMessage(`Invalid date: ${validation.errors.join(', ')}`);
     }
-  }, []);
+  }, [coordinates, isConnected]);
 
   const generateRandomDateOnly = () => {
     const randomDate = generateRandomDate({ preferRecent: true, guaranteedOnly: false });
@@ -643,7 +690,7 @@ function App() {
                   type="date"
                   value={selectedDate}
                   min={TEMPORAL_COVERAGE.HISTORICAL_START}
-                  max={TEMPORAL_COVERAGE.GUARANTEED_END}
+                  max={getMaxSelectableDate()}
                   onChange={(e) => handleDateChange(e.target.value)}
                   aria-label={t('controls.dateSelection')}
                   aria-describedby="date-validation-info"
@@ -660,7 +707,16 @@ function App() {
               </div>
               
               {/* Date validation info */}
-              {!dateValidation.isValid && (
+              {!dateValidation.isValid && dateValidation.isFutureDate && (
+                <div id="date-validation-info" style={{ 
+                  fontSize: designSystem.typography.caption, 
+                  color: designSystem.colors.text.muted, 
+                  marginBottom: designSystem.spacing.xs
+                }} role="status">
+                  📅 {t('controls.futureDate')}
+                </div>
+              )}
+              {!dateValidation.isValid && !dateValidation.isFutureDate && (
                 <div id="date-validation-info" style={{ 
                   fontSize: designSystem.typography.caption, 
                   color: designSystem.colors.error, 
