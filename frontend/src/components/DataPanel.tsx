@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faCircleInfo,
+  faLocationDot,
+  faCalendar,
+  faFlask,
+  faWater,
+  faTemperatureHigh
+} from '@fortawesome/free-solid-svg-icons';
 import { MultiDatasetOceanResponse, OceanDataValue, OceanPointData } from '../utils/types';
 import { classifyMeasurement, formatDirection } from '../services/oceanDataService';
 import { analyzeSectionHealth } from '../utils/oceanHealthAnalyzer';
@@ -205,13 +212,13 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
 
   const renderDataset = (datasetName: string, dataset: OceanPointData | { error: string }) => {
     if ('error' in dataset) {
-      const sections: Record<string, { title: string; icon: string }> = {
-        sst: { title: 'Temperature', icon: '🌡️' },
-        currents: { title: 'Currents', icon: '🌀' },
-        acidity: { title: 'Ocean Chemistry', icon: '🧪' }
+      const sections: Record<string, { title: string; icon: JSX.Element }> = {
+        sst: { title: 'Temperature', icon: <FontAwesomeIcon icon={faTemperatureHigh} /> },
+        currents: { title: 'Currents', icon: <FontAwesomeIcon icon={faWater} /> },
+        acidity: { title: 'Ocean Chemistry', icon: <FontAwesomeIcon icon={faFlask} /> }
       };
       
-      const section = sections[datasetName] || { title: datasetName.toUpperCase(), icon: '📊' };
+      const section = sections[datasetName] || { title: datasetName.toUpperCase(), icon: <FontAwesomeIcon icon={faWater} /> };
       
       return (
         <div key={datasetName} style={{ marginBottom: designSystem.spacing.xl }}>
@@ -248,20 +255,20 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
     const data = dataset as OceanPointData;
     
     // Define sections and their variables with improved organization
-    const sections: Record<string, { title: string; icon: string; variables: string[] }> = {
+    const sections: Record<string, { title: string; icon: JSX.Element; variables: string[] }> = {
       sst: {
         title: 'Temperature',
-        icon: '🌡️',
+        icon: <FontAwesomeIcon icon={faTemperatureHigh} />,
         variables: ['sst', 'ice']
       },
       currents: {
         title: 'Currents',
-        icon: '🌀',
+        icon: <FontAwesomeIcon icon={faWater} />,
         variables: ['uo', 'vo', 'u', 'v', 'ug', 'vg', 'current_speed', 'current_direction', 'thetao', 'so']
       },
       acidity: {
         title: 'Ocean Chemistry',
-        icon: '🧪',
+        icon: <FontAwesomeIcon icon={faFlask} />,
         variables: ['ph', 'ph_insitu', 'ph_insitu_total', 'dissic', 'dic', 'talk', 'pco2', 'revelle', 'o2', 'no3', 'po4', 'si', 'chl', 'nppv']
       }
     };
@@ -560,9 +567,13 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
           margin: 0, 
           fontSize: designSystem.typography.title, 
           color: designSystem.colors.primary,
-          fontWeight: '600'
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: designSystem.spacing.sm
         }}>
-          🌊 Ocean Data Analysis
+          <FontAwesomeIcon icon={faWater} />
+          Ocean Data Analysis
         </h3>
       </div>
       
@@ -573,8 +584,14 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         display: 'flex',
         justifyContent: 'space-between'
       }}>
-        <span>📍 {data.location.lat.toFixed(4)}°, {data.location.lon.toFixed(4)}°</span>
-        <span>📅 {data.date}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: designSystem.spacing.xs }}>
+          <FontAwesomeIcon icon={faLocationDot} />
+          {data.location.lat.toFixed(4)}°, {data.location.lon.toFixed(4)}°
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: designSystem.spacing.xs }}>
+          <FontAwesomeIcon icon={faCalendar} />
+          {data.date}
+        </span>
       </div>
       
       {renderEcosystemInsights()}

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { Mesh, TextureLoader } from 'three';
+import { Mesh, TextureLoader, Raycaster, Vector2 } from 'three';
 import * as THREE from 'three';
 import Scene from './Scene';
 import MicroplasticsOverlay from './MicroplasticsOverlay';
@@ -9,7 +9,7 @@ import { useGlobeCamera } from '../hooks/useGlobeCamera';
 import { useAnimationController } from '../hooks/useAnimationController';
 import { useTextureLoader } from '../hooks/useTextureLoader';
 import type { GlobeProps, Coordinates } from '../utils/types';
-import { latLngToVector3 } from '../utils/coordinates'; // Import latLngToVector3
+import { latLngToVector3, vector3ToLatLng } from '../utils/coordinates';
 
 const GlobeLoadingIndicator: React.FC = () => {
   return <group />; // Empty - no visual elements
@@ -70,9 +70,42 @@ const GlobeMesh: React.FC<{
   onMicroplasticsPointHover?: (point: any) => void;
   onMicroplasticsPointClick?: (point: any) => void;
   onSstTextureLoaded?: () => void;
-}> = ({ isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst', selectedDate, showMicroplastics = false, onMicroplasticsPointHover, onMicroplasticsPointClick, onSstTextureLoaded }) => {
+  onDoubleClick?: (coordinates: Coordinates) => void;
+}> = ({ isLoading, selectedCoordinates, showDataOverlay = false, dataCategory = 'sst', selectedDate, showMicroplastics = false, onMicroplasticsPointHover, onMicroplasticsPointClick, onSstTextureLoaded, onDoubleClick }) => {
   const meshRef = useRef<Mesh>(null);
   const sstMeshRef = useRef<Mesh>(null);
+  
+  // Get camera and size for raycasting
+  const { camera, gl, size } = useThree();
+
+  // Handle double-click on globe
+  const handleDoubleClick = useCallback((event: any) => {
+    if (!onDoubleClick || !meshRef.current) return;
+    
+    event.stopPropagation();
+    
+    // Get mouse coordinates relative to canvas
+    const rect = gl.domElement.getBoundingClientRect();
+    const mouse = new Vector2();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    // Create raycaster
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    
+    // Check intersection with globe mesh
+    const intersects = raycaster.intersectObject(meshRef.current);
+    
+    if (intersects.length > 0) {
+      const point = intersects[0].point;
+      // Convert 3D point to lat/lng coordinates
+      const coordinates = vector3ToLatLng(point);
+      
+      console.log('🎯 Double-clicked on globe at:', coordinates);
+      onDoubleClick(coordinates);
+    }
+  }, [onDoubleClick, camera, gl]);
 
   // Load earth texture directly using useLoader
   const earthTexture = useLoader(TextureLoader, 'http://localhost:8000/textures/earth/nasa_world_topo_bathy.jpg');
@@ -102,6 +135,7 @@ const GlobeMesh: React.FC<{
       {/* NASA Earth Base Layer */}
       <mesh
         ref={meshRef}
+        onDoubleClick={handleDoubleClick}
       >
         <sphereGeometry args={[1, 360, 180]} />
         <meshStandardMaterial 
@@ -141,7 +175,7 @@ const GlobeMesh: React.FC<{
   );
 };
 
-const Globe: React.FC<GlobeProps> = ({ 
+const Globe: React.FC<GlobeProps & { onDoubleClick?: (coordinates: Coordinates) => void }> = ({ 
   coordinates, 
   onLocationChange, 
   isLoading = false,
@@ -153,7 +187,8 @@ const Globe: React.FC<GlobeProps> = ({
   onZoomFunctionsReady,
   showMicroplastics = false,
   onMicroplasticsPointHover,
-  onMicroplasticsPointClick
+  onMicroplasticsPointClick,
+  onDoubleClick
 }) => {
   const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | undefined>(coordinates);
   const { animateToCoordinates, orbitControlsRef, resetView, zoomIn, zoomOut } = useGlobeCamera();
@@ -252,6 +287,7 @@ const Globe: React.FC<GlobeProps> = ({
         onMicroplasticsPointHover={onMicroplasticsPointHover}
         onMicroplasticsPointClick={onMicroplasticsPointClick}
         onSstTextureLoaded={handleSstTextureLoaded}
+        onDoubleClick={onDoubleClick}
       />
     </Scene>
   );

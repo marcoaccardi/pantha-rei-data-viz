@@ -105,7 +105,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
           style={{
             backgroundColor: 'transparent',
             border: '1px solid rgba(156, 163, 175, 0.5)',
-            borderRadius: '6px',
+            borderRadius: '50%',
             padding: '8px',
             color: '#9ca3af',
             cursor: 'pointer',
@@ -113,9 +113,21 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minWidth: '40px',
-            minHeight: '40px'
+            width: '32px',
+            height: '32px',
+            transition: 'all 0.2s ease'
           }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = `rgba(239, 68, 68, 0.2)`;
+            e.currentTarget.style.borderColor = '#ef4444';
+            e.currentTarget.style.color = '#ef4444';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.5)';
+            e.currentTarget.style.color = '#9ca3af';
+          }}
+          title="Close ocean health information panel"
         >
           <FontAwesomeIcon icon={faXmark} />
         </button>

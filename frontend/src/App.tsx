@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, startTransition } from 'react';
 import Globe from './components/Globe';
 import DataPanel from './components/DataPanel';
+import MicroplasticExplanation from './components/MicroplasticExplanation';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useTextureLoader } from './hooks/useTextureLoader';
 import { fetchMultiPointData, transformToLegacyFormat, getLatestAvailableDate } from './services/oceanDataService';
@@ -72,6 +73,7 @@ function App() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [showMicroplastics, setShowMicroplastics] = useState(false);
   const [hoveredMicroplastic, setHoveredMicroplastic] = useState<any>(null);
+  const [clickedMicroplastic, setClickedMicroplastic] = useState<any>(null);
   
   // Date management state - must be defined before texture loader
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -581,8 +583,9 @@ function App() {
           onMicroplasticsPointHover={setHoveredMicroplastic}
           onMicroplasticsPointClick={(point) => {
             console.log('Microplastic point clicked:', point);
-            // Could open a detail panel here
+            setClickedMicroplastic(point);
           }}
+          onDoubleClick={handleLocationChange}
         />
         
         {/* Control Panel */}
@@ -886,16 +889,6 @@ function App() {
                     borderRadius: designSystem.spacing.xs,
                     fontSize: designSystem.typography.caption
                   }}>
-                    <div style={{ 
-                      fontWeight: 'bold', 
-                      marginBottom: designSystem.spacing.xs, 
-                      color: designSystem.colors.secondary
-                    }}>
-                      📍 Measurement Details
-                    </div>
-                    <div style={{ marginBottom: designSystem.spacing.xs }}>
-                      <strong>Concentration:</strong> {hoveredMicroplastic.concentration.toFixed(3)} pieces/m³
-                    </div>
                     <div style={{ marginBottom: designSystem.spacing.xs }}>
                       <strong>Class:</strong> <span style={{ 
                         color: hoveredMicroplastic.concentrationClass === 'Very High' ? '#ff4444' :
@@ -905,16 +898,10 @@ function App() {
                       }}>{hoveredMicroplastic.concentrationClass}</span>
                     </div>
                     <div style={{ marginBottom: designSystem.spacing.xs }}>
-                      <strong>Date:</strong> {hoveredMicroplastic.date}
-                    </div>
-                    <div style={{ marginBottom: designSystem.spacing.xs }}>
-                      <strong>Source:</strong> {hoveredMicroplastic.dataSource === 'real' ? '✅ Real Data' : '⚠️ Synthetic'}
-                    </div>
-                    <div style={{ marginBottom: designSystem.spacing.xs }}>
-                      <strong>Confidence:</strong> {(hoveredMicroplastic.confidence * 100).toFixed(0)}%
+                      <strong>Location:</strong> {hoveredMicroplastic.coordinates[1].toFixed(2)}°, {hoveredMicroplastic.coordinates[0].toFixed(2)}°
                     </div>
                     <div>
-                      <strong>Location:</strong> {hoveredMicroplastic.coordinates[1].toFixed(2)}°, {hoveredMicroplastic.coordinates[0].toFixed(2)}°
+                      <strong>Date:</strong> {hoveredMicroplastic.date}
                     </div>
                   </div>
                 )}
@@ -955,12 +942,32 @@ function App() {
           </div>
         )}
         
+        {/* Microplastic Explanation Panel */}
+        {clickedMicroplastic && (
+          <div style={{
+            position: 'absolute',
+            top: designSystem.spacing.xl,
+            right: designSystem.spacing.xl,
+            width: '450px',
+            height: '90vh',
+            borderRadius: designSystem.spacing.md,
+            zIndex: 1002
+          }}>
+            <MicroplasticExplanation
+              microplastic={clickedMicroplastic}
+              onClose={() => setClickedMicroplastic(null)}
+            />
+          </div>
+        )}
+
         {/* Data Panel */}
-        <DataPanel 
-          data={oceanData}
-          isLoading={isLoading}
-          error={apiError}
-        />
+        {!clickedMicroplastic && (
+          <DataPanel 
+            data={oceanData}
+            isLoading={isLoading}
+            error={apiError}
+          />
+        )}
       </div>
     </div>
   );
