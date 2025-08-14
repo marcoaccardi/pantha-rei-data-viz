@@ -4,11 +4,11 @@ This document describes the new organization of all backend scripts, implemented
 
 ## Folder Structure Overview
 
-### 🟢 `production/` - Critical Production Scripts (7 files)
+### 🟢 `production/` - Critical Production Scripts (6 files)
 **Active production scripts that are essential for daily operations.**
 
-- `update_ocean_data.sh` - Main update script and entry point
 - `update_ocean_data.py` - Python orchestrator for data updates
+- **Main Entry Point**: `update_ocean_data.sh` moved to **project root** for easier access
 - `file_validator.py` - File validation and integrity checking
 - `recovery_manager.py` - Error recovery and repair coordination
 - `daily_sst_texture_update.py` - Daily SST texture generation
@@ -103,8 +103,8 @@ This document describes the new organization of all backend scripts, implemented
 ## Usage Guidelines
 
 ### For Production Operations
-- Always use scripts in `production/` for daily operations
-- Use `production/update_ocean_data.sh` as the main entry point
+- Use `./update_ocean_data.sh` from project root as the main entry point
+- Always use scripts in `production/` for individual components
 
 ### For Maintenance
 - Use `maintenance/` scripts for system health checks

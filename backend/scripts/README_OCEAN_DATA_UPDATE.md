@@ -4,7 +4,9 @@
 
 The ocean data update system has been enhanced with a comprehensive, zero-error approach.
 
-### Main Script: `update_ocean_data.sh`
+### Main Script: `update_ocean_data.sh` (Project Root)
+
+**Location**: `./update_ocean_data.sh` (moved to project root for easier access)
 
 This is the **primary script** you should use for all data updates. It provides:
 

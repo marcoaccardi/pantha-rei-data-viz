@@ -6,8 +6,9 @@ This folder contains the core scripts that run the production ocean data system.
 
 ## Scripts Overview
 
-### `update_ocean_data.sh` - Main Entry Point
-The primary production script that orchestrates all data updates.
+### **Main Entry Point: `update_ocean_data.sh`** 
+**⚠️ MOVED TO PROJECT ROOT**: The primary production script is now at `./update_ocean_data.sh` for easier access.
+
 - Handles all datasets (SST, currents, acidity, microplastics)
 - Includes comprehensive error handling and logging
 - Supports dry-run mode for testing
@@ -15,9 +16,9 @@ The primary production script that orchestrates all data updates.
 
 **Usage:**
 ```bash
-./scripts/production/update_ocean_data.sh
-./scripts/production/update_ocean_data.sh --datasets sst,currents
-./scripts/production/update_ocean_data.sh --dry-run
+./update_ocean_data.sh
+./update_ocean_data.sh --datasets sst,currents
+./update_ocean_data.sh --dry-run
 ```
 
 ### `update_ocean_data.py` - Python Orchestrator
