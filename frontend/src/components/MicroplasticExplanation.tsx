@@ -124,7 +124,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
       bottom: '0',
       minHeight: '90vh',
       height: 'auto',
-      backgroundColor: 'rgba(0, 0, 0, 0.95)',
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
       color: 'white',
       padding: '20px',
       borderRadius: '12px',
@@ -198,7 +198,8 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
       <div style={{
         marginBottom: '24px',
         padding: '16px',
-        backgroundColor: `${healthImpact.color}20`,
+        backgroundColor: 'transparent',
+        border: '1px solid rgba(156, 163, 175, 0.3)',
         borderRadius: '8px'
       }}>
         <div style={{
@@ -268,7 +269,8 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
         
         <div style={{
           padding: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: 'transparent',
+          border: '1px solid rgba(156, 163, 175, 0.3)',
           borderRadius: '8px',
           marginBottom: '12px',
         }}>
@@ -306,7 +308,8 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
         
         <div style={{
           padding: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: 'transparent',
+          border: '1px solid rgba(156, 163, 175, 0.3)',
           borderRadius: '8px',
           marginBottom: '12px',
         }}>
@@ -350,7 +353,8 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
         
         <div style={{
           padding: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: 'transparent',
+          border: '1px solid rgba(156, 163, 175, 0.3)',
           borderRadius: '8px',
           marginBottom: '12px',
         }}>
@@ -391,7 +395,8 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
         
         <div style={{
           padding: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: 'transparent',
+          border: '1px solid rgba(156, 163, 175, 0.3)',
           borderRadius: '8px',
           marginBottom: '12px',
         }}>

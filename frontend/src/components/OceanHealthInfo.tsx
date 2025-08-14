@@ -64,7 +64,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
       bottom: '0',
       minHeight: '90vh',
       height: 'auto',
-      backgroundColor: 'rgba(0, 0, 0, 0.95)',
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
       color: 'white',
       padding: '20px',
       borderRadius: '12px',
@@ -139,7 +139,8 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
       <div style={{
         marginBottom: '24px',
         padding: '16px',
-        backgroundColor: `${healthScoreColor}20`,
+        backgroundColor: 'transparent',
+        border: '1px solid rgba(156, 163, 175, 0.3)',
         borderRadius: '8px'
       }}>
         <div style={{
@@ -211,7 +212,8 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
         
         <div style={{
           padding: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          backgroundColor: 'transparent',
+          border: '1px solid rgba(156, 163, 175, 0.3)',
           borderRadius: '8px',
           marginBottom: '12px'
         }}>
@@ -241,7 +243,8 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
         <div style={{ marginBottom: '24px' }}>
           <div style={{
             padding: '20px',
-            backgroundColor: 'rgba(156, 163, 175, 0.1)',
+            backgroundColor: 'transparent',
+            border: '1px solid rgba(156, 163, 175, 0.3)',
             borderRadius: '8px',
             textAlign: 'center'
           }}>
@@ -287,7 +290,8 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
                   key={index}
                   style={{
                     padding: '12px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    backgroundColor: 'transparent',
+                    border: '1px solid rgba(156, 163, 175, 0.3)',
                     borderRadius: '6px',
                     color: '#e5e7eb',
                     fontSize: '0.9em',
@@ -319,7 +323,8 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
                 key={index}
                 style={{
                   padding: '16px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  backgroundColor: 'transparent',
+                  border: '1px solid rgba(156, 163, 175, 0.3)',
                   borderRadius: '8px'
                 }}
               >

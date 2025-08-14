@@ -85,7 +85,8 @@ const ParameterExplanation: React.FC<ParameterExplanationProps> = ({
     <div style={{
       marginBottom: '12px',
       padding: '12px',
-      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      backgroundColor: 'transparent',
+      border: '1px solid rgba(156, 163, 175, 0.3)',
       borderRadius: '8px',
       border: `1px solid ${data.classification?.color || 'rgba(255, 255, 255, 0.1)'}`
     }}>
@@ -166,7 +167,8 @@ const ParameterExplanation: React.FC<ParameterExplanationProps> = ({
             <div style={{ 
               marginBottom: '8px',
               padding: '8px',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.3)',
               borderRadius: '4px',
               color: '#93c5fd'
             }}>

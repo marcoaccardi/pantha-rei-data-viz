@@ -201,12 +201,12 @@ const AnecoicaInfoOverlay: React.FC<AnecoicaInfoOverlayProps> = ({ onClose }) =>
                 src="/qr-code.png"
                 alt="QR Code for anecoica.net"
                 style={{
-                  width: '80px',
-                  height: '80px',
+                  width: '120px',
+                  height: '120px',
+                  filter: 'invert(1)',
                   border: '1px solid rgba(156, 163, 175, 0.3)',
                   borderRadius: '8px',
-                  padding: '4px',
-                  backgroundColor: 'white'
+                  clipPath: 'inset(8% 8% 8% 8%)'
                 }}
               />
               <div style={{

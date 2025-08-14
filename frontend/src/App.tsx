@@ -847,7 +847,14 @@ function App() {
                 marginTop: designSystem.spacing.lg
               }}>
                 <button
-                  onClick={() => setShowMicroplastics(!showMicroplastics)}
+                  onClick={() => {
+                    const newState = !showMicroplastics;
+                    setShowMicroplastics(newState);
+                    // Clear clicked microplastic when hiding overlay
+                    if (!newState && clickedMicroplastic) {
+                      setClickedMicroplastic(null);
+                    }
+                  }}
                   style={{
                     backgroundColor: showMicroplastics ? 'rgba(156, 163, 175, 0.2)' : 'transparent',
                     color: designSystem.colors.text.primary,
@@ -917,7 +924,7 @@ function App() {
         )}
         
         {/* Microplastic Explanation Panel */}
-        {clickedMicroplastic && (
+        {clickedMicroplastic && showMicroplastics && (
           <div style={{
             position: 'absolute',
             top: designSystem.spacing.xl,
@@ -935,7 +942,7 @@ function App() {
         )}
 
         {/* Data Panel */}
-        {!clickedMicroplastic && (
+        {!(clickedMicroplastic && showMicroplastics) && (
           <DataPanel 
             data={oceanData}
             isLoading={isLoading}
