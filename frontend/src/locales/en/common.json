@@ -13,6 +13,7 @@
   },
   "controls": {
     "dateSelection": "Date Selection",
+    "futureDate": "No data available yet for this date",
     "randomLocation": "Generate random ocean location and fetch data",
     "randomDate": "Generate random date and fetch data",
     "randomBoth": "Generate random date and ocean location combination",

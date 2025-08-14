@@ -13,6 +13,7 @@
   },
   "controls": {
     "dateSelection": "Selecció de Data",
+    "futureDate": "No hi ha dades disponibles encara per a aquesta data",
     "randomLocation": "Generar ubicació oceànica aleatòria i obtenir dades",
     "randomDate": "Generar data aleatòria i obtenir dades",
     "randomBoth": "Generar combinació de data i ubicació oceànica aleatòria",
