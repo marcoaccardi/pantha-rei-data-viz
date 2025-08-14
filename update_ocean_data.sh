@@ -33,10 +33,10 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Script configuration
+# Script configuration (now at project root level)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_DIR="$(dirname "$SCRIPT_DIR")"
-PROJECT_DIR="$(dirname "$BACKEND_DIR")"
+PROJECT_DIR="$SCRIPT_DIR"
+BACKEND_DIR="$PROJECT_DIR/backend"
 OCEAN_DATA_DIR="$PROJECT_DIR/ocean-data"
 LOGS_DIR="$OCEAN_DATA_DIR/logs"
 
@@ -215,7 +215,7 @@ run_update() {
     log_info "Starting ocean data update..."
     
     # Build Python command
-    local python_cmd="python scripts/production/update_ocean_data.py"
+    local python_cmd="python backend/scripts/production/update_ocean_data.py"
     
     if [ ! -z "$DATASETS" ]; then
         python_cmd="$python_cmd --datasets $DATASETS"
@@ -249,14 +249,14 @@ run_update() {
 run_validation() {
     log_info "Running file validation..."
     
-    local python_cmd="python scripts/production/file_validator.py --generate-report"
+    local python_cmd="python backend/scripts/production/file_validator.py --generate-report"
     
     if [ ! -z "$DATASETS" ]; then
         # Run validation for each dataset separately
         IFS=',' read -ra DATASET_ARRAY <<< "$DATASETS"
         for dataset in "${DATASET_ARRAY[@]}"; do
             log_info "Validating dataset: $dataset"
-            python scripts/production/file_validator.py --dataset "$dataset"
+            python backend/scripts/production/file_validator.py --dataset "$dataset"
         done
     else
         # Generate comprehensive report
@@ -268,7 +268,7 @@ run_validation() {
 run_recovery() {
     log_info "Running error recovery..."
     
-    local python_cmd="python scripts/production/recovery_manager.py"
+    local python_cmd="python backend/scripts/production/recovery_manager.py"
     
     if [ ! -z "$DATASETS" ]; then
         python_cmd="$python_cmd --datasets $DATASETS"
