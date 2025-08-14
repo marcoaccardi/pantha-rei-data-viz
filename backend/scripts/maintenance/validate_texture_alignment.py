@@ -7,7 +7,7 @@ and alignment across different datasets. It helps prevent coordinate alignment i
 that can cause visual misalignment in the 3D globe visualization.
 
 Usage:
-    python scripts/validate_texture_alignment.py
+    python scripts/maintenance/validate_texture_alignment.py
 """
 
 import sys

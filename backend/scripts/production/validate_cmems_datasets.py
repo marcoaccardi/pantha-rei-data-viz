@@ -6,9 +6,9 @@ Validates that all CMEMS dataset IDs in sources.yaml are accessible and working.
 This helps prevent deployment of incorrect dataset configurations.
 
 Usage:
-    python scripts/validate_cmems_datasets.py
-    python scripts/validate_cmems_datasets.py --dataset currents
-    python scripts/validate_cmems_datasets.py --test-download
+    python scripts/production/validate_cmems_datasets.py
+    python scripts/production/validate_cmems_datasets.py --dataset currents
+    python scripts/production/validate_cmems_datasets.py --test-download
 """
 
 import argparse

@@ -196,7 +196,7 @@ def main():
     if corrupted_count > 0:
         logger.warning(f"\n⚠️  Found {corrupted_count} corrupted files in quick scan!")
         logger.info("Run the comprehensive scan for complete analysis:")
-        logger.info("python scripts/comprehensive_corruption_check.py")
+        logger.info("python scripts/production/comprehensive_corruption_check.py")
         sys.exit(1)
     else:
         logger.info("\n✅ Quick scan found no corruption issues!")

@@ -296,7 +296,7 @@ def main():
         
         # Ask if user wants to continue with all files
         logger.info("Test repair successful. To repair all corrupted files, run:")
-        logger.info("python scripts/repair_corrupted_files.py --all")
+        logger.info("python scripts/maintenance/repair_corrupted_files.py --all")
     else:
         logger.warning("No files were successfully repaired. Check credentials and network connection.")
 

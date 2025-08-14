@@ -7,9 +7,9 @@ and data quality for all ocean datasets. Goes beyond basic API access to validat
 we actually receive vs what we expect.
 
 Usage:
-    python scripts/deep_dataset_validation.py
-    python scripts/deep_dataset_validation.py --dataset sst
-    python scripts/deep_dataset_validation.py --test-historical --start-date 1993-01-01
+    python scripts/maintenance/deep_dataset_validation.py
+    python scripts/maintenance/deep_dataset_validation.py --dataset sst
+    python scripts/maintenance/deep_dataset_validation.py --test-historical --start-date 1993-01-01
 """
 
 import argparse
