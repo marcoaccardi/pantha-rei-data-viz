@@ -13,8 +13,6 @@
   },
   "controls": {
     "dateSelection": "Selecció de Data",
-    "oceanData": "Dades Oceàniques",
-    "autoFetchInfo": "Les dades s'obtenen automàticament quan canvieu la ubicació o la data",
     "randomLocation": "Generar ubicació oceànica aleatòria i obtenir dades",
     "randomDate": "Generar data aleatòria i obtenir dades",
     "randomBoth": "Generar combinació de data i ubicació oceànica aleatòria",
@@ -208,9 +206,7 @@
         "doubleClick": "Doble Clic",
         "doubleClickDesc": "Feu doble clic per fer zoom ràpidament a una ubicació i obtenir automàticament les seves dades oceàniques.",
         "dragRotate": "Arrossegar i Rotar",
-        "dragRotateDesc": "Arrossegueu per rotar el globus lliurement. Utilitzeu la roda del ratolí o gestos de pessic per fer zoom.",
-        "touchSupport": "Suport Tàctil",
-        "touchSupportDesc": "Suport tàctil complet per a dispositius mòbils - toqueu, arrossegueu i pessigueu per explorar."
+        "dragRotateDesc": "Arrossegueu per rotar el globus lliurement. Utilitzeu la roda del ratolí o gestos de pessic per fer zoom."
       },
       "controls": {
         "title": "Panell de Control (Superior Esquerre)",

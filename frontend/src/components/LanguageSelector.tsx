@@ -8,19 +8,19 @@ const LanguageSelector: React.FC = () => {
     { 
       code: 'en', 
       name: 'English', 
-      flag: '🇬🇧',
+      initial: 'EN',
       ariaLabel: 'Switch to English'
     },
     { 
       code: 'ca', 
       name: 'Català', 
-      flag: '🏴󠁥󠁳󠁣󠁴󠁿',
+      initial: 'CA',
       ariaLabel: 'Canviar a Català'
     },
     { 
       code: 'es', 
       name: 'Español', 
-      flag: '🇪🇸',
+      initial: 'ES',
       ariaLabel: 'Cambiar a Español'
     }
   ];
@@ -34,17 +34,13 @@ const LanguageSelector: React.FC = () => {
   return (
     <div style={{
       position: 'absolute',
-      top: '420px', // Position below the control panel
+      top: '50%',
+      transform: 'translateY(-50%)',
       left: '20px',
       zIndex: 1001,
       display: 'flex',
       flexDirection: 'column', // Vertical layout
-      gap: '6px',
-      backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      padding: '8px',
-      borderRadius: '8px',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(156, 163, 175, 0.4)'
+      gap: '10px'
     }}>
       {languages.map((lang) => (
         <button
@@ -54,38 +50,39 @@ const LanguageSelector: React.FC = () => {
           title={lang.name}
           style={{
             backgroundColor: currentLanguage === lang.code 
-              ? 'rgba(59, 130, 246, 0.3)' 
+              ? 'rgba(156, 163, 175, 0.3)' 
               : 'transparent',
             border: currentLanguage === lang.code
-              ? '1px solid #3b82f6'
-              : '1px solid rgba(156, 163, 175, 0.3)',
-            borderRadius: '6px',
-            padding: '6px 10px',
+              ? '1px solid #9ca3af'
+              : '1px solid rgba(156, 163, 175, 0.6)',
+            borderRadius: '50%',
+            padding: '0',
             cursor: 'pointer',
-            fontSize: '16px',
+            fontSize: '12px',
+            fontWeight: '500',
+            color: '#f9fafb',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
-            minWidth: '40px',
-            height: '32px'
+            width: '36px',
+            height: '36px',
+            backdropFilter: 'blur(10px)'
           }}
           onMouseOver={(e) => {
             if (currentLanguage !== lang.code) {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-              e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.6)';
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.borderColor = 'rgba(229, 231, 235, 0.8)';
             }
           }}
           onMouseOut={(e) => {
             if (currentLanguage !== lang.code) {
               e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.3)';
+              e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.6)';
             }
           }}
         >
-          <span role="img" aria-label={`${lang.name} flag`}>
-            {lang.flag}
-          </span>
+          {lang.initial}
         </button>
       ))}
     </div>

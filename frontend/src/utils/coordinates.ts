@@ -24,7 +24,21 @@ export function vector3ToLatLng(position: Vector3, radius: number = 1): Coordina
   const normalizedPos = position.clone().normalize().multiplyScalar(radius);
   
   const lat = 90 - (Math.acos(normalizedPos.y / radius) * 180 / Math.PI);
-  const lng = ((Math.atan2(normalizedPos.z, -normalizedPos.x) * 180 / Math.PI) - 180);
+  
+  // Fixed longitude calculation to handle all quadrants correctly
+  // The formula should convert from x,z coordinates back to longitude
+  // Given x = -sin(phi) * cos(theta) and z = sin(phi) * sin(theta)
+  // We can derive longitude as: lng = atan2(z, -x) * 180/PI - 180
+  // But we need to ensure proper wrapping
+  let lng = Math.atan2(normalizedPos.z, -normalizedPos.x) * 180 / Math.PI;
+  
+  // Convert from the internal coordinate system back to standard longitude
+  // Our internal system has 0° at x=-1, z=0, so we need to subtract 180°
+  lng = lng - 180;
+  
+  // Ensure longitude is in the range [-180, 180]
+  while (lng > 180) lng -= 360;
+  while (lng < -180) lng += 360;
 
   return {
     lat: Math.max(-85, Math.min(85, lat)),

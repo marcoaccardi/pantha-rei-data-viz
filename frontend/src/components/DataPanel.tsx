@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faCircleInfo,
+  faInfo,
   faLocationDot,
   faCalendar,
   faFlask,
@@ -260,9 +260,9 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
           alignItems: 'center',
           gap: designSystem.spacing.sm
         }}>
-          🌊 Ecosystem Health Analysis
+          🌊 {t('dataPanel.ecosystem.title')}
           <span style={{ fontSize: designSystem.typography.caption, fontWeight: 'normal', color: designSystem.colors.text.muted }}>
-            ({insights.measurement_count} parameters analyzed)
+            ({t('dataPanel.ecosystem.parametersAnalyzed', { count: insights.measurement_count })})
           </span>
         </h4>
         
@@ -429,7 +429,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMi
             }}
             title={t('dataPanel.healthInfo.viewHealthInfo', { section: section.title.toLowerCase() })}
           >
-            <FontAwesomeIcon icon={faCircleInfo} />
+            i
           </button>
         </div>
         

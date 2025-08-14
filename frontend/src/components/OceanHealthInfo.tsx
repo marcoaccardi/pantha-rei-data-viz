@@ -120,9 +120,9 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             transition: 'all 0.2s ease'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = `rgba(239, 68, 68, 0.2)`;
-            e.currentTarget.style.borderColor = '#ef4444';
-            e.currentTarget.style.color = '#ef4444';
+            e.currentTarget.style.backgroundColor = `rgba(156, 163, 175, 0.2)`;
+            e.currentTarget.style.borderColor = '#6b7280';
+            e.currentTarget.style.color = '#6b7280';
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';

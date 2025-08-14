@@ -13,8 +13,6 @@
   },
   "controls": {
     "dateSelection": "Selección de Fecha",
-    "oceanData": "Datos Oceánicos",
-    "autoFetchInfo": "Los datos se obtienen automáticamente cuando cambias la ubicación o la fecha",
     "randomLocation": "Generar ubicación oceánica aleatoria y obtener datos",
     "randomDate": "Generar fecha aleatoria y obtener datos",
     "randomBoth": "Generar combinación de fecha y ubicación oceánica aleatoria",
@@ -208,9 +206,7 @@
         "doubleClick": "Doble Clic",
         "doubleClickDesc": "Haga doble clic para hacer zoom rápidamente a una ubicación y obtener automáticamente sus datos oceánicos.",
         "dragRotate": "Arrastrar y Rotar",
-        "dragRotateDesc": "Arrastre para rotar el globo libremente. Use la rueda del ratón o gestos de pellizco para hacer zoom.",
-        "touchSupport": "Soporte Táctil",
-        "touchSupportDesc": "Soporte táctil completo para dispositivos móviles - toque, arrastre y pellizque para explorar."
+        "dragRotateDesc": "Arrastre para rotar el globo libremente. Use la rueda del ratón o gestos de pellizco para hacer zoom."
       },
       "controls": {
         "title": "Panel de Control (Superior Izquierdo)",

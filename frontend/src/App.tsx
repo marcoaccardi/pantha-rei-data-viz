@@ -29,7 +29,7 @@ import {
   faTemperatureHigh, 
   faBottleWater, 
   faWater,
-  faCircleInfo
+  faInfo
 } from '@fortawesome/free-solid-svg-icons';
 
 // Design system constants for consistent styling
@@ -648,7 +648,7 @@ function App() {
                   style={{
                     backgroundColor: 'transparent',
                     color: designSystem.colors.text.primary,
-                    border: `1px solid ${dateValidation.isValid ? designSystem.colors.text.muted : designSystem.colors.error}`,
+                    border: `0.5px solid ${dateValidation.isValid ? designSystem.colors.text.muted : designSystem.colors.error}`,
                     borderRadius: designSystem.spacing.xs,
                     padding: `${designSystem.spacing.xs} ${designSystem.spacing.sm}`,
                     fontSize: designSystem.typography.caption,
@@ -684,8 +684,8 @@ function App() {
             <div style={{ 
               marginTop: designSystem.spacing.md, 
               display: 'flex', 
-              gap: designSystem.spacing.xs, 
-              justifyContent: 'space-between'
+              gap: designSystem.spacing.sm, 
+              justifyContent: 'center'
             }}>
               <button 
                 onClick={() => {
@@ -702,7 +702,6 @@ function App() {
                   borderRadius: '50%',  
                   cursor: 'pointer',
                   fontSize: designSystem.typography.body,
-                  flex: '1',
                   fontWeight: '500',
                   display: 'flex',
                   alignItems: 'center',
@@ -738,7 +737,6 @@ function App() {
                   borderRadius: '50%',  
                   cursor: 'pointer',
                   fontSize: designSystem.typography.body,
-                  flex: '1',
                   fontWeight: '500',
                   display: 'flex',
                   alignItems: 'center',
@@ -775,7 +773,6 @@ function App() {
                   borderRadius: '50%',  
                   cursor: 'pointer',
                   fontSize: designSystem.typography.body,
-                  flex: '1',
                   fontWeight: '500',
                   display: 'flex',
                   alignItems: 'center',
@@ -809,9 +806,9 @@ function App() {
                 <button
                   onClick={() => setShowDataOverlay(!showDataOverlay)}
                   style={{
-                    backgroundColor: designSystem.colors.backgrounds.primary,
+                    backgroundColor: showDataOverlay ? 'rgba(156, 163, 175, 0.2)' : 'transparent',
                     color: designSystem.colors.text.primary,
-                    border: 'none',
+                    border: `1px solid ${designSystem.colors.text.muted}`,
                     padding: `${designSystem.spacing.md} ${designSystem.spacing.lg}`,
                     borderRadius: designSystem.spacing.xs,
                     cursor: 'pointer',
@@ -825,10 +822,13 @@ function App() {
                     gap: designSystem.spacing.sm
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = designSystem.colors.backgrounds.secondary;
+                    if (!showDataOverlay) {
+                      e.currentTarget.style.backgroundColor = designSystem.colors.backgrounds.secondary;
+                    }
+                    e.currentTarget.style.borderColor = designSystem.colors.text.secondary;
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.backgroundColor = showDataOverlay ? 'rgba(156, 163, 175, 0.2)' : 'transparent';
                     e.currentTarget.style.borderColor = designSystem.colors.text.muted;
                   }}
                 >
@@ -845,9 +845,9 @@ function App() {
                 <button
                   onClick={() => setShowMicroplastics(!showMicroplastics)}
                   style={{
-                    backgroundColor: designSystem.colors.backgrounds.primary,
+                    backgroundColor: showMicroplastics ? 'rgba(156, 163, 175, 0.2)' : 'transparent',
                     color: designSystem.colors.text.primary,
-                    border: 'none',
+                    border: `1px solid ${designSystem.colors.text.muted}`,
                     padding: `${designSystem.spacing.md} ${designSystem.spacing.lg}`,
                     borderRadius: designSystem.spacing.xs,
                     cursor: 'pointer',
@@ -861,10 +861,14 @@ function App() {
                     gap: designSystem.spacing.sm
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = designSystem.colors.backgrounds.secondary;
+                    if (!showMicroplastics) {
+                      e.currentTarget.style.backgroundColor = designSystem.colors.backgrounds.secondary;
+                    }
+                    e.currentTarget.style.borderColor = designSystem.colors.text.secondary;
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = designSystem.colors.backgrounds.primary;
+                    e.currentTarget.style.backgroundColor = showMicroplastics ? 'rgba(156, 163, 175, 0.2)' : 'transparent';
+                    e.currentTarget.style.borderColor = designSystem.colors.text.muted;
                   }}
                 >
                   <FontAwesomeIcon icon={faBottleWater} />
@@ -938,6 +942,7 @@ function App() {
         
         {/* Help Button - Bottom Right */}
         <button
+          className={!hasClickedHelp ? 'pulse-button' : ''}
           onClick={() => {
             setShowHelpOverlay(true);
             setHasClickedHelp(true);
@@ -946,9 +951,9 @@ function App() {
             position: 'absolute',
             bottom: designSystem.spacing.xl,
             right: designSystem.spacing.xl,
-            backgroundColor: designSystem.colors.primary,
-            color: designSystem.colors.text.primary,
-            border: 'none',
+            backgroundColor: 'transparent',
+            color: designSystem.colors.primary,
+            border: `1px solid ${designSystem.colors.primary}`,
             padding: designSystem.spacing.lg,
             borderRadius: '50%',
             cursor: 'pointer',
@@ -961,21 +966,20 @@ function App() {
             height: '56px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            animation: !hasClickedHelp ? 'pulse 2s infinite' : 'none'
+            justifyContent: 'center'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = designSystem.colors.primaryHover;
+            e.currentTarget.style.backgroundColor = `${designSystem.colors.primary}20`;
             e.currentTarget.style.transform = 'scale(1.05)';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = designSystem.colors.primary;
+            e.currentTarget.style.backgroundColor = 'transparent';
             e.currentTarget.style.transform = 'scale(1)';
           }}
           title={t('controls.helpButton')}
           aria-label={t('controls.helpButtonAria')}
         >
-          <FontAwesomeIcon icon={faCircleInfo} />
+          i
         </button>
         
         {/* Anecoica Logo - Bottom Left */}
@@ -985,9 +989,22 @@ function App() {
             bottom: designSystem.spacing.xl,
             left: designSystem.spacing.xl,
             zIndex: 1000,
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            borderRadius: '8px',
+            padding: '8px'
           }}
           onClick={() => setShowAnecoicaInfo(true)}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            const img = e.currentTarget.querySelector('img') as HTMLImageElement;
+            if (img) img.style.opacity = '1';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            const img = e.currentTarget.querySelector('img') as HTMLImageElement;
+            if (img) img.style.opacity = '0.8';
+          }}
           title="Anecoica Studio - Click for info about the project and team"
         >
           <img
@@ -997,7 +1014,8 @@ function App() {
               width: '80px',
               height: 'auto',
               filter: 'invert(1)',
-              opacity: 0.8
+              opacity: 0.8,
+              transition: 'opacity 0.2s ease'
             }}
           />
         </div>

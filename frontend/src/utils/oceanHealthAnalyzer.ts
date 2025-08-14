@@ -1,5 +1,5 @@
 import { OceanPointData, OceanDataValue, ParameterClassification } from './types';
-import { TFunction } from 'react-i18next';
+import { TFunction } from 'i18next';
 
 export interface SectionHealthAnalysis {
   overallSeverity: 'low' | 'medium' | 'high' | 'critical';
@@ -84,7 +84,7 @@ export function analyzeSectionHealth(
     const paramData = dataset.data[paramName];
     if (paramData && paramData.valid && paramData.value !== null) {
       // Generate basic classification if not present
-      const classification = paramData.classification || generateBasicClassification(paramName, paramData.value);
+      const classification = paramData.classification || generateBasicClassification(paramName, paramData.value, t);
       
       const impact: ParameterImpact = {
         parameter: paramName,
@@ -286,7 +286,7 @@ function getParameterDisplayName(paramName: string): string {
   return displayNames[paramName] || paramName;
 }
 
-function generateBasicClassification(paramName: string, value: number | string): {
+function generateBasicClassification(paramName: string, value: number | string, t?: TFunction): {
   severity: 'low' | 'medium' | 'high' | 'critical';
   classification: string;
   environmental_impact: string;
@@ -299,23 +299,23 @@ function generateBasicClassification(paramName: string, value: number | string):
     if (numValue >= 8.1) {
       return {
         severity: 'low',
-        classification: 'Healthy pH',
-        environmental_impact: 'Optimal conditions for marine calcification and coral growth',
-        context: 'Normal oceanic pH supports healthy marine ecosystems'
+        classification: t ? t('dataPanel.classifications.healthyPH') : 'Healthy pH',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.optimalConditions') : 'Optimal conditions for marine calcification and coral growth',
+        context: t ? t('dataPanel.contexts.normalOceanic') : 'Normal oceanic pH supports healthy marine ecosystems'
       };
     } else if (numValue >= 7.9) {
       return {
         severity: 'medium',
-        classification: 'Slightly Acidic',
-        environmental_impact: 'Some stress on shell-forming organisms',
-        context: 'pH is lower than optimal but within acceptable range'
+        classification: t ? t('dataPanel.classifications.slightlyAcidic') : 'Slightly Acidic',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.someStress') : 'Some stress on shell-forming organisms',
+        context: t ? t('dataPanel.contexts.lowerThanOptimal') : 'pH is lower than optimal but within acceptable range'
       };
     } else {
       return {
         severity: 'high',
-        classification: 'Ocean Acidification',
-        environmental_impact: 'Significant threat to marine calcification processes',
-        context: 'pH indicates concerning ocean acidification levels'
+        classification: t ? t('dataPanel.classifications.oceanAcidification') : 'Ocean Acidification',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.significantThreat') : 'Significant threat to marine calcification processes',
+        context: t ? t('dataPanel.contexts.concerningAcidification') : 'pH indicates concerning ocean acidification levels'
       };
     }
   }
@@ -325,30 +325,30 @@ function generateBasicClassification(paramName: string, value: number | string):
     if (numValue < 15) {
       return {
         severity: 'low',
-        classification: 'Cool Water',
-        environmental_impact: 'Supports cold-water marine species and ecosystems',
-        context: 'Typical of higher latitude or deeper water masses'
+        classification: t ? t('dataPanel.classifications.coolWater') : 'Cool Water',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.supportsColdWater') : 'Supports cold-water marine species and ecosystems',
+        context: t ? t('dataPanel.contexts.typicalHigherLatitude') : 'Typical of higher latitude or deeper water masses'
       };
     } else if (numValue < 25) {
       return {
         severity: 'low',
-        classification: 'Moderate Temperature',
-        environmental_impact: 'Optimal range for diverse marine life',
-        context: 'Healthy temperature range for most marine ecosystems'
+        classification: t ? t('dataPanel.classifications.moderateTemperature') : 'Moderate Temperature',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.optimalRange') : 'Optimal range for diverse marine life',
+        context: t ? t('dataPanel.contexts.healthyTemperature') : 'Healthy temperature range for most marine ecosystems'
       };
     } else if (numValue < 30) {
       return {
         severity: 'medium',
-        classification: 'Warm Water',
-        environmental_impact: 'May stress some marine organisms if sustained',
-        context: 'Warm but within normal tropical range'
+        classification: t ? t('dataPanel.classifications.warmWater') : 'Warm Water',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.mayStress') : 'May stress some marine organisms if sustained',
+        context: t ? t('dataPanel.contexts.warmTropical') : 'Warm but within normal tropical range'
       };
     } else {
       return {
         severity: 'high',
-        classification: 'Very Warm',
-        environmental_impact: 'High stress on marine ecosystems, coral bleaching risk',
-        context: 'Unusually warm temperatures indicate potential marine heatwave'
+        classification: t ? t('dataPanel.classifications.veryWarm') : 'Very Warm',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.highStress') : 'High stress on marine ecosystems, coral bleaching risk',
+        context: t ? t('dataPanel.contexts.marineHeatwave') : 'Unusually warm temperatures indicate potential marine heatwave'
       };
     }
   }
@@ -359,30 +359,30 @@ function generateBasicClassification(paramName: string, value: number | string):
     if (speed < 0.1) {
       return {
         severity: 'medium',
-        classification: 'Very Slow Currents',
-        environmental_impact: 'Limited nutrient transport and mixing',
-        context: 'Low current speeds may indicate stagnant water conditions'
+        classification: t ? t('dataPanel.classifications.verySlowCurrents') : 'Very Slow Currents',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.limitedTransport') : 'Limited nutrient transport and mixing',
+        context: t ? t('dataPanel.contexts.stagnantWater') : 'Low current speeds may indicate stagnant water conditions'
       };
     } else if (speed < 0.5) {
       return {
         severity: 'low',
-        classification: 'Moderate Currents',
-        environmental_impact: 'Good for nutrient transport and marine ecosystem health',
-        context: 'Healthy current speeds support marine productivity'
+        classification: t ? t('dataPanel.classifications.moderateCurrents') : 'Moderate Currents',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.goodTransport') : 'Good for nutrient transport and marine ecosystem health',
+        context: t ? t('dataPanel.contexts.healthyCurrents') : 'Healthy current speeds support marine productivity'
       };
     } else if (speed < 1.0) {
       return {
         severity: 'low',
-        classification: 'Strong Currents',
-        environmental_impact: 'Excellent nutrient mixing and transport',
-        context: 'Strong currents enhance marine productivity'
+        classification: t ? t('dataPanel.classifications.strongCurrents') : 'Strong Currents',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.excellentMixing') : 'Excellent nutrient mixing and transport',
+        context: t ? t('dataPanel.contexts.enhancesProductivity') : 'Strong currents enhance marine productivity'
       };
     } else {
       return {
         severity: 'medium',
-        classification: 'Very Strong Currents',
-        environmental_impact: 'May create challenging conditions for some marine life',
-        context: 'Very strong currents can affect marine organism behavior'
+        classification: t ? t('dataPanel.classifications.veryStrongCurrents') : 'Very Strong Currents',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.challengingConditions') : 'May create challenging conditions for some marine life',
+        context: t ? t('dataPanel.contexts.affectsOrganism') : 'Very strong currents can affect marine organism behavior'
       };
     }
   }
@@ -392,23 +392,23 @@ function generateBasicClassification(paramName: string, value: number | string):
     if (numValue > 250) {
       return {
         severity: 'low',
-        classification: 'High Oxygen',
-        environmental_impact: 'Excellent conditions for marine respiration',
-        context: 'High oxygen levels support diverse marine life'
+        classification: t ? t('dataPanel.classifications.highOxygen') : 'High Oxygen',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.excellentRespiration') : 'Excellent conditions for marine respiration',
+        context: t ? t('dataPanel.contexts.supportsDiverse') : 'High oxygen levels support diverse marine life'
       };
     } else if (numValue > 150) {
       return {
         severity: 'low',
-        classification: 'Good Oxygen',
-        environmental_impact: 'Adequate oxygen for most marine organisms',
-        context: 'Healthy oxygen levels for marine ecosystems'
+        classification: t ? t('dataPanel.classifications.goodOxygen') : 'Good Oxygen',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.adequateOxygen') : 'Adequate oxygen for most marine organisms',
+        context: t ? t('dataPanel.contexts.healthyOxygen') : 'Healthy oxygen levels for marine ecosystems'
       };
     } else {
       return {
         severity: 'high',
-        classification: 'Low Oxygen',
-        environmental_impact: 'Stress on marine organisms, potential hypoxia',
-        context: 'Low oxygen conditions threaten marine life'
+        classification: t ? t('dataPanel.classifications.lowOxygen') : 'Low Oxygen',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.potentialHypoxia') : 'Stress on marine organisms, potential hypoxia',
+        context: t ? t('dataPanel.contexts.threatensLife') : 'Low oxygen conditions threaten marine life'
       };
     }
   }
@@ -418,16 +418,16 @@ function generateBasicClassification(paramName: string, value: number | string):
     if (numValue < 0.1) {
       return {
         severity: 'low',
-        classification: 'Low Nitrate',
-        environmental_impact: 'Indicates nutrient-poor surface waters typical of open ocean',
-        context: 'Low nitrate levels suggest limited recent upwelling or mixing'
+        classification: t ? t('dataPanel.classifications.lowNitrate') : 'Low Nitrate',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.nutrientPoor') : 'Indicates nutrient-poor surface waters typical of open ocean',
+        context: t ? t('dataPanel.contexts.limitedUpwelling') : 'Low nitrate levels suggest limited recent upwelling or mixing'
       };
     } else {
       return {
         severity: 'low',
-        classification: 'Elevated Nitrate',
-        environmental_impact: 'Higher nitrate supports phytoplankton growth',
-        context: 'Elevated nitrate suggests upwelling or riverine input'
+        classification: t ? t('dataPanel.classifications.elevatedNitrate') : 'Elevated Nitrate',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.supportsPhytoplankton') : 'Higher nitrate supports phytoplankton growth',
+        context: t ? t('dataPanel.contexts.suggestsUpwelling') : 'Elevated nitrate suggests upwelling or riverine input'
       };
     }
   }
@@ -435,18 +435,18 @@ function generateBasicClassification(paramName: string, value: number | string):
   if (paramName === 'po4' || paramName === 'phosphate') {
     return {
       severity: 'low',
-      classification: 'Normal Phosphate',
-      environmental_impact: 'Phosphate levels support marine primary productivity',
-      context: 'Phosphate is essential nutrient for marine phytoplankton'
+      classification: t ? t('dataPanel.classifications.normalPhosphate') : 'Normal Phosphate',
+      environmental_impact: t ? t('dataPanel.environmentalImpacts.supportsProductivity') : 'Phosphate levels support marine primary productivity',
+      context: t ? t('dataPanel.contexts.essentialNutrient') : 'Phosphate is essential nutrient for marine phytoplankton'
     };
   }
   
   if (paramName === 'si' || paramName === 'silicate') {
     return {
       severity: 'low',
-      classification: 'Normal Silicate',
-      environmental_impact: 'Silicate supports diatom growth and marine food webs',
-      context: 'Important nutrient for siliceous marine organisms'
+      classification: t ? t('dataPanel.classifications.normalSilicate') : 'Normal Silicate',
+      environmental_impact: t ? t('dataPanel.environmentalImpacts.supportsDiatoms') : 'Silicate supports diatom growth and marine food webs',
+      context: t ? t('dataPanel.contexts.importantNutrient') : 'Important nutrient for siliceous marine organisms'
     };
   }
   
@@ -454,16 +454,16 @@ function generateBasicClassification(paramName: string, value: number | string):
     if (numValue < 0.1) {
       return {
         severity: 'low',
-        classification: 'Low Chlorophyll',
-        environmental_impact: 'Indicates oligotrophic (nutrient-poor) ocean conditions',
-        context: 'Typical of clear, deep ocean waters with low productivity'
+        classification: t ? t('dataPanel.classifications.lowChlorophyll') : 'Low Chlorophyll',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.oligotrophic') : 'Indicates oligotrophic (nutrient-poor) ocean conditions',
+        context: t ? t('dataPanel.contexts.clearOcean') : 'Typical of clear, deep ocean waters with low productivity'
       };
     } else {
       return {
         severity: 'low',
-        classification: 'Moderate Chlorophyll',
-        environmental_impact: 'Indicates active phytoplankton productivity',
-        context: 'Shows healthy primary production in marine ecosystem'
+        classification: t ? t('dataPanel.classifications.moderateChlorophyll') : 'Moderate Chlorophyll',
+        environmental_impact: t ? t('dataPanel.environmentalImpacts.activePhytoplankton') : 'Indicates active phytoplankton productivity',
+        context: t ? t('dataPanel.contexts.healthyPrimary') : 'Shows healthy primary production in marine ecosystem'
       };
     }
   }
@@ -471,9 +471,9 @@ function generateBasicClassification(paramName: string, value: number | string):
   if (paramName === 'nppv') {
     return {
       severity: 'low',
-      classification: 'Active Primary Production',
-      environmental_impact: 'Indicates healthy phytoplankton productivity and carbon fixation',
-      context: 'Primary production forms base of marine food web'
+      classification: t ? t('dataPanel.classifications.activePrimaryProduction') : 'Active Primary Production',
+      environmental_impact: t ? t('dataPanel.environmentalImpacts.healthyProductivity') : 'Indicates healthy phytoplankton productivity and carbon fixation',
+      context: t ? t('dataPanel.contexts.formsBase') : 'Primary production forms base of marine food web'
     };
   }
   
@@ -481,9 +481,9 @@ function generateBasicClassification(paramName: string, value: number | string):
   if (paramName === 'direction' || paramName.includes('direction')) {
     return {
       severity: 'low',
-      classification: 'Current Direction',
-      environmental_impact: 'Current direction affects regional water mass transport',
-      context: 'Flow direction influences nutrient and heat distribution'
+      classification: t ? t('dataPanel.classifications.currentDirection') : 'Current Direction',
+      environmental_impact: t ? t('dataPanel.environmentalImpacts.affectsTransport') : 'Current direction affects regional water mass transport',
+      context: t ? t('dataPanel.contexts.influencesNutrient') : 'Flow direction influences nutrient and heat distribution'
     };
   }
   
@@ -491,17 +491,17 @@ function generateBasicClassification(paramName: string, value: number | string):
   if (paramName === 'uo' || paramName === 'vo' || paramName.includes('velocity')) {
     return {
       severity: 'low',
-      classification: 'Ocean Velocity',
-      environmental_impact: 'Contributes to regional circulation and mixing patterns',
-      context: 'Component of total current flow affecting marine transport'
+      classification: t ? t('dataPanel.classifications.oceanVelocity') : 'Ocean Velocity',
+      environmental_impact: t ? t('dataPanel.environmentalImpacts.contributes') : 'Contributes to regional circulation and mixing patterns',
+      context: t ? t('dataPanel.contexts.affectingTransport') : 'Component of total current flow affecting marine transport'
     };
   }
   
   // Default case for other parameters
   return {
     severity: 'low',
-    classification: 'Normal Range',
-    environmental_impact: 'Parameter within expected range for ocean health',
-    context: 'Measurement indicates stable marine conditions'
+    classification: t ? t('dataPanel.classifications.normalRange') : 'Normal Range',
+    environmental_impact: t ? t('dataPanel.environmentalImpacts.withinExpected') : 'Parameter within expected range for ocean health',
+    context: t ? t('dataPanel.contexts.stableConditions') : 'Measurement indicates stable marine conditions'
   };
 }

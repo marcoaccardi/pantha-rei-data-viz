@@ -42,7 +42,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         backdropFilter: 'blur(10px)',
         zIndex: 2000,
         display: 'flex',
@@ -55,7 +55,7 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
       <div 
         className="elegant-scrollbar"
         style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
           color: 'white',
           padding: '40px',
           borderRadius: '20px',
@@ -63,9 +63,10 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
           maxHeight: '90vh',
           width: '100%',
           overflowY: 'auto',
-          border: '1px solid rgba(156, 163, 175, 0.2)',
+          border: '1px solid rgba(156, 163, 175, 0.3)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          position: 'relative'
+          position: 'relative',
+          backdropFilter: 'blur(15px)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -120,9 +121,9 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               transition: 'all 0.2s ease'
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-              e.currentTarget.style.borderColor = '#ef4444';
-              e.currentTarget.style.color = '#ef4444';
+              e.currentTarget.style.backgroundColor = 'rgba(156, 163, 175, 0.2)';
+              e.currentTarget.style.borderColor = '#6b7280';
+              e.currentTarget.style.color = '#6b7280';
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
@@ -152,9 +153,9 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
           
           <div style={{
             padding: '24px',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            backgroundColor: 'transparent',
             borderRadius: '16px',
-            border: '1px solid rgba(59, 130, 246, 0.2)'
+            border: '1px solid rgba(156, 163, 175, 0.4)'
           }}>
             <p style={{
               fontSize: '1.05rem',
@@ -202,7 +203,8 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div style={{
               padding: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
               borderRadius: '12px'
             }}>
               <h3 style={{ color: '#10b981', fontSize: '1rem', marginBottom: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -215,7 +217,8 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             
             <div style={{
               padding: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
               borderRadius: '12px'
             }}>
               <h3 style={{ color: '#10b981', fontSize: '1rem', marginBottom: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -228,7 +231,8 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             
             <div style={{
               padding: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
               borderRadius: '12px'
             }}>
               <h3 style={{ color: '#10b981', fontSize: '1rem', marginBottom: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -236,19 +240,6 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               </h3>
               <p style={{ color: '#d1d5db', fontSize: '0.9rem', lineHeight: '1.4', margin: 0 }}>
                 Drag to rotate the globe freely. Use mouse wheel or pinch gestures to zoom in and out.
-              </p>
-            </div>
-            
-            <div style={{
-              padding: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '12px'
-            }}>
-              <h3 style={{ color: '#10b981', fontSize: '1rem', marginBottom: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FontAwesomeIcon icon={faHandPointer} /> Touch Support
-              </h3>
-              <p style={{ color: '#d1d5db', fontSize: '0.9rem', lineHeight: '1.4', margin: 0 }}>
-                Full touch support for mobile devices - tap, drag, and pinch to explore.
               </p>
             </div>
           </div>
@@ -272,11 +263,12 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{
               padding: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
               borderRadius: '8px'
             }}>
               <h3 style={{
-                color: '#f59e0b',
+                color: '#e5e7eb',
                 fontSize: '1rem',
                 marginBottom: '8px',
                 fontWeight: '600',
@@ -296,14 +288,15 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
               <div style={{
                 padding: '16px',
-                backgroundColor: 'rgba(100, 116, 139, 0.2)',
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
                 borderRadius: '12px',
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>
                   <FontAwesomeIcon icon={faLocationDot} />
                 </div>
-                <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px', fontWeight: '600' }}>
+                <h4 style={{ color: '#e5e7eb', fontSize: '0.9rem', marginBottom: '4px', fontWeight: '600' }}>
                   Random Location
                 </h4>
                 <p style={{ color: '#d1d5db', fontSize: '0.8rem', margin: 0 }}>
@@ -313,14 +306,15 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               
               <div style={{
                 padding: '12px',
-                backgroundColor: 'rgba(100, 116, 139, 0.2)',
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>
                   <FontAwesomeIcon icon={faCalendar} />
                 </div>
-                <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px', fontWeight: '600' }}>
+                <h4 style={{ color: '#e5e7eb', fontSize: '0.9rem', marginBottom: '4px', fontWeight: '600' }}>
                   Random Date
                 </h4>
                 <p style={{ color: '#d1d5db', fontSize: '0.8rem', margin: 0 }}>
@@ -330,14 +324,15 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               
               <div style={{
                 padding: '12px',
-                backgroundColor: 'rgba(100, 116, 139, 0.2)',
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
                 <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>
                   <FontAwesomeIcon icon={faDice} />
                 </div>
-                <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px', fontWeight: '600' }}>
+                <h4 style={{ color: '#e5e7eb', fontSize: '0.9rem', marginBottom: '4px', fontWeight: '600' }}>
                   Random Both
                 </h4>
                 <p style={{ color: '#d1d5db', fontSize: '0.8rem', margin: 0 }}>
@@ -349,12 +344,13 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div style={{
                 padding: '12px',
-                backgroundColor: 'rgba(100, 116, 139, 0.2)',
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
                 <h4 style={{
-                  color: '#64748b',
+                  color: '#e5e7eb',
                   fontSize: '0.9rem',
                   marginBottom: '8px',
                   fontWeight: '600',
@@ -373,12 +369,13 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
               
               <div style={{
                 padding: '12px',
-                backgroundColor: 'rgba(100, 116, 139, 0.2)',
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
                 <h4 style={{
-                  color: '#64748b',
+                  color: '#e5e7eb',
                   fontSize: '0.9rem',
                   marginBottom: '8px',
                   fontWeight: '600',
@@ -416,7 +413,8 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{
               padding: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
               borderRadius: '8px'
             }}>
               <h3 style={{
@@ -439,7 +437,8 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             
             <div style={{
               padding: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
               borderRadius: '8px'
             }}>
               <h3 style={{
@@ -462,7 +461,8 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
             
             <div style={{
               padding: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
               borderRadius: '8px'
             }}>
               <h3 style={{
@@ -485,9 +485,9 @@ const AppHelpOverlay: React.FC<AppHelpOverlayProps> = ({ onClose }) => {
 
             <div style={{
               padding: '20px',
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              backgroundColor: 'transparent',
               borderRadius: '12px',
-              border: '1px solid rgba(99, 102, 241, 0.2)'
+              border: '1px solid rgba(156, 163, 175, 0.4)'
             }}>
               <h3 style={{
                 color: '#6366f1',

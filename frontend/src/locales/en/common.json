@@ -206,9 +206,7 @@
         "doubleClick": "Double-Click",
         "doubleClickDesc": "Double-click to quickly zoom to a location and automatically fetch its ocean data.",
         "dragRotate": "Drag & Rotate",
-        "dragRotateDesc": "Drag to rotate the globe freely. Use mouse wheel or pinch gestures to zoom in and out.",
-        "touchSupport": "Touch Support",
-        "touchSupportDesc": "Full touch support for mobile devices - tap, drag, and pinch to explore."
+        "dragRotateDesc": "Drag to rotate the globe freely. Use mouse wheel or pinch gestures to zoom in and out."
       },
       "controls": {
         "title": "Control Panel (Top Left)",

@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { Vector3 } from 'three';
+import * as THREE from 'three';
 import type { Coordinates } from '../utils/types';
 import { latLngToVector3 } from '../utils/coordinates';
 
@@ -35,6 +36,13 @@ export function useGlobeCamera() {
         const controls = orbitControlsRef.current;
         const camera = controls.object;
         
+        // Ensure camera has a valid initial position
+        if (camera.position.length() < 0.1) {
+          // If camera is too close to origin, set it to a default position
+          camera.position.set(0, 0, 5);
+          controls.update();
+        }
+        
         // Calculate the 3D position of the selected coordinates on the globe
         const targetPosition = latLngToVector3(coords.lat, coords.lng, 1);
         
@@ -56,8 +64,32 @@ export function useGlobeCamera() {
             const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
             const easedProgress = easeInOut(progress);
             
-            // Interpolate camera position on a spherical path
-            const currentCameraPosition = startCameraPosition.clone().lerp(idealCameraPosition, easedProgress);
+            // Use spherical interpolation for natural globe rotation
+            // This prevents the camera from taking weird paths through the globe
+            const startDirection = startCameraPosition.clone().normalize();
+            const idealDirection = idealCameraPosition.clone().normalize();
+            
+            // Calculate the angle between start and target directions
+            const angle = startDirection.angleTo(idealDirection);
+            
+            // If angle is very small, use linear interpolation to avoid numerical issues
+            let currentDirection;
+            if (angle < 0.001) {
+              currentDirection = startDirection.clone().lerp(idealDirection, easedProgress);
+            } else {
+              // Use spherical interpolation (slerp) for smooth rotation along the sphere
+              // Create a quaternion that rotates from start to ideal direction
+              const axis = new Vector3().crossVectors(startDirection, idealDirection).normalize();
+              const quaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle * easedProgress);
+              currentDirection = startDirection.clone().applyQuaternion(quaternion);
+            }
+            
+            // Maintain consistent distance from globe center
+            const startDistance = startCameraPosition.length();
+            const idealDistance = idealCameraPosition.length();
+            const currentDistance = startDistance + (idealDistance - startDistance) * easedProgress;
+            
+            const currentCameraPosition = currentDirection.multiplyScalar(currentDistance);
             camera.position.copy(currentCameraPosition);
             
             // Always look at the center of the globe
@@ -75,6 +107,7 @@ export function useGlobeCamera() {
               animationFrameRef.current = null;
             }
           } catch (error) {
+            console.error('Camera animation error:', error);
             animationFrameRef.current = null;
           }
         };
