@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faLocationDot, faCalendar, faTemperatureHigh, faFlask, faWater } from '@fortawesome/free-solid-svg-icons';
 import { SectionHealthAnalysis, formatValueWithUnits, getHealthScoreDescription } from '../utils/oceanHealthAnalyzer';
 
 interface OceanHealthInfoProps {
@@ -23,19 +23,19 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
     switch (sectionName) {
       case 'temperature':
         return {
-          title: '🌡️ Ocean Temperature & Health',
+          title: <><FontAwesomeIcon icon={faTemperatureHigh} /> Ocean Temperature & Health</>,
           description: 'Sea surface temperature is a critical indicator of ocean health, affecting marine ecosystems, coral reefs, and global climate patterns.',
           importance: 'Temperature changes impact species distribution, coral bleaching, marine food webs, and ocean circulation patterns that regulate global climate.'
         };
       case 'chemistry':
         return {
-          title: '🧪 Ocean Chemistry & Health',
+          title: <><FontAwesomeIcon icon={faFlask} /> Ocean Chemistry & Health</>,
           description: 'Ocean chemistry parameters like pH, dissolved oxygen, and nutrients determine the health of marine ecosystems and their ability to support life.',
           importance: 'Chemical changes affect marine organism survival, coral calcification, shell formation, and the entire marine food web structure.'
         };
       case 'currents':
         return {
-          title: '🌀 Ocean Currents & Health',
+          title: <><FontAwesomeIcon icon={faWater} /> Ocean Currents & Health</>,
           description: 'Ocean currents transport nutrients, heat, and marine life, playing a crucial role in maintaining healthy marine ecosystems.',
           importance: 'Current patterns affect nutrient distribution, marine biodiversity, climate regulation, and the connectivity of marine habitats.'
         };
@@ -96,7 +96,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             fontSize: '0.85em',
             color: '#9ca3af'
           }}>
-            📍 {location.lat.toFixed(4)}°, {location.lon.toFixed(4)}° • 📅 {date}
+            <FontAwesomeIcon icon={faLocationDot} /> {location.lat.toFixed(4)}°, {location.lon.toFixed(4)}° • <FontAwesomeIcon icon={faCalendar} /> {date}
           </div>
         </div>
         
@@ -138,8 +138,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
         marginBottom: '24px',
         padding: '16px',
         backgroundColor: `${healthScoreColor}20`,
-        borderRadius: '8px',
-        border: `1px solid ${healthScoreColor}`
+        borderRadius: '8px'
       }}>
         <div style={{
           display: 'flex',
@@ -212,8 +211,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
           padding: '16px',
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
-          marginBottom: '12px',
-          border: '1px solid rgba(156, 163, 175, 0.2)'
+          marginBottom: '12px'
         }}>
           <p style={{
             color: '#e5e7eb',
@@ -243,15 +241,8 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
             padding: '20px',
             backgroundColor: 'rgba(156, 163, 175, 0.1)',
             borderRadius: '8px',
-            border: '1px solid #6b7280',
             textAlign: 'center'
           }}>
-            <div style={{
-              fontSize: '2em',
-              marginBottom: '12px'
-            }}>
-              📊
-            </div>
             <h3 style={{
               color: '#9ca3af',
               marginBottom: '12px',
@@ -265,7 +256,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
               lineHeight: '1.4',
               margin: '0 0 12px 0'
             }}>
-              {sectionInfo.title.split('&')[0].trim()} data is not available for this location and date.
+              {sectionName.charAt(0).toUpperCase() + sectionName.slice(1)} data is not available for this location and date.
             </p>
             <p style={{
               color: '#9ca3af',
@@ -327,10 +318,7 @@ const OceanHealthInfo: React.FC<OceanHealthInfoProps> = ({
                 style={{
                   padding: '16px',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '8px',
-                  border: `1px solid ${impact.severity === 'critical' ? '#991b1b' : 
-                                      impact.severity === 'high' ? '#ef4444' :
-                                      impact.severity === 'medium' ? '#f59e0b' : '#10b981'}`
+                  borderRadius: '8px'
                 }}
               >
                 <div style={{

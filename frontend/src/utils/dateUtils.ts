@@ -76,8 +76,12 @@ export function generateRandomDate(options: {
     endDateStr = TEMPORAL_COVERAGE.EXTENDED_END;
   }
 
+  // Never generate dates beyond today or beyond available data
+  const today = new Date().toISOString().split('T')[0];
+  const maxAvailableDate = endDateStr < today ? endDateStr : today;
+  
   const startDate = new Date(startDateStr);
-  const endDate = new Date(endDateStr);
+  const endDate = new Date(maxAvailableDate);
 
   // Validate date range with recursion protection
   if (startDate >= endDate) {
@@ -244,6 +248,19 @@ export function getGuaranteedDateRange(): DateRange {
     start: TEMPORAL_COVERAGE.GUARANTEED_START,
     end: TEMPORAL_COVERAGE.GUARANTEED_END
   };
+}
+
+/**
+ * Get a safe initial date that's guaranteed to have data available
+ * Never returns a future date beyond available data or today
+ * @returns Safe date string in YYYY-MM-DD format
+ */
+export function getSafeInitialDate(): string {
+  const today = new Date().toISOString().split('T')[0];
+  const maxAvailableDate = TEMPORAL_COVERAGE.GUARANTEED_END < today ? TEMPORAL_COVERAGE.GUARANTEED_END : today;
+  
+  // If today is before our data coverage ends, use today, otherwise use the latest available date
+  return maxAvailableDate;
 }
 
 /**

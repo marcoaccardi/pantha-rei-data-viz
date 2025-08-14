@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faLocationDot, faCalendar, faBottleWater } from '@fortawesome/free-solid-svg-icons';
 
 interface MicroplasticExplanationProps {
   microplastic: {
@@ -150,13 +150,13 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
             fontSize: '1.4em',
             color: '#e5e7eb'
           }}>
-            🧴 Microplastic Pollution Analysis
+            <FontAwesomeIcon icon={faBottleWater} /> Microplastic Pollution Analysis
           </h2>
           <div style={{
             fontSize: '0.85em',
             color: '#9ca3af'
           }}>
-            📍 {microplastic.coordinates[1].toFixed(4)}°, {microplastic.coordinates[0].toFixed(4)}° • 📅 {microplastic.date}
+            <FontAwesomeIcon icon={faLocationDot} /> {microplastic.coordinates[1].toFixed(4)}°, {microplastic.coordinates[0].toFixed(4)}° • <FontAwesomeIcon icon={faCalendar} /> {microplastic.date}
           </div>
         </div>
         
@@ -199,8 +199,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
         marginBottom: '24px',
         padding: '16px',
         backgroundColor: `${healthImpact.color}20`,
-        borderRadius: '8px',
-        border: `1px solid ${healthImpact.color}`
+        borderRadius: '8px'
       }}>
         <div style={{
           display: 'flex',
@@ -264,7 +263,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           marginBottom: '12px',
           fontSize: '1.1em'
         }}>
-          🔬 What Are Microplastics?
+          What Are Microplastics?
         </h3>
         
         <div style={{
@@ -272,7 +271,6 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
           marginBottom: '12px',
-          border: '1px solid rgba(156, 163, 175, 0.2)'
         }}>
           <p style={{
             color: '#e5e7eb',
@@ -303,7 +301,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           marginBottom: '12px',
           fontSize: '1.1em'
         }}>
-          🌊 Environmental Impact
+          Environmental Impact
         </h3>
         
         <div style={{
@@ -311,7 +309,6 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
           marginBottom: '12px',
-          border: '1px solid rgba(156, 163, 175, 0.2)'
         }}>
           <p style={{
             color: '#e5e7eb',
@@ -348,7 +345,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           marginBottom: '12px',
           fontSize: '1.1em'
         }}>
-          🏥 Human Health Implications
+          Human Health Implications
         </h3>
         
         <div style={{
@@ -356,7 +353,6 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
           marginBottom: '12px',
-          border: '1px solid rgba(156, 163, 175, 0.2)'
         }}>
           <p style={{
             color: '#e5e7eb',
@@ -390,7 +386,7 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           marginBottom: '12px',
           fontSize: '1.1em'
         }}>
-          📊 Measurement Information
+          Measurement Information
         </h3>
         
         <div style={{
@@ -398,7 +394,6 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
           marginBottom: '12px',
-          border: '1px solid rgba(156, 163, 175, 0.2)'
         }}>
           <div style={{ 
             display: 'grid',
@@ -412,20 +407,16 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
               <div style={{ color: '#d1d5db' }}>pieces/m³</div>
             </div>
             <div>
-              <strong style={{ color: '#e5e7eb' }}>Data Source:</strong>
-              <div style={{ color: microplastic.dataSource === 'real' ? '#10b981' : '#f59e0b' }}>
-                {microplastic.dataSource === 'real' ? '✅ Real Data' : '⚠️ Synthetic'}
-              </div>
-            </div>
-            <div>
-              <strong style={{ color: '#e5e7eb' }}>Confidence:</strong>
-              <div style={{ color: '#d1d5db' }}>
-                {(microplastic.confidence * 100).toFixed(0)}%
-              </div>
-            </div>
-            <div>
               <strong style={{ color: '#e5e7eb' }}>Method:</strong>
               <div style={{ color: '#d1d5db' }}>Marine sampling</div>
+            </div>
+            <div>
+              <strong style={{ color: '#e5e7eb' }}>Analysis:</strong>
+              <div style={{ color: '#d1d5db' }}>Microscopy & spectroscopy</div>
+            </div>
+            <div>
+              <strong style={{ color: '#e5e7eb' }}>Classification:</strong>
+              <div style={{ color: '#d1d5db' }}>Environmental impact studies</div>
             </div>
           </div>
           
@@ -449,8 +440,6 @@ const MicroplasticExplanation: React.FC<MicroplasticExplanationProps> = ({
         textAlign: 'center'
       }}>
         Microplastic analysis based on real-time data from multiple scientific sources.
-        <br />
-        Data reflects current conditions and may change with new measurements.
       </div>
     </div>
   );

@@ -222,14 +222,14 @@ function generateKeyFindings(sectionName: string, impacts: ParameterImpact[]): s
   
   // Add a few medium severity findings if there's space
   mediumImpacts.slice(0, 2).forEach(impact => {
-    findings.push(`📊 ${impact.displayName}: ${impact.classification} - ${impact.context}`);
+    findings.push(`${impact.displayName}: ${impact.classification} - ${impact.context}`);
   });
   
   // If no concerning findings, add positive ones
   if (findings.length === 0) {
     const healthyImpacts = impacts.filter(i => i.severity === 'low');
     healthyImpacts.slice(0, 3).forEach(impact => {
-      findings.push(`💧 ${impact.displayName}: ${impact.classification} - ${impact.impact}`);
+      findings.push(`${impact.displayName}: ${impact.classification} - ${impact.impact}`);
     });
   }
   

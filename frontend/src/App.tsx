@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, startTransition } from 'react';
 import Globe from './components/Globe';
 import DataPanel from './components/DataPanel';
 import MicroplasticExplanation from './components/MicroplasticExplanation';
+import AppHelpOverlay from './components/AppHelpOverlay';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useTextureLoader } from './hooks/useTextureLoader';
 import { fetchMultiPointData, transformToLegacyFormat, getLatestAvailableDate } from './services/oceanDataService';
@@ -12,6 +13,7 @@ import {
   getGuaranteedDateRange, 
   formatDateWithCoverage,
   getDataAvailabilityDescription,
+  getSafeInitialDate,
   TEMPORAL_COVERAGE
 } from './utils/dateUtils';
 import { useConnectionStatus } from './services/connectionMonitor';
@@ -23,7 +25,8 @@ import {
   faDice, 
   faTemperatureHigh, 
   faBottleWater, 
-  faWater 
+  faWater,
+  faCircleInfo
 } from '@fortawesome/free-solid-svg-icons';
 
 // Design system constants for consistent styling
@@ -74,9 +77,10 @@ function App() {
   const [showMicroplastics, setShowMicroplastics] = useState(false);
   const [hoveredMicroplastic, setHoveredMicroplastic] = useState<any>(null);
   const [clickedMicroplastic, setClickedMicroplastic] = useState<any>(null);
+  const [showHelpOverlay, setShowHelpOverlay] = useState(false);
   
   // Date management state - must be defined before texture loader
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getSafeInitialDate());
   
   // Texture management - pass selectedDate to sync texture with date selection
   const { 
@@ -86,7 +90,7 @@ function App() {
     getAvailableOptions,
     metadata 
   } = useTextureLoader(undefined, selectedDate);
-  const [dateValidation, setDateValidation] = useState(validateDate(new Date().toISOString().split('T')[0]));
+  const [dateValidation, setDateValidation] = useState(validateDate(getSafeInitialDate()));
   
   // Connection status
   const { status: connectionStatus, details: connectionDetails, isConnected } = useConnectionStatus();
@@ -879,32 +883,6 @@ function App() {
                   {showMicroplastics ? 'Hide Microplastics' : 'Show Microplastics'}
                 </button>
                 
-                {/* Microplastics hover info in side panel */}
-                {showMicroplastics && hoveredMicroplastic && (
-                  <div style={{
-                    marginTop: designSystem.spacing.sm,
-                    padding: designSystem.spacing.sm,
-                    backgroundColor: designSystem.colors.backgrounds.accent,
-                    border: `1px solid ${designSystem.colors.secondary}40`,
-                    borderRadius: designSystem.spacing.xs,
-                    fontSize: designSystem.typography.caption
-                  }}>
-                    <div style={{ marginBottom: designSystem.spacing.xs }}>
-                      <strong>Class:</strong> <span style={{ 
-                        color: hoveredMicroplastic.concentrationClass === 'Very High' ? '#ff4444' :
-                               hoveredMicroplastic.concentrationClass === 'High' ? '#ff9944' :
-                               hoveredMicroplastic.concentrationClass === 'Medium' ? '#ff44aa' :
-                               hoveredMicroplastic.concentrationClass === 'Low' ? '#9944ff' : '#bb88ff'
-                      }}>{hoveredMicroplastic.concentrationClass}</span>
-                    </div>
-                    <div style={{ marginBottom: designSystem.spacing.xs }}>
-                      <strong>Location:</strong> {hoveredMicroplastic.coordinates[1].toFixed(2)}°, {hoveredMicroplastic.coordinates[0].toFixed(2)}°
-                    </div>
-                    <div>
-                      <strong>Date:</strong> {hoveredMicroplastic.date}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -966,7 +944,51 @@ function App() {
             data={oceanData}
             isLoading={isLoading}
             error={apiError}
+            hoveredMicroplastic={hoveredMicroplastic}
           />
+        )}
+        
+        {/* Help Button - Bottom Right */}
+        <button
+          onClick={() => setShowHelpOverlay(true)}
+          style={{
+            position: 'absolute',
+            bottom: designSystem.spacing.xl,
+            right: designSystem.spacing.xl,
+            backgroundColor: designSystem.colors.primary,
+            color: designSystem.colors.text.primary,
+            border: 'none',
+            padding: designSystem.spacing.lg,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            fontSize: '1.2rem',
+            zIndex: 1000,
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            transition: 'all 0.2s ease',
+            width: '56px',
+            height: '56px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = designSystem.colors.primaryHover;
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = designSystem.colors.primary;
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+          title="App Help & Instructions"
+          aria-label="Open application help and usage instructions"
+        >
+          <FontAwesomeIcon icon={faCircleInfo} />
+        </button>
+        
+        {/* Help Overlay */}
+        {showHelpOverlay && (
+          <AppHelpOverlay onClose={() => setShowHelpOverlay(false)} />
         )}
       </div>
     </div>

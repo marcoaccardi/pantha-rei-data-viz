@@ -6,7 +6,8 @@ import {
   faCalendar,
   faFlask,
   faWater,
-  faTemperatureHigh
+  faTemperatureHigh,
+  faBottleWater
 } from '@fortawesome/free-solid-svg-icons';
 import { MultiDatasetOceanResponse, OceanDataValue, OceanPointData } from '../utils/types';
 import { classifyMeasurement, formatDirection } from '../services/oceanDataService';
@@ -18,6 +19,15 @@ interface DataPanelProps {
   data: MultiDatasetOceanResponse | null;
   isLoading: boolean;
   error: string | null;
+  hoveredMicroplastic?: {
+    position: [number, number, number];
+    concentration: number;
+    confidence: number;
+    dataSource: 'real' | 'synthetic';
+    date: string;
+    concentrationClass: string;
+    coordinates: [number, number]; // [lon, lat]
+  } | null;
 }
 
 // Design system constants
@@ -56,9 +66,100 @@ const designSystem = {
   }
 };
 
-const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
+const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error, hoveredMicroplastic }) => {
   const [expandedParameters, setExpandedParameters] = useState<string[]>([]);
   const [activeHealthInfo, setActiveHealthInfo] = useState<'temperature' | 'chemistry' | 'currents' | null>(null);
+  
+  const getConcentrationColor = (concentrationClass: string): string => {
+    switch (concentrationClass) {
+      case 'Very Low':
+        return '#bb88ff';  // Light purple
+      case 'Low':
+        return '#9944ff';  // Medium purple
+      case 'Medium':
+        return '#ff44aa';  // Pink
+      case 'High':
+        return '#ff9944';  // Orange
+      case 'Very High':
+        return '#ff4444';  // Red
+      default:
+        return '#888888';  // Gray
+    }
+  };
+
+  const renderMicroplasticHover = () => {
+    return (
+      <div style={{
+        marginTop: designSystem.spacing.lg,
+        paddingTop: designSystem.spacing.lg,
+        borderTop: `1px solid ${designSystem.colors.text.muted}40`,
+        padding: designSystem.spacing.lg,
+        backgroundColor: designSystem.colors.backgrounds.secondary,
+        borderRadius: designSystem.spacing.sm
+      }}>
+        <h4 style={{
+          color: designSystem.colors.primary,
+          marginBottom: designSystem.spacing.md,
+          fontSize: designSystem.typography.heading,
+          fontWeight: '600',
+          margin: '0 0 12px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: designSystem.spacing.sm
+        }}>
+          <FontAwesomeIcon icon={faBottleWater} /> Microplastic Data
+        </h4>
+        
+        {/* Location and Date on same line */}
+        <div style={{
+          marginBottom: designSystem.spacing.md,
+          fontSize: designSystem.typography.body,
+          color: designSystem.colors.text.muted,
+          display: 'flex',
+          justifyContent: 'space-between'
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: designSystem.spacing.xs }}>
+            <FontAwesomeIcon icon={faLocationDot} />
+            {hoveredMicroplastic ? 
+              `${hoveredMicroplastic.coordinates[1].toFixed(4)}°, ${hoveredMicroplastic.coordinates[0].toFixed(4)}°` : 
+              'Hover over point'
+            }
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: designSystem.spacing.xs }}>
+            <FontAwesomeIcon icon={faCalendar} />
+            {hoveredMicroplastic ? hoveredMicroplastic.date : 'No data'}
+          </span>
+        </div>
+        
+        {/* Class and Concentration below */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: designSystem.typography.body
+        }}>
+          <div>
+            <span style={{ color: designSystem.colors.text.secondary, marginRight: designSystem.spacing.xs }}>Class:</span>
+            <span style={{
+              color: hoveredMicroplastic ? getConcentrationColor(hoveredMicroplastic.concentrationClass) : designSystem.colors.text.muted,
+              fontWeight: '600'
+            }}>
+              {hoveredMicroplastic ? hoveredMicroplastic.concentrationClass : 'N/A'}
+            </span>
+          </div>
+          <div>
+            <span style={{ color: designSystem.colors.text.secondary, marginRight: designSystem.spacing.xs }}>Concentration:</span>
+            <span style={{
+              color: hoveredMicroplastic ? designSystem.colors.text.primary : designSystem.colors.text.muted,
+              fontWeight: '500'
+            }}>
+              {hoveredMicroplastic ? `${hoveredMicroplastic.concentration.toFixed(3)} pieces/m³` : 'N/A'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
   const getFormattedLabel = (parameter: string, longName?: string): string => {
     const labelMap: Record<string, string> = {
       // SST parameters
@@ -309,8 +410,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         marginBottom: designSystem.spacing.xxl,
         padding: designSystem.spacing.lg,
         backgroundColor: designSystem.colors.backgrounds.secondary,
-        borderRadius: designSystem.spacing.sm,
-        border: `1px solid ${healthAnalysis.overallColor}40`
+        borderRadius: designSystem.spacing.sm
       }}>
         <div style={{
           display: 'flex',
@@ -384,7 +484,8 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
                   fontWeight: '500', 
                   textAlign: 'right',
                   lineHeight: '1.3',
-                  fontSize: designSystem.typography.body
+                  fontSize: designSystem.typography.body,
+                  whiteSpace: 'nowrap'
                 }}>
                   {renderValue(varData, varName)}
                 </span>
@@ -406,7 +507,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         color: designSystem.colors.text.primary,
         padding: designSystem.spacing.xl,
         borderRadius: designSystem.spacing.md,
-        width: '400px',
+        width: '480px',
         maxHeight: '80vh',
         overflowY: 'auto',
         backdropFilter: 'blur(10px)',
@@ -448,7 +549,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         color: designSystem.colors.text.primary,
         padding: designSystem.spacing.xl,
         borderRadius: designSystem.spacing.md,
-        width: '400px',
+        width: '480px',
         backdropFilter: 'blur(10px)',
         border: `1px solid ${designSystem.colors.error}40`
       }}>
@@ -480,7 +581,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         color: designSystem.colors.text.primary,
         padding: designSystem.spacing.xl,
         borderRadius: designSystem.spacing.md,
-        width: '400px',
+        width: '480px',
         backdropFilter: 'blur(10px)',
         border: `1px solid ${designSystem.colors.text.muted}40`
       }}>
@@ -542,7 +643,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
   }
 
   return (
-    <div style={{
+    <div className="elegant-scrollbar" style={{
       position: 'absolute',
       top: designSystem.spacing.xl,
       right: designSystem.spacing.xl,
@@ -550,13 +651,11 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
       color: designSystem.colors.text.primary,
       padding: designSystem.spacing.xl,
       borderRadius: designSystem.spacing.md,
-      width: '420px',
+      width: '480px',
       maxHeight: '80vh',
       overflowY: 'auto',
       backdropFilter: 'blur(10px)',
-      border: `1px solid ${designSystem.colors.text.muted}40`,
-      scrollbarWidth: 'thin',
-      scrollbarColor: `${designSystem.colors.text.muted} transparent`
+      border: `1px solid ${designSystem.colors.text.muted}40`
     }}>
       <div style={{
         marginBottom: designSystem.spacing.lg,
@@ -600,6 +699,8 @@ const DataPanel: React.FC<DataPanelProps> = ({ data, isLoading, error }) => {
         .filter(([name]) => name !== '_ecosystem_insights' && name !== 'microplastics') // Filter out insights and microplastics from regular dataset display
         .map(([name, dataset]) => renderDataset(name, dataset)
       )}
+      
+      {renderMicroplasticHover()}
       
     </div>
   );

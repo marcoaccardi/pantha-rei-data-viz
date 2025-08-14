@@ -53,7 +53,7 @@ const ParameterExplanation: React.FC<ParameterExplanationProps> = ({
       'high': '🔴',
       'critical': '💀'
     };
-    return icons[severity as keyof typeof icons] || '📊';
+    return icons[severity as keyof typeof icons] || '';
   };
   
   const getSeverityColor = (severity: string) => {
