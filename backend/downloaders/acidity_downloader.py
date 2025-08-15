@@ -44,7 +44,7 @@ class AcidityDownloader(BaseDataDownloader):
             self.harmonized_path.mkdir(parents=True, exist_ok=True)
         
         # Load credentials directly from .env file
-        env_file = self.config_path / "credentials.env"
+        env_file = self.config_path / ".env"
         self.cmems_username = None
         self.cmems_password = None
         
@@ -67,7 +67,7 @@ class AcidityDownloader(BaseDataDownloader):
         
         # Validate CMEMS credentials
         if not self.cmems_username or not self.cmems_password:
-            raise ValueError("CMEMS credentials not found. Please configure CMEMS_USERNAME and CMEMS_PASSWORD in credentials.env file")
+            raise ValueError("CMEMS credentials not found. Please configure CMEMS_USERNAME and CMEMS_PASSWORD in .env file")
         
         self.logger.info(f"Initialized CMEMS Acidity downloader with credentials for user: {self.cmems_username}")
     

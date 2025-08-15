@@ -57,7 +57,7 @@ class CurrentsOscarDownloader(BaseDataDownloader):
     
     def _load_nasa_credentials(self):
         """Load NASA Earthdata credentials from environment file."""
-        env_file = self.config_path / "credentials.env"
+        env_file = self.config_path / ".env"
         
         if env_file.exists():
             with open(env_file, 'r') as f:

@@ -91,7 +91,7 @@ class BaseDataDownloader(ABC):
         credentials = {}
         
         # Try to load from .env file
-        env_file = self.config_path / "credentials.env"
+        env_file = self.config_path / ".env"
         if env_file.exists():
             with open(env_file, 'r') as f:
                 for line in f:

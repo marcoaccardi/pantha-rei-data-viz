@@ -51,7 +51,7 @@ class GLODAPDownloader(BaseDataDownloader):
     
     def _load_cmems_credentials(self):
         """Load CMEMS credentials from config or environment."""
-        env_file = self.config_path / "credentials.env"
+        env_file = self.config_path / ".env"
         self.cmems_username = None
         self.cmems_password = None
         
@@ -74,7 +74,7 @@ class GLODAPDownloader(BaseDataDownloader):
         
         # Validate CMEMS credentials
         if not self.cmems_username or not self.cmems_password:
-            raise ValueError("CMEMS credentials not found. Please configure CMEMS_USERNAME and CMEMS_PASSWORD in credentials.env file")
+            raise ValueError("CMEMS credentials not found. Please configure CMEMS_USERNAME and CMEMS_PASSWORD in .env file")
     
     def download_glodap_dataset(self, start_year: int = 1993, end_year: int = 2021) -> bool:
         """
