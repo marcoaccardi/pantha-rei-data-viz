@@ -368,16 +368,28 @@ class FileValidator:
             if texture_path.exists():
                 files = list(texture_path.rglob("*.png"))
         else:
-            # Check both raw and processed directories
-            for base_dir in ["raw", "processed/unified_coords"]:
-                dataset_path = self.base_path / base_dir / dataset
-                if dataset_path.exists():
-                    files.extend(list(dataset_path.rglob("*.nc")))
-                
-                # Also check for acidity variants
+            # Check processed/unified_coords directory first (priority)
+            processed_path = self.base_path / "processed/unified_coords" / dataset
+            if processed_path.exists():
+                files.extend(list(processed_path.rglob("*.nc")))
+            
+            # Also check for acidity variants in processed
+            if dataset == "acidity":
+                for variant in ["acidity_current", "acidity_historical"]:
+                    variant_path = self.base_path / "processed/unified_coords" / variant
+                    if variant_path.exists():
+                        files.extend(list(variant_path.rglob("*.nc")))
+            
+            # If no processed files found, check raw directory as fallback
+            if not files:
+                raw_path = self.base_path / "raw" / dataset  
+                if raw_path.exists():
+                    files.extend(list(raw_path.rglob("*.nc")))
+                    
+                # Also check for acidity variants in raw
                 if dataset == "acidity":
                     for variant in ["acidity_current", "acidity_historical"]:
-                        variant_path = self.base_path / base_dir / variant
+                        variant_path = self.base_path / "raw" / variant
                         if variant_path.exists():
                             files.extend(list(variant_path.rglob("*.nc")))
         
