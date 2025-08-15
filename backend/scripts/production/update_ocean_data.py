@@ -89,19 +89,19 @@ class GapDetector:
         return latest_date, missing_dates
     
     def _detect_raw_data_gaps(self, dataset: str) -> Tuple[Optional[date], List[date]]:
-        """Detect gaps in raw data files."""
+        """Detect gaps in processed data files."""
         # Handle acidity hybrid system with separate current/historical directories
         if dataset == "acidity":
             return self._detect_acidity_hybrid_gaps()
         
-        dataset_path = self.raw_path / dataset
+        # Check processed/unified_coords first (priority)
+        dataset_path = self.processed_path / dataset
         if not dataset_path.exists():
             # No data exists, start from dataset start date
             start_dates = {
                 "sst": date(2003, 1, 1),  # Align with user requirement: 2003-present coverage
                 "currents": date(2003, 1, 1),
-                "acidity": date(1993, 1, 1),
-                "microplastics": date(1993, 1, 1)
+                "acidity": date(2021, 1, 1)  # Only current acidity data
             }
             start_date = start_dates.get(dataset, date(2024, 1, 1))
             return None, self._generate_date_range(start_date, date.today() - timedelta(days=1))
@@ -111,13 +111,13 @@ class GapDetector:
         
         # Different patterns for different datasets
         if dataset == "sst":
-            pattern = re.compile(r"oisst-avhrr-v02r01\.(\d{8})\.nc")
+            pattern = re.compile(r"sst_harmonized_(\d{8})\.nc")
         elif dataset == "currents":
             pattern = re.compile(r"currents.*?(\d{8}).*\.nc")
         elif dataset.startswith("acidity"):
             pattern = re.compile(r"acidity.*?(\d{8}).*\.nc")
         elif dataset == "microplastics":
-            # Microplastics is a static dataset - no regular updates needed
+            # Microplastics dataset excluded - not processed
             return date.today() - timedelta(days=1), []  # Always up to date
         else:
             pattern = re.compile(r".*(\d{8}).*\.nc")
@@ -148,8 +148,7 @@ class GapDetector:
             start_dates = {
                 "sst": date(2003, 1, 1),  # User requirement: 2003-present coverage
                 "currents": date(2003, 1, 1),
-                "acidity": date(1993, 1, 1),
-                "microplastics": date(1993, 1, 1)
+                "acidity": date(2021, 1, 1)  # Only current acidity data
             }
             start_date = start_dates.get(dataset, date(2024, 1, 1))
             return None, self._generate_date_range(start_date, date.today() - timedelta(days=1))
@@ -163,33 +162,24 @@ class GapDetector:
         return latest_date, missing_dates
     
     def _detect_acidity_hybrid_gaps(self) -> Tuple[Optional[date], List[date]]:
-        """Detect gaps in acidity hybrid system (historical + current directories)."""
-        # Acidity system uses two directories:
-        # - acidity_historical: 1993-2022 (ends 2022-12-31)
-        # - acidity_current: 2021-present (overlaps with historical 2021-2022)
+        """Detect gaps in acidity hybrid system (current directories only)."""
+        # Only use acidity_current directory (excluding acidity_historical)
+        # - acidity_current: 2021-present
         
-        historical_path = self.raw_path / "acidity_historical"
-        current_path = self.raw_path / "acidity_current"
+        current_path = self.processed_path / "acidity_current"
         
-        latest_historical = None
         latest_current = None
         
-        # Check historical data (1993-2022)
-        if historical_path.exists():
-            latest_historical = self._find_latest_date_in_path(historical_path, r"acidity_historical.*?(\d{8}).*\.nc")
-        
-        # Check current data (2021-present)
+        # Check current data (2021-present) only
         if current_path.exists():
-            latest_current = self._find_latest_date_in_path(current_path, r"acidity_current.*?(\d{8}).*\.nc")
+            latest_current = self._find_latest_date_in_path(current_path, r"acidity.*?(\d{8}).*\.nc")
         
-        # Determine overall latest date (current takes priority)
+        # Determine overall latest date
         if latest_current:
             latest_date = latest_current
-        elif latest_historical:
-            latest_date = latest_historical
         else:
-            # No data found, start from beginning
-            return None, self._generate_date_range(date(1993, 1, 1), date.today() - timedelta(days=1))
+            # No data found, start from 2021 (when current data begins)
+            return None, self._generate_date_range(date(2021, 1, 1), date.today() - timedelta(days=1))
         
         # Generate missing dates from latest to yesterday
         yesterday = date.today() - timedelta(days=1)
@@ -251,13 +241,12 @@ class OceanDataUpdater:
         self.status_manager = StatusManager()
         self.coordinate_harmonizer = CoordinateHarmonizer()
         
-        # Initialize downloaders
+        # Initialize downloaders (exclude acidity_historical and waves)
         self.downloaders = {
             "sst": SSTDownloader(),
             "sst_textures": SSTERDDAPTextureDownloader(),
             "currents": CurrentsDownloader(),
-            "acidity": AcidityHybridDownloader(),
-            "microplastics": MicroplasticsDownloader()
+            "acidity": AcidityHybridDownloader()
         }
         
         # Results tracking

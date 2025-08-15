@@ -66,13 +66,12 @@ class RecoveryManager:
         self.status_manager = StatusManager()
         self.coordinate_harmonizer = CoordinateHarmonizer()
         
-        # Initialize downloaders
+        # Initialize downloaders (exclude acidity_historical and waves)
         self.downloaders = {
             "sst": SSTDownloader(),
             "sst_textures": SSTERDDAPTextureDownloader(),
             "currents": CurrentsDownloader(), 
-            "acidity": AcidityHybridDownloader(),
-            "microplastics": MicroplasticsDownloader()
+            "acidity": AcidityHybridDownloader()
         }
         
         # Recovery tracking
@@ -169,8 +168,8 @@ class RecoveryManager:
         missing_processed = {}
         
         for dataset in datasets:
-            if dataset in ["sst_textures", "microplastics"]:
-                continue  # These don't need processing
+            if dataset in ["sst_textures", "microplastics", "acidity_historical", "waves"]:
+                continue  # These don't need processing or are excluded
                 
             self.logger.info(f"Checking processed files for {dataset}...")
             
